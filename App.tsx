@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Camera, Cpu, Target, Coins, ArrowRight, Github, MonitorPlay, Shield, Activity, Layers } from 'lucide-react';
+import { Camera, Cpu, Target, Coins, ArrowRight, Github, MonitorPlay, Shield, Activity, Layers, HardDrive } from 'lucide-react';
 import ModeSelector from './components/ModeSelector';
 import PhotoUploader from './components/PhotoUploader';
 import AnalysisResults, { TabId, MentorChatStateV2 } from './components/AnalysisResults';
 import AuditLogPanel from './components/AuditLogPanel';
 import BatchResultsPanel from './components/BatchResultsPanel';
+import DesktopBatchPanel from './components/DesktopBatchPanel';
 import { PresentationSlides } from './components/PresentationSlides';
 import { runAnalysisPipeline, checkOllamaHealth, warmUpModel, AnalysisProgress } from './services/analysisOrchestrator';
 import { setOperationalMode, exportAuditLog } from './services/auditService';
@@ -67,10 +68,13 @@ function App() {
   // Vault Mode: audit log panel visibility
   const [showAuditLog, setShowAuditLog] = useState(false);
 
-  // Batch processing state
+  // Batch processing state (web)
   const [batchMode, setBatchMode] = useState(false);
   const [batchItems, setBatchItems] = useState<WebBatchItem[]>([]);
   const [batchProcessing, setBatchProcessing] = useState(false);
+
+  // Desktop batch panel
+  const [showDesktopBatch, setShowDesktopBatch] = useState(false);
 
   // Warm up Ollama on mount — eliminates ~40s cold-start penalty (Spike 1 finding).
   // checkOllamaHealth confirms the daemon is running, then warmUpModel fires a
@@ -406,8 +410,17 @@ function App() {
                 }`}
               >
                 <Layers className="w-4 h-4" />
-                Batch Mode
+                Web Batch (50)
               </button>
+              {typeof window !== 'undefined' && window.electronAPI?.isElectron && (
+                <button
+                  onClick={() => setShowDesktopBatch(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-all"
+                >
+                  <HardDrive className="w-4 h-4" />
+                  Desktop Batch (∞)
+                </button>
+              )}
             </div>
 
             {/* Uploader */}
@@ -565,6 +578,9 @@ function App() {
 
       {/* Vault Mode audit log panel (modal) */}
       {showAuditLog && <AuditLogPanel onClose={() => setShowAuditLog(false)} />}
+
+      {/* Desktop batch panel (modal) */}
+      {showDesktopBatch && <DesktopBatchPanel onClose={() => setShowDesktopBatch(false)} />}
 
       <footer className="border-t border-slate-800 mt-12 py-8 flex flex-col items-center gap-4 text-slate-600 text-sm">
         <p>&copy; {new Date().getFullYear()} Photography Coach v2. Powered by Gemma 4 E4B · Runs 100% locally via Ollama.</p>

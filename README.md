@@ -575,7 +575,7 @@ You are free to use, modify, and distribute this software for commercial or non-
 
 <div align="center">
 
-**Built with ❤️ for photographers, by photographers**
+**Built with ❤️ for photographers, by a photographer**
 
 *Powered by Gemma 4 E4B • Running 100% Locally • Zero Cloud Dependencies*
 

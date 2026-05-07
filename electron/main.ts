@@ -113,7 +113,7 @@ app.whenReady().then(() => {
 
   ipcMain.handle('batch-init-queue', async (_event, config: { batchDir: string; photoPaths: string[] }) => {
     try {
-      const { BatchQueueManager } = await import('../services/batchService');
+      const { BatchQueueManager } = await import('./batchService');
       const manager = new BatchQueueManager({ batchDir: config.batchDir });
       await manager.initializeQueue(config.photoPaths);
       return { success: true };
@@ -124,7 +124,7 @@ app.whenReady().then(() => {
 
   ipcMain.handle('batch-get-unprocessed', async (_event, batchDir: string) => {
     try {
-      const { BatchQueueManager } = await import('../services/batchService');
+      const { BatchQueueManager } = await import('./batchService');
       const manager = new BatchQueueManager({ batchDir });
       const jobs = await manager.getUnprocessedJobs();
       return { success: true, jobs };
@@ -135,7 +135,7 @@ app.whenReady().then(() => {
 
   ipcMain.handle('batch-record-complete', async (_event, params: { batchDir: string; jobId: string; result: any; latencyMs: number }) => {
     try {
-      const { BatchQueueManager } = await import('../services/batchService');
+      const { BatchQueueManager } = await import('./batchService');
       const manager = new BatchQueueManager({ batchDir: params.batchDir });
       await manager.recordJobComplete(params.jobId, params.result, params.latencyMs);
       return { success: true };
@@ -146,7 +146,7 @@ app.whenReady().then(() => {
 
   ipcMain.handle('batch-record-error', async (_event, params: { batchDir: string; jobId: string; error: string }) => {
     try {
-      const { BatchQueueManager } = await import('../services/batchService');
+      const { BatchQueueManager } = await import('./batchService');
       const manager = new BatchQueueManager({ batchDir: params.batchDir });
       await manager.recordJobError(params.jobId, params.error);
       return { success: true };
@@ -157,7 +157,7 @@ app.whenReady().then(() => {
 
   ipcMain.handle('batch-export-xmp', async (_event, params: { batchDir: string; outputDir: string }) => {
     try {
-      const { BatchQueueManager } = await import('../services/batchService');
+      const { BatchQueueManager } = await import('./batchService');
       const manager = new BatchQueueManager({ batchDir: params.batchDir });
       const count = await manager.exportAllXMP(params.outputDir);
       return { success: true, count };
@@ -168,7 +168,7 @@ app.whenReady().then(() => {
 
   ipcMain.handle('batch-get-checkpoint', async (_event, batchDir: string) => {
     try {
-      const { BatchQueueManager } = await import('../services/batchService');
+      const { BatchQueueManager } = await import('./batchService');
       const manager = new BatchQueueManager({ batchDir });
       const checkpoint = manager.getCheckpoint();
       return { success: true, checkpoint };

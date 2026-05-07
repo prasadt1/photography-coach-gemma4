@@ -221,3 +221,22 @@ export interface SessionHistoryEntry {
   totalTokens: number;
   latencyMs: number;
 }
+
+// ─── Web batch upload (browser File objects) ─────────────────────────────────
+
+export interface WebBatchItem {
+  id: string;
+  file: File;
+  base64: string;
+  mimeType: string;
+  imageEl: HTMLImageElement | null;
+  status: 'pending' | 'analyzing' | 'completed' | 'failed';
+  analysis?: PhotoAnalysisV2;
+  error?: string;
+}
+
+export interface WebBatchState {
+  items: WebBatchItem[];
+  currentIndex: number;
+  isProcessing: boolean;
+}

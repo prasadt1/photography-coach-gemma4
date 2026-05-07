@@ -1,15 +1,16 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Camera, Cpu, Target, Coins, ArrowRight, Github, MonitorPlay, Shield, Activity } from 'lucide-react';
+import { Camera, Cpu, Target, Coins, ArrowRight, Github, MonitorPlay, Shield, Activity, Layers } from 'lucide-react';
 import ModeSelector from './components/ModeSelector';
 import PhotoUploader from './components/PhotoUploader';
 import AnalysisResults, { TabId, MentorChatStateV2 } from './components/AnalysisResults';
 import AuditLogPanel from './components/AuditLogPanel';
+import BatchResultsPanel from './components/BatchResultsPanel';
 import { PresentationSlides } from './components/PresentationSlides';
 import { runAnalysisPipeline, checkOllamaHealth, warmUpModel, AnalysisProgress } from './services/analysisOrchestrator';
 import { setOperationalMode, exportAuditLog } from './services/auditService';
 import { AppState } from './types';
-import { PhotoAnalysisV2, OperationalMode, SessionHistoryEntry } from './types.v2';
+import { PhotoAnalysisV2, OperationalMode, SessionHistoryEntry, WebBatchItem } from './types.v2';
 
 // Floating badge component showing session token count
 const SessionSavingsBadge: React.FC<{
@@ -65,6 +66,11 @@ function App() {
 
   // Vault Mode: audit log panel visibility
   const [showAuditLog, setShowAuditLog] = useState(false);
+
+  // Batch processing state
+  const [batchMode, setBatchMode] = useState(false);
+  const [batchItems, setBatchItems] = useState<WebBatchItem[]>([]);
+  const [batchProcessing, setBatchProcessing] = useState(false);
 
   // Warm up Ollama on mount — eliminates ~40s cold-start penalty (Spike 1 finding).
   // checkOllamaHealth confirms the daemon is running, then warmUpModel fires a
@@ -163,7 +169,111 @@ function App() {
     setAnalysis(null);
     setError(null);
     setMentorChatState({ messages: [], isLoading: false });
+    setBatchMode(false);
+    setBatchItems([]);
+    setBatchProcessing(false);
   };
+
+  // Batch processing handlers
+  const handleBatchSelected = useCallback(async (files: File[]) => {
+    // Limit to 50 photos
+    const limitedFiles = files.slice(0, 50);
+
+    // Pre-process all files: read as base64 and create HTMLImageElement
+    const itemsPromises = limitedFiles.map(async (file, index) => {
+      return new Promise<WebBatchItem>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64 = reader.result as string;
+          const img = new Image();
+          img.onload = () => {
+            resolve({
+              id: `${Date.now()}-${index}`,
+              file,
+              base64,
+              mimeType: file.type,
+              imageEl: img,
+              status: 'pending',
+            });
+          };
+          img.onerror = () => {
+            resolve({
+              id: `${Date.now()}-${index}`,
+              file,
+              base64,
+              mimeType: file.type,
+              imageEl: null,
+              status: 'pending',
+            });
+          };
+          img.src = base64;
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    const items = await Promise.all(itemsPromises);
+    setBatchItems(items);
+    setBatchProcessing(true);
+    setAppState(AppState.ANALYZING);
+
+    // Process sequentially
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+
+      // Mark as analyzing
+      setBatchItems(prev => prev.map(it =>
+        it.id === item.id ? { ...it, status: 'analyzing' as const } : it
+      ));
+
+      try {
+        const v2Result = await runAnalysisPipeline(
+          item.base64,
+          item.mimeType,
+          item.imageEl || undefined,
+          item.file,
+          (progress) => setAnalysisProgress(progress),
+        );
+
+        // Mark as completed with analysis
+        setBatchItems(prev => prev.map(it =>
+          it.id === item.id ? { ...it, status: 'completed' as const, analysis: v2Result } : it
+        ));
+
+        // Update session history
+        if (v2Result.tokenUsage?.totalTokens) {
+          setSessionHistory(prev => [
+            ...prev,
+            {
+              id: prev.length + 1,
+              timestamp: Date.now(),
+              modelId: v2Result.model_id,
+              promptTokens: v2Result.tokenUsage!.promptTokens ?? 0,
+              completionTokens: v2Result.tokenUsage!.completionTokens ?? 0,
+              totalTokens: v2Result.tokenUsage!.totalTokens!,
+              latencyMs: 0,
+            } satisfies SessionHistoryEntry,
+          ]);
+        }
+      } catch (err: any) {
+        console.error(`[Batch] Failed to analyze ${item.file.name}:`, err);
+        setBatchItems(prev => prev.map(it =>
+          it.id === item.id ? { ...it, status: 'failed' as const, error: err.message || 'Analysis failed' } : it
+        ));
+      }
+    }
+
+    setBatchProcessing(false);
+    setAnalysisProgress(null);
+    setAppState(AppState.RESULTS);
+  }, []);
+
+  const handleBatchReset = useCallback(() => {
+    setBatchItems([]);
+    setBatchProcessing(false);
+    setBatchMode(false);
+    setAppState(AppState.IDLE);
+  }, []);
 
   const handleExportAuditLog = async () => {
     try {
@@ -275,8 +385,38 @@ function App() {
             {/* Mode selector */}
             <ModeSelector mode={mode} onChange={handleModeChange} />
 
+            {/* Batch mode toggle */}
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={() => setBatchMode(false)}
+                className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  !batchMode
+                    ? 'bg-brand-600 text-white'
+                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                }`}
+              >
+                Single Photo
+              </button>
+              <button
+                onClick={() => setBatchMode(true)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                  batchMode
+                    ? 'bg-brand-600 text-white'
+                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                }`}
+              >
+                <Layers className="w-4 h-4" />
+                Batch Mode
+              </button>
+            </div>
+
             {/* Uploader */}
-            <PhotoUploader onImageSelected={handleImageSelected} isAnalyzing={false} />
+            <PhotoUploader
+              onImageSelected={handleImageSelected}
+              onBatchSelected={handleBatchSelected}
+              isAnalyzing={false}
+              batchMode={batchMode}
+            />
 
             {/* Sample Photos Section */}
             <div className="w-full max-w-4xl pt-8">
@@ -333,7 +473,24 @@ function App() {
           </div>
         )}
 
-        {appState === AppState.ANALYZING && (
+        {appState === AppState.ANALYZING && batchProcessing && (
+          <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-8">
+            <div className="text-center">
+              <h2 className="text-3xl font-bold text-white mb-4">Processing Batch</h2>
+              <p className="text-slate-400 mb-8">
+                {batchItems.filter(it => it.status === 'completed').length} of {batchItems.length} photos analyzed
+              </p>
+              <div className="w-full max-w-md mx-auto h-2 bg-slate-900 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-brand-500 to-emerald-500 transition-all duration-500"
+                  style={{ width: `${(batchItems.filter(it => it.status === 'completed').length / batchItems.length) * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {appState === AppState.ANALYZING && !batchProcessing && (
            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-8 animate-pulse">
               <div className="w-full max-w-2xl mx-auto">
                  <PhotoUploader
@@ -345,7 +502,14 @@ function App() {
            </div>
         )}
 
-        {appState === AppState.RESULTS && analysis && currentImage && (
+        {appState === AppState.RESULTS && batchItems.length > 0 && (
+          <BatchResultsPanel
+            items={batchItems}
+            onReset={handleBatchReset}
+          />
+        )}
+
+        {appState === AppState.RESULTS && batchItems.length === 0 && analysis && currentImage && (
           <AnalysisResults
             analysis={analysis}
             imageSrc={currentImage}

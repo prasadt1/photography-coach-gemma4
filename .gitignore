@@ -33,6 +33,13 @@ models/
 .env.production
 .env.*.local
 
+# Stray compiled JS (prevent TS from emitting next to source)
+/services/*.js
+/types.v2.js
+/*.js
+!vite.config.js
+!vitest.config.js
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

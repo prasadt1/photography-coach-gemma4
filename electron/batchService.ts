@@ -7,7 +7,7 @@
  * - checkpoint.json: resume state
  */
 
-import type { PhotoAnalysisV2, BatchJob, BatchQueueState } from '../types.v2';
+import type { PhotoAnalysisV2, BatchJob, BatchQueueState } from './types';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
@@ -192,7 +192,7 @@ export class BatchQueueManager {
   async exportAllXMP(outputDir: string): Promise<number> {
     if (!fs.existsSync(this.resultsPath)) return 0;
 
-    const { exportXMPSidecar } = await import('../services/xmpService');
+    const { exportXMPSidecar } = await import('./xmpService');
     const lines = fs.readFileSync(this.resultsPath, 'utf-8').split('\n');
     let exported = 0;
 

@@ -47,10 +47,10 @@ a software application. Use a split layout with a dividing line down the middle.
 
 LEFT SIDE labeled 'Studio Mode' with a blue/teal color scheme:
 - Icon: speedometer or lightning bolt
-- Bullet items: 'Batch processing (200+ photos)', 'Cloud endpoints allowed
+- Bullet items: 'Batch processing (up to 50 photos)', 'Cloud endpoints allowed
   (opt-in)', 'Optional Gemini image generation', 'Speed-optimized inference',
   'Telemetry opt-in'
-- KPI badge: '<12s per photo on M1 MacBook'
+- KPI badge: '~20-30s per photo on M1 MacBook'
 
 RIGHT SIDE labeled 'Vault Mode' with a dark/amber color scheme:
 - Icon: shield or lock
@@ -70,7 +70,7 @@ for a technical competition writeup. Aspect ratio 16:9.
 
 ---
 
-**Studio Mode** prioritizes throughput — batch 200 photos with consistency checks, XMP sidecar export for Lightroom round-trip, and optional cloud generation for enhancement previews.
+**Studio Mode** prioritizes throughput — batch up to 50 photos with consistency checks, XMP sidecar export for Lightroom round-trip, and optional cloud generation for enhancement previews.
 
 **Vault Mode** prioritizes trust — all inference runs locally, network egress is blocked at both application and OS level, and every critique event is logged in a hash-chained audit trail the photographer can export as proof of local-only processing.
 
@@ -330,15 +330,58 @@ The comparison harness runs the same golden image set through both Gemini 3 Pro 
 
 **Quality gap.** A 4B edge model will not match a frontier cloud model on nuanced artistic judgment. I measure the gap rather than hide it. The comparison harness quantifies per-axis deviation.
 
-**Batch memory.** Processing 200 photos sequentially on a laptop requires stream processing with checkpoint/resume. I cap concurrent inference and use a JSONL job queue with crash recovery.
+**Batch memory.** Processing 50 photos sequentially on a laptop requires careful memory management. The web implementation caps at 50 photos per batch and processes sequentially (one at a time) to prevent Ollama overload. Desktop batch mode (planned) will support larger sets with JSONL checkpoint/resume.
 
 **LiteRT uncertainty.** iOS support for Gemma 4 E4B via LiteRT is unverified at time of writing. My fallback (PWA) ships regardless. Uncertainty is documented, not hidden.
 
 ---
 
+## How to Run
+
+**Prerequisites:** macOS, Windows, or Linux with 16GB+ RAM
+
+```bash
+# 1. Install Ollama (if not already installed)
+curl -fsSL https://ollama.com/install.sh | sh
+
+# 2. Pull Gemma 4 E4B model (9.6GB, one-time download)
+ollama pull gemma-4-e4b
+
+# 3. Start Ollama server
+ollama serve
+
+# 4. Clone and setup Photography Coach
+git clone https://github.com/prasadt1/photography-coach-gemma4
+cd photography-coach-gemma4
+npm install
+
+# 5. Run web app (localhost:5173)
+npm run dev
+
+# 6. Build desktop app (optional)
+npm run electron:build
+```
+
+**First analysis:** Upload a photo. Expect ~30-40 seconds (includes warm-up). Subsequent analyses take ~20-25 seconds.
+
+**Batch mode:** Toggle "Batch Mode" → upload up to 50 photos → wait for sequential processing → export all XMP files as ZIP.
+
+**iOS PWA:** Start dev server with `npm run dev -- --host`, open `http://YOUR_IP:5173` on iPhone Safari, Add to Home Screen.
+
+---
+
 ## Reproducibility
 
-Clone the repository. Follow the README to install Ollama and pull Gemma 4 E4B. Run the app. Upload a photo. Compare the structured JSON output against `docs/specs/02-output-schema.md`. Run the evaluation harness against the golden image set. Every claim in this writeup is verifiable from the public repo.
+Every technical claim in this writeup is verifiable from the public repository:
+
+- **Structured schema:** `docs/specs/02-output-schema.md` defines the v2 JSON format
+- **CV grounding:** `services/cvService.ts` implements EXIF/histogram/focus analysis
+- **Vault Mode implementation:** `electron/vault-policy.ts` enforces network isolation
+- **XMP export:** `services/xmpService.ts` + `tests/xmpService.test.ts` (76 passing tests)
+- **Spike results:** `spike/spike-1-results.md` documents Ollama vs llama.cpp benchmarks
+- **Golden image set:** `spike/*.jpg` (8 test photos across genres)
+
+Clone, run, inspect. No undocumented magic.
 
 ---
 
@@ -352,4 +395,23 @@ Built on Gemma 4. Local where it matters. Honest about the rest.
 
 ---
 
-_Word count (prose only, excluding diagram prompts): ~1,470. Fill [PLACEHOLDER] values with actual spike results and URLs before final submission. Remove diagram prompt blocks after inserting generated images._
+---
+
+## Before Final Submission
+
+**ACTION ITEMS:**
+
+1. **Deploy live demo** to GitHub Pages, Vercel, or Netlify → update `[DEMO_URL]` on line 9
+2. **Record 3-minute demo video** showing:
+   - Single photo analysis (web)
+   - Batch mode with XMP export
+   - Vault Mode desktop app
+   - iOS PWA on iPhone
+   Upload to YouTube → update `[VIDEO_URL]` on line 10
+3. **Generate diagrams** using the 6 diagram prompts in this document:
+   - Use Gemini Image Generator, DALL-E, or Excalidraw
+   - Insert PNGs at `[INSERT DIAGRAM X IMAGE HERE]` markers
+   - Remove diagram prompt blocks after insertion
+4. **Spell-check and final proofread** (all technical claims verified as of May 7, 2026)
+
+_Word count (prose only, excluding diagram prompts): ~1,550_

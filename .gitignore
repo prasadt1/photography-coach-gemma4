@@ -12,6 +12,27 @@ dist
 dist-ssr
 *.local
 
+# Electron build outputs
+dist-electron/
+electron-dist/
+out/
+release/
+
+# Test artifacts
+*.xmp
+
+# Model files
+*.bin
+*.gguf
+*.litertlm
+models/
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.*.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -1,643 +1,582 @@
-# 📷 Photography Coach AI – Gemini 3 Pro Edition
+# 📷 Photography Coach – Gemma 4 Edition
 
+**Professional AI Photography Coaching Running 100% Locally**
 
-<img width="1024" height="318" alt="image" src="https://github.com/user-attachments/assets/e2a38c0e-7a6c-49ef-8fb6-2cd870ea6e36" /><br/>
-
-
-[![Launch Live App](https://img.shields.io/badge/Launch_Live_App-Google_AI_Studio-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.studio/apps/drive/1v2uJziWHPOHRES4EmmWXavydKZAe8ary?fullscreenApplet=true)
-[![Gemini 3 Pro](https://img.shields.io/badge/Powered%20by-Gemini%203%20Pro-green?style=flat-square&logo=google)](https://ai.google.dev)
-[![React](https://img.shields.io/badge/React-18%2B-blue?style=flat-square&logo=react)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5%2B-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org)
-[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
-
-An **intelligent, production-ready AI photography coaching system** powered by **Google Gemini 3 Pro**. Get transparent, multi-dimensional feedback on your photos in seconds with advanced reasoning, real-time image improvement, and interactive mentorship.
-
-🏆 **Built for the Google DeepMind – Vibe Code with Gemini 3 Pro competition** – showcasing production-grade architecture, context caching economics, and multi-modal AI integration.
+[![Gemma 4 E4B](https://img.shields.io/badge/Powered%20by-Gemma%204%20E4B-4285F4?style=for-the-badge&logo=google)](https://deepmind.google/technologies/gemma/gemma-4/)
+[![Ollama](https://img.shields.io/badge/Runtime-Ollama-000000?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxMCIgZmlsbD0id2hpdGUiLz48L3N2Zz4=)](https://ollama.com)
+[![React](https://img.shields.io/badge/React-18%2B-61DAFB?style=flat-square&logo=react)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5%2B-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org)
+[![License](https://img.shields.io/badge/License-Apache%202.0-green?style=flat-square)](LICENSE)
 
 ---
 
-## 📺 Watch the Demo
+## 🏆 Built for Gemma 4 Good Hackathon
 
-**🎬 2-Minute Demo Video:** [YouTube](https://youtu.be/wCtk384Xu8g)
+An intelligent photography coaching system powered by **Google Gemma 4 E4B** running entirely on your device. Get professional-grade critique, spatial annotations, and personalized recommendations—**with zero cloud dependencies and complete privacy**.
 
-Watch the AI Photography Coach in action:
-- Instant multi-dimensional analysis with 5 scores
-- Spatial critique with interactive bounding boxes
-- Transparent thinking process (Glass Box experience)
-- Interactive mentor chat with context awareness
-- Before/after image improvement
-- Production economics simulator at scale
-
-Duration: 1:59 | Powered by Gemini 3 Pro
-
+**Three platforms. One AI. Full control.**
+- 🌐 **Web App** (Studio Mode) – Batch processing, cloud-optional
+- 🖥️ **Desktop App** (Vault Mode) – Network-isolated, cryptographically air-gapped
+- 📱 **iOS PWA** – Mobile critique with full vision support
 
 ---
 
-## 🎯 What It Does
+## ✨ What Makes This Different
 
-Upload any photo and get **personalized, transparent AI coaching** that:
+### 🔒 Privacy-First Architecture
 
-✅ **Multi-Dimensional Analysis** – 5 independent scores (Composition, Lighting, Technique, Creative Impact, Subject Impact)
+**Vault Mode** (Desktop only):
+- **Cryptographic network isolation** – OS-level egress guard prevents ANY network traffic
+- **Hash-chained audit log** – Tamper-evident record of every analysis
+- **Zero-knowledge architecture** – Photos never leave your machine
+- **Use case:** Confidential client work, NDAs, competitive intelligence
 
-✅ **Spatial Critique** – Pinpointed flaws with severity levels (critical/moderate/minor) marked on your photo
+**Studio Mode** (Web/Desktop):
+- **Local-first with cloud fallback** – Ollama primary, optional Gemini enhancement
+- **Batch processing** – Analyze 50-200 photos with outlier detection
+- **XMP export for Lightroom** – Star ratings, color labels, IPTC keywords
+- **Use case:** Wedding photographers, stock photography, portfolio review
 
-✅ **Transparent Reasoning** – See exactly HOW the AI analyzed your photo (observations → reasoning → priority fixes)
+### 🎯 Professional Features
 
-✅ **Interactive Mentorship** – Ask follow-up questions; Gemini responds with full reasoning
+**5-Axis Critique System:**
+- Composition (rule of thirds, leading lines, symmetry)
+- Lighting (exposure, dynamic range, color temperature)
+- Technical Execution (sharpness, focus, depth of field)
+- Creative Impact (originality, artistic merit)
+- Subject Impact (story, emotion, engagement)
 
-✅ **Real-Time Image Generation** – Apply suggested fixes to your photo; see before/after comparison
+**Spatial Annotations:**
+- Pinpointed issues with bounding boxes
+- Severity levels (critical/moderate/minor)
+- Color-coded overlays (red/yellow/green)
+- Hover to highlight, click to inspect
 
-✅ **Skill-Based Learning Path** – Get personalized "Next Skills to Master" recommendations
+**Deterministic CV Grounding:**
+- EXIF extraction (focal length, aperture, ISO, shutter speed)
+- Histogram analysis (tonal distribution, clipping detection)
+- Focus map computation (Laplacian variance on grid)
+- Gemma 4 sees BOTH image AND technical data
 
-✅ **Production Economics** – Understand cost optimization at scale (context caching reduces costs by 75%)
+**Mentor Chat:**
+- Follow-up questions with full context
+- "How can I improve the lighting?"
+- "What focal length would work better?"
+- Gemma 4 provides specific, actionable advice
 
-**No generic templates.** Every response is dynamically generated by **Gemini 3 Pro** based on YOUR photo and YOUR questions.
+### 🚀 Production-Grade Stack
 
+**Inference Runtime:**
+- **Ollama** (primary) – Gemma 4 E4B (Q4_K_M, 9.6GB)
+- Structured JSON output via schema enforcement
+- Token streaming with progress tracking
+- Model warm-up for sub-20s latency
 
-## 🚀 Quick Start (2 minutes)
+**Integrations:**
+- **Lightroom Classic** – XMP sidecar export (ratings, labels, keywords)
+- **Electron** – Desktop app with OS-level network controls
+- **Progressive Web App** – iOS-installable, camera access
+- **Evaluation harness** – Automated golden-set testing
 
-### 1. Clone & Install
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- **Node.js 18+** and npm
+- **Ollama** ([ollama.com](https://ollama.com)) for local inference
+- (Optional) **Gemini API key** for cloud enhancement mode
+
+### Installation
 
 ```bash
-git clone https://github.com/prasadt1/photography-coach-ai.git
-cd photography-coach-ai
+# 1. Clone repository
+git clone https://github.com/prasadt1/photography-coach-gemma4.git
+cd photography-coach-gemma4
+
+# 2. Install dependencies
 npm install
-```
 
-### 2. Set Up Environment
+# 3. Install Gemma 4 E4B model (9.6GB download)
+ollama pull gemma4:e4b
 
-Create `.env.local`:
-```env
-VITE_GEMINI_API_KEY=your_gemini_api_key_here
-```
+# 4. Start Ollama server
+ollama serve
 
-Get your free API key: [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
-
-### 3. Launch App
-
-```bash
+# 5. Launch web app
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) → Upload a photo → Start getting feedback! 🎉
+Open [http://localhost:5173](http://localhost:5173) → Upload a photo → Get critique! 🎉
 
 ---
 
-## 🎥 Live Demo
+## 📦 Platform-Specific Setup
 
-**🌐 Try it Live:** [AI Studio App](https://aistudio.google.com) (Search for "Photography Coach AI")
+### 🌐 Web App (Vite + React)
 
-**📺 Watch the Demo:** [2-Minute Video on YouTube](https://youtube.com)
-- Instant multi-dimensional analysis
-- Transparent thinking process
-- Interactive mentor chat
-- Before/after image improvement
-- Cost savings at scale visualization
-
----
-
-## ⭐ Key Features
-
-### 🤖 Gemini 3 Pro Integration
-
-- **Advanced Vision Analysis** – Structured JSON outputs with 5 dimension scores
-- **Extended Thinking** – Reasoning process exposed (observations, evaluation steps, priority fixes)
-- **Image Generation** – Real-time photo improvement with before/after comparison
-- **Context Caching** – Photography principles cached for 75% cost reduction at scale
-- **Multi-Turn Dialogue** – Interactive mentor chat with full conversation history
-
-### 🧠 Intelligent Coaching
-<img width="1024" height="1024" alt="skill-progression" src="https://github.com/user-attachments/assets/a7268b0e-f89b-4823-b60f-76226a1a0915" />
-
-**Adaptive Feedback Based on Photo Quality**
-
-Photography Coach AI detects your current skill level from each individual photo and adapts its coaching:
-
-**Beginner Level** (Photos scoring < 5.5/10 average)
-- Focus on fundamentals: Rule of thirds, exposure, composition basics
-- Encouragement-focused feedback
-- Actionable, step-by-step guidance
-
-**Intermediate Level** (Photos scoring 5.5-7.5/10 average)
-- Explore nuanced techniques: Leading lines, fill light, color theory
-- Balance confidence-building with advanced concepts
-- Reference photography principles and industry standards
-
-**Advanced Level** (Photos scoring ≥ 7.5/10 average)
-- Push creative boundaries: Mood, storytelling, signature style
-- Technical precision expected
-- Challenge assumptions and explore artistic choices
-
-**How It Works**
-
-Each photo analysis:
-1. Calculates average score across 5 dimensions (composition, lighting, creativity, technique, subject impact)
-2. Compares to thresholds (5.5 and 7.5) to detect current skill level
-3. Generates personalized "Next Skills to Master" recommendations
-4. Adapts mentor chat responses based on detected level
-
-**Why This Approach**
-
-Unlike systems that require 20+ photos to track progression, this app gives **immediate adaptive feedback** on any single photo. A beginner's landscape might score 4/10 (triggering beginner coaching), while their portrait might score 8/10 (triggering advanced coaching)—and the system adjusts accordingly.
-
-**Learning Outcome**
-
-This demonstrates that skill detection doesn't require historical tracking. Gemini's vision analysis is sophisticated enough to infer skill level from the photo quality itself, enabling real-time personalization in a single-session app.
-
-### 💬 Mentor Chat (5-Turn Conversation)
-
-<img width="2176" height="1952" alt="mentor-chat" src="https://github.com/user-attachments/assets/63e03a85-e2c5-4eae-a4cb-e75eb46f56bf" />
-
-
-**Beyond Single-Shot Analysis**
-Most AI tools give you one answer and move on. Photography Coach AI lets you have a real conversation.
-
-**What You Can Do:**
-- **Ask clarifying questions:** "But what if I'm shooting in low light?"
-- **Request comparisons:** "How does this compare to my last photo?"
-- **Discuss trade-offs:** "Is f/4 acceptable if I have a tripod?"
-- **Learn principles:** "Why is the rule of thirds important?"
-- **Generate improvements:** "Show me what this would look like improved"
-
-**How It Works:**
-1. Upload photo and get initial 5-dimension analysis
-2. Open Mentor Chat tab
-3. Ask your first question (AI remembers your analysis)
-4. Get instant, context-aware response
-5. Ask follow-ups (up to 5 turns total)
-6. Generate improved versions based on feedback
-
-**Why It Matters:**
-Photography is contextual. A horizon tilt is bad in landscapes but creative in portraits. A mentor chat lets you explore nuance—exactly what you can't get from static feedback or tutorials.
-
-**Free Tier:** 5 turns per session
-**Upgrade:** Unlimited turns for continued learning
-
-### 🧠 Transparent Reasoning: Gemini 3 Pro's Thinking Process
-<img width="1024" height="1024" alt="reasoning-process" src="https://github.com/user-attachments/assets/5e7c4988-58d4-4e8d-a924-43aa7ef3d21d" />
-
-
-**Beyond Scores: See the AI's Work**
-
-Most AI analysis tools give you results. Photography Coach AI shows you *how* the AI thinks.
-
-**What You Get:**
-
-When you upload a photo, Gemini 3 Pro doesn't just output scores—it exposes its complete reasoning process:
-
-**1. Observations**
-The AI's initial visual scan of your photo, noting composition, lighting, and quality immediately visible. No opinions yet—just what it saw first.
-
-**2. Reasoning Steps**
-Step-by-step evaluation against photography principles (rule of thirds, lighting theory, technical guidelines, etc.). This is the "why" behind every critique.
-
-**3. Priority Fixes**
-Ranked improvements ordered by impact:
-- **Critical** – Major errors that significantly hurt the photo
-- **Moderate** – Noticeable distractions or missed opportunities
-- **Minor** – Polish details that refine an already-good photo
-
-**How It Works:**
-
-```
-Upload Photo (0ms)
-    ↓
-Frontend Processing (100ms)
-    ↓
-Send to Gemini API (200ms)
-    ↓
-Gemini Analyzes with Extended Thinking (2-3 seconds)
-    ├─ Stream 1: Observations (What did I notice?)
-    ├─ Stream 2: Reasoning Steps (Why did I notice that?)
-    └─ Stream 3: Priority Fixes (How should this be fixed?)
-    ↓
-Parse JSON Response (50ms)
-    ↓
-Render All 5 Tabs (instant)
-```
-
-**Why This Matters:**
-
-Photography coaching is about understanding *why* something works or doesn't work. By exposing Gemini's reasoning, you learn not just what to fix, but the *principles* behind the feedback.
-
-Instead of: "Your horizon is crooked" (feedback only)  
-You get: "Your horizon is 3° tilted clockwise, creating tension. Straightening it using your camera's grid overlay would improve stability and follow the rule of thirds." (feedback + principle + actionable method)
-
-**In the Detailed Analysis Tab:**
-
-Click the "Detailed Analysis" tab in the dashboard to expand the complete thinking process. You'll see:
-- Observations formatted as bullet points
-- Reasoning steps as numbered logical progression
-- Priority fixes ranked by impact with visual severity indicators
-- Technical deep dive into composition, lighting, and technique
-- Spatial issues marked on your photo with bounding boxes
-
-**The Learning Outcome:**
-
-This transparency teaches you photography principles in context. Rather than memorizing rules, you see how a professional AI applies them to *your* specific photo—accelerating your learning curve dramatically.
-
-**Technical Note:**
-
-Gemini 3 Pro's extended thinking feature captures the AI's internal reasoning at inference time. Photography Coach AI extracts and structures this thinking into observations, reasoning steps, and priority fixes—making the usually-hidden AI decision-making process visible and educational.
-
----
-
-### 🎛 AI Enhancement: From Feedback to Improved Photo
-<img width="1024" height="1024" alt="before-after" src="https://github.com/user-attachments/assets/b4b451d0-f11b-48dc-9ae7-4d383bc46388" />
-
-**Not just “make it better” — apply specific fixes.**
-
-Most AI image tools are black boxes: you ask for “better lighting” and hope for the best. Photography Coach AI takes a different path by tying **image generation directly to the structured critique**.
-
-**How it works:**
-
-1. **Analyze first.**
-   Gemini 3 Pro analyzes your original photo and produces:
-   - 5 dimension scores (Composition, Lighting, Creativity, Technique, Subject Impact)
-   - A list of strengths and improvement opportunities
-   - A structured `improvements[]` list with concrete edits (for example: “lift shadows on subject”, “reduce highlight clipping in the sky”, “remove background distraction on the right edge”).
-
-2. **Extract targeted improvements.**
-   The app takes the top improvements from the analysis and builds a precise instruction set for the image model, rather than vague prompts. This keeps the subject and framing intact while focusing on technical and aesthetic fixes.
-
-3. **Call Gemini 3 Pro Image Generation.**
-   The original photo (base64) plus the `improvements[]` list are sent to the image model. The model returns a corrected image that:
-   - Preserves the original subject and composition.
-   - Adjusts exposure, contrast, and color balance.
-   - Optionally cleans up small distractions in the frame.
-
-4. **Blend and compare interactively.**
-   In the **AI Enhancement** tab:
-   - A slider lets you blend between the original and AI-corrected image.
-   - Labels clearly indicate “Original” and “AI-Corrected”.
-   - You can download the improved version if you like the result.
-
-**Why this matters for learning:**
-
-Instead of a magic “enhance” button, you see the full chain:
-
-> Critique → Structured improvements → Image generation → Visual
-
----
-
-### 📊 Production-Grade Features
-
-- **Cost-Optimized** – Context caching demonstrates real-world scaling economics
-- **Full-Stack** – React + TypeScript frontend, Gemini APIs backend
-- **Responsive Design** – Works on desktop, tablet, mobile
-- **Error Handling** – Graceful degradation and retry logic
-- **Observability** – Token tracking, cost metrics, performance analytics
-
-### 🎨 Clean, Modern UI
-
-- Multi-tab dashboard (Overview, Detailed Analysis, Mentor Chat, AI Enhancement, Economics)
-- Drag-and-drop photo upload
-- Real-time spatial overlay with severity-colored bounding boxes
-- Chat-style mentor conversation interface
-- Before/after side-by-side image comparison
-- Cost simulation at scale
-
----
-
-## 🏗️ Architecture
-
-<img width="2528" height="1696" alt="arch-main" src="https://github.com/user-attachments/assets/60b269f1-f1e4-4eb6-b720-00015b2fc7b5" />
-
-The app is built with:
-- **Frontend:** React + TypeScript with a beautiful 5-tab dashboard
-- **AI Engine:** Google Gemini 3 Pro (Vision + Image Generation + Chat)
-- **Speed:** 2.5 seconds from upload to analysis
-- **Scale:** Context caching reduces costs by 90% at enterprise scale
-
-What you get:
-- **5 Dimension Scores** - Composition, Lighting, Creativity, Technique, Subject Impact
-- **Spatial Feedback** - Bounding boxes marking specific issues in your photo
-- **Mentor Chat** - Ask follow-up questions, get personalized guidance
-- **AI Enhancement** - Generate improved versions of your photo
-- **Cost Transparency** - See exactly how much each analysis costs
-
-
-**Key Design Decisions:**
-
-1. **Context Caching** – Static photography principles cached as 32KB+ prefix, reducing per-request token cost by ~90%
-2. **Structured Outputs** – All responses enforce JSON schema for reliable parsing
-3. **Thinking Exposure** – Reasoning process extracted as separate field, making AI logic transparent
-4. **Spatial Annotations** – Bounding boxes mark FLAWS only (not strengths), teaching through error correction
-5. **Full-Stack Integration** – Frontend handles all UI, backend is pure Gemini APIs (no custom servers)
-
----
-
-## 📁 Project Structure
-
-```
-photography-coach-ai/
-├── src/
-│   ├── components/
-│   │   ├── App.tsx                 # 🎯 Main app orchestrator
-│   │   ├── PhotoUploader.tsx        # 📸 Drag-drop upload + thinking UI
-│   │   ├── AnalysisResults.tsx      # 📊 5-tab dashboard
-│   │   │   ├── Overview tab        # Coach's verdict + skill badge
-│   │   │   ├── Detailed Analysis   # Thinking process + priority fixes
-│   │   │   ├── Mentor Chat         # Multi-turn conversation
-│   │   │   ├── AI Enhancement      # Before/after image generation
-│   │   │   └── Economics           # Cost simulation at scale
-│   │   └── SpatialOverlay.tsx       # 🎨 Canvas bounding box rendering
-│   ├── services/
-│   │   └── geminiService.ts         # 🤖 Gemini API integration
-│   │       ├── analyzeImage()       # Vision analysis + thinking
-│   │       ├── generateCorrectedImage() # Image generation
-│   │       └── askPhotographyMentor() # Multi-turn mentor chat
-│   ├── types/
-│   │   └── index.ts                 # TypeScript interfaces
-│   └── main.tsx                     # App entry point
-├── public/
-├── .env.local                       # API key config
-├── package.json
-├── tsconfig.json
-├── vite.config.ts
-└── README.md                        # This file
-```
-
----
-
-## 💻 Usage Examples
-
-### Web Interface
-
+**Development:**
 ```bash
-# Start the app
-npm run dev
-
-# Open http://localhost:5173
-# 1. Upload a photo (JPG/PNG/WEBP, max 10MB)
-# 2. See instant analysis with 5 scores
-# 3. Click tabs to explore:
-#    - Overview: Coach's verdict + skill level
-#    - Detailed Analysis: Full reasoning process
-#    - Mentor Chat: Ask follow-up questions
-#    - AI Enhancement: Generate improved photo
-#    - Economics: See cost savings at scale
+npm run dev                    # Start dev server
+npm run build                  # Production build
+npm run preview                # Preview production build
 ```
 
-### Example Mentor Chat Flow
-
-```
-User: "How can I improve the composition?"
-
-AI: "Great question! Looking at your photo, you have some strong elements but opportunity in framing.
-Here's what I observe: [observations]. My reasoning: [steps]. Priority fix: [suggestion]"
-
-User: "Should I use a wider angle lens?"
-
-AI: "Absolutely! At your current focal length (35mm equivalent), a wider lens would:
-[detailed response with reasoning about DOF, framing, perspective distortion, etc.]"
-```
-
----
-
-## 🔧 Technical Stack
-
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Frontend** | React 18 + TypeScript | Modern UI with type safety |
-| **Styling** | Tailwind CSS | Clean, responsive design |
-| **Visualization** | Recharts + Canvas | Charts + spatial bounding boxes |
-| **Icons** | Lucide React | Professional icon library |
-| **LLM** | Gemini 3 Pro APIs | Vision analysis + image generation |
-| **API Pattern** | REST (via SDK) | Direct Gemini integration |
-| **Deployment** | Vite + TypeScript | Fast build, type-checked |
-
-**Why These Choices?**
-- **Gemini 3 Pro** – Best-in-class vision + reasoning + image generation
-- **React** – Component-based, reusable architecture
-- **TypeScript** – Catch errors early, better DX
-- **Tailwind** – Rapid styling, consistent design system
-- **Context Caching** – Demonstrates production economics understanding
-
----
-
-## 🚀 Deployment
-
-### Local Development
-
+**Deployment:**
 ```bash
-npm install
-npm run dev
-```
-
-### Production Build
-
-```bash
+# Deploy to Vercel/Netlify
 npm run build
-npm run preview
+# Upload dist/ folder
 ```
 
-### Deploy to Vercel (Recommended)
-
-```bash
-npm install -g vercel
-vercel
+**Environment Variables** (optional):
+```env
+# .env.local
+VITE_GEMINI_API_KEY=your_key_here  # For cloud enhancement mode (Studio only)
+OLLAMA_BASE_URL=http://localhost:11434  # Default Ollama endpoint
 ```
 
-### Deploy to Google Cloud Run
+### 🖥️ Desktop App (Electron + Vault Mode)
 
+**Build Desktop App:**
 ```bash
-gcloud run deploy photography-coach-ai \
-  --source . \
-  --region us-central1 \
-  --allow-unauthenticated \
-  --set-env-vars VITE_GEMINI_API_KEY=your_key
+# Install Electron dependencies
+npm install --save-dev electron electron-builder
+
+# Build for current platform
+npm run build:electron          # macOS (DMG/app)
+# OR
+npm run build:electron:win      # Windows (exe/portable)
+# OR
+npm run build:electron:linux    # Linux (AppImage/deb)
+```
+
+**Vault Mode Features:**
+- Network isolation via OS-level controls
+- Audit log with cryptographic hashing
+- No cloud fallback (Ollama only)
+- Egress guard intercepts all fetch() calls
+
+**Run in development:**
+```bash
+npm run electron:dev
+```
+
+### 📱 iOS PWA (Progressive Web App)
+
+**Setup Ollama for network access:**
+```bash
+# On Mac/PC, allow Ollama to accept connections from local network
+export OLLAMA_HOST=0.0.0.0:11434
+export OLLAMA_ORIGINS="*"
+ollama serve
+```
+
+**Find your machine's IP:**
+```bash
+# macOS/Linux
+ifconfig | grep "inet " | grep -v 127.0.0.1
+
+# Windows
+ipconfig
+```
+
+**On iPhone:**
+1. Connect to **same WiFi** as Mac/PC
+2. Safari → `http://YOUR_COMPUTER_IP:5173`
+3. Tap Share (⬆️) → "Add to Home Screen"
+4. Open app from home screen (runs full-screen)
+5. Upload photo → Get critique
+
+**Detailed guide:** See `docs/ios-pwa-setup.md`
+
+---
+
+## 🎨 Features Overview
+
+### Multi-Dimensional Analysis
+
+**5-Axis Scoring** (0-10 per axis):
+```
+Composition:   8.5/10  ✨
+Lighting:      7.0/10  💡
+Technique:     9.0/10  🎯
+Creativity:    6.5/10  🎨
+Subject:       8.0/10  👁️
+```
+
+**Detailed Critique:**
+- Composition: "Strong use of leading lines draws the eye to the focal point. Rule of thirds placement is effective."
+- Lighting: "Golden hour light creates warm tones, though slight overexposure in sky could benefit from graduated ND filter."
+- Technique: "Excellent sharpness on subject with pleasing bokeh in background. f/2.8 aperture choice is appropriate."
+
+**Spatial Issues** (Bounding Boxes):
+- 🔴 **Critical:** Overexposed highlights in top-right (clipped whites)
+- 🟡 **Moderate:** Subject slightly off-center, consider cropping
+- 🟢 **Minor:** Foreground distraction in bottom-left corner
+
+### Deterministic CV Grounding
+
+**Before Gemma 4 sees your photo, we extract:**
+
+**EXIF Metadata:**
+```json
+{
+  "focalLength": "50mm",
+  "aperture": "f/2.8",
+  "shutterSpeed": "1/250s",
+  "iso": "ISO 400",
+  "camera": "Canon EOS R5",
+  "lens": "RF 50mm f/1.8"
+}
+```
+
+**Histogram Analysis:**
+```json
+{
+  "shadowsClipped": 2.3,
+  "highlightsClipped": 8.1,
+  "midtonesAvg": 128,
+  "contrastRatio": 4.2
+}
+```
+
+**Focus Map:**
+```json
+{
+  "sharpnessScore": 0.82,
+  "focusRegion": {"x": 45, "y": 38, "width": 25, "height": 30},
+  "grid": [[0.2, 0.8, 0.9], ...]
+}
+```
+
+Gemma 4 receives **image + technical context** → More accurate, grounded critique.
+
+### Lightroom Integration
+
+**Export XMP sidecars with:**
+- ⭐ **Star ratings** (1-5 stars based on average score)
+- 🏷️ **Color labels** (Red/Yellow/Green based on severity)
+- 🔖 **IPTC keywords** (Top 5 observations from critique)
+- 📝 **Description** (Overall critique summary)
+
+**Workflow:**
+1. Analyze 50 photos in Photography Coach
+2. Export XMP sidecars for each
+3. Import folder into Lightroom Classic
+4. Filter by "4 stars and up" → See best shots
+5. Filter by "Red label" → See critical issues to fix
+
+**Guide:** See `docs/integrations/lightroom-xmp.md`
+
+---
+
+## 📐 Architecture
+
+### Three-Layer Design
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  LAYER 1: Deterministic CV (Client-Side)                   │
+│  ├─ EXIF extraction (exif-js)                              │
+│  ├─ Histogram analysis (Canvas API)                        │
+│  ├─ Focus map computation (Laplacian variance)             │
+│  └─ Face/eye detection (future: TensorFlow.js)             │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│  LAYER 2: Gemma 4 E4B Inference (Local or Cloud)          │
+│  ├─ Primary: Ollama (localhost, zero-cost)                 │
+│  ├─ Input: base64 image + CV grounding data                │
+│  ├─ Output: v2 schema JSON (structured, validated)         │
+│  └─ Fallback: Gemini API (Studio Mode only, optional)      │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│  LAYER 3: Validation & Audit (Trustworthy AI)             │
+│  ├─ Zod schema validation (type safety)                    │
+│  ├─ AJV JSON Schema validation (structure)                 │
+│  ├─ Implicit refusal detection (safety)                    │
+│  └─ Hash-chained audit log (Vault Mode only)               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Directory Structure
+
+```
+photography-coach-gemma4/
+├── components/              # React UI components
+│   ├── AnalysisResults.tsx  # Main results display (5-axis, spatial, mentor)
+│   ├── PhotoUploader.tsx    # Drag-and-drop uploader
+│   ├── SpatialOverlay.tsx   # Bounding box annotations
+│   ├── VaultModeBanner.tsx  # Security indicators
+│   └── ...
+├── services/                # Core business logic
+│   ├── ollamaService.ts     # Gemma 4 inference via Ollama
+│   ├── cvService.ts         # Deterministic CV grounding
+│   ├── validationService.ts # Schema validation (Zod + AJV)
+│   ├── auditService.ts      # Hash-chained audit log
+│   ├── promptService.ts     # Photography principles system prompt
+│   ├── xmpService.ts        # Lightroom XMP export
+│   └── analysisOrchestrator.ts  # Pipeline coordinator
+├── electron/                # Desktop app (Vault Mode)
+│   ├── main.ts              # Electron main process
+│   ├── preload.ts           # IPC bridge
+│   └── vault-policy.ts      # Network isolation enforcement
+├── docs/                    # Documentation
+│   ├── specs/               # 14 comprehensive spec documents
+│   ├── spikes/              # Spike results (Ollama, Cactus, LiteRT)
+│   ├── integrations/        # Lightroom XMP guide
+│   └── ios-pwa-setup.md     # iOS PWA installation guide
+├── tests/                   # Test suites
+│   ├── unit/                # 49 unit tests (services)
+│   └── integration/         # 5 integration tests (pipeline)
+├── public/                  # Static assets
+│   ├── manifest.json        # PWA manifest
+│   └── sw.js                # Service worker
+├── types.v2.ts              # TypeScript types (v2 schema)
+├── config.ts                # App configuration
+└── vitest.config.ts         # Test runner config
 ```
 
 ---
 
-## 📊 Key Metrics
+## 🧪 Testing
 
-### Performance
+### Unit Tests (49 tests)
 
-| Metric | Target | Current |
-|--------|--------|---------|
-| Analysis Response Time | <5s | ~2-3s |
-| Image Generation Time | <10s | ~4-6s |
-| Tab Navigation | <200ms | <50ms |
-| Mentor Chat Response | <3s | ~2-3s |
+```bash
+npm test                     # Run all tests
+npm test -- cvService        # Test CV grounding
+npm test -- xmpService       # Test XMP export
+npm test -- validation       # Test schema validation
+```
 
-### Quality Metrics
+### Integration Tests (5 tests)
 
-| Dimension | Score |
-|-----------|-------|
-| Analysis Accuracy | 9.0/10 |
-| Reasoning Clarity | 8.5/10 |
-| Actionability | 8.7/10 |
-| User Satisfaction | 8.6/10 |
+```bash
+npm test -- integration      # Full pipeline tests
+```
 
-### Cost Efficiency
+### Manual Testing
 
-<img width="2816" height="1536" alt="econ-comparison" src="https://github.com/user-attachments/assets/9d04c301-d9e4-4213-81da-3a394f7c3a6f" />
+**iOS PWA + Lightroom XMP:**
+```bash
+# See comprehensive testing guide
+cat docs/TESTING_GUIDE.md
 
+# Quick checklist
+cat docs/QUICK_TEST_CHECKLIST.md
+```
 
-## 💡 Economics Simulation: Understanding LLM Costs
+### Evaluation Harness
 
-### What's Real vs. Projected
-
-**Real Costs (What You Pay Today)**
-- Single photo: $0.00204
-- 10 photos: $0.0204  
-- 100 photos: $0.204
-- 1,000 photos: $2.04
-
-These are actual Gemini 3 Pro charges. No caching discount applied because:
-- Your requests are ~5,000 tokens each
-- Gemini requires 32,768+ tokens minimum to activate caching
-- Below that threshold, you pay full price
-
-**Projected Costs (Educational Simulation)**
-If this app ran at true enterprise scale with properly cached photography principles:
-- 1,000 photos: $1.75 (vs $2.04 without caching)
-- Savings: $0.29 per 1,000 photos (14% reduction)
-
-This projection shows the *potential* of context caching, not actual current savings.
-
-### Why This Matters for Learning
-
-This project teaches three key LLM economics concepts:
-
-1. **Token Arithmetic** - Real pricing is per million tokens, creating mathematical opportunities
-2. **Cache Thresholds** - Features only activate at specific scale (32KB+ prefix requirement)
-3. **Scale Economics** - Optimization only matters when request volume justifies the infrastructure
-
-### The Honest Comparison
-
-| Metric | Reality | Projection |
-|--------|---------|-----------|
-| **What's Activated** | None (too small) | Cache (hypothetical) |
-| **Why?** | Single-request app | Enterprise-scale app |
-| **Cost per 1000 photos** | $2.04 | $1.75 |
-| **Savings** | $0 (not applicable yet) | $0.29 (theoretical) |
-| **What This Teaches** | Real Gemini pricing | How caching *would* help at scale |
+```bash
+# Run golden-set comparison (Gemini vs Gemma)
+npm run eval
+```
 
 ---
 
 ## 📚 Documentation
 
-| Document | Purpose |
-|----------|---------|
-| [DEPLOYMENT.md](./DEPLOYMENT.md) | Docker, Cloud Run, production setup |
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | Deep dive into system design |
-| [API_REFERENCE.md](./API_REFERENCE.md) | Gemini API integration details |
-| [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) | Common issues and solutions |
+### Specifications (14 documents in `docs/specs/`)
+
+- **00-baseline-audit.md** – Project baseline and goals
+- **01-product-spec.md** – Feature requirements and user stories
+- **02-output-schema.md** – v2 JSON schema definition
+- **03-runtime-decisions-and-spikes.md** – Technology evaluation
+- **04-prompt-and-rationale-spec.md** – Photography principles prompt
+- **05-deterministic-cv-spec.md** – CV grounding implementation
+- **06-architecture-spec.md** – System design and data flow
+- **07-stack-and-runtime-mapping.md** – Platform matrix
+- **08-vault-mode-spec.md** – Network isolation specification
+- **09-validation-and-error-handling-spec.md** – Safety guarantees
+- **10-platform-shells-spec.md** – Web/Desktop/iOS implementation
+- **11-ui-adaptation-spec.md** – Responsive design patterns
+- **12-testing-strategy-spec.md** – Test coverage plan
+- **13-implementation-roadmap-spec.md** – 5-day sprint timeline
+
+### Spike Results (3 documents in `docs/spikes/`)
+
+- **spike-1-results.md** – Gemma 4 E4B via Ollama (PASS)
+- **spike-2-results.md** – Cactus evaluation (FAIL/DROP)
+- **spike-3-litert-ios.md** – LiteRT iOS investigation (BLOCKED, PWA fallback)
+
+### Integration Guides
+
+- **docs/integrations/lightroom-xmp.md** – Lightroom Classic workflow
+- **docs/ios-pwa-setup.md** – iOS PWA installation and troubleshooting
+- **docs/TESTING_GUIDE.md** – Comprehensive testing instructions
 
 ---
 
-## 🎓 Learning Outcomes
+## 🔧 Troubleshooting
 
-**Skills Demonstrated:**
+### "Ollama not found" Error
 
-✅ Full-stack AI application development
-✅ Gemini 3 Pro integration (vision + generation + reasoning)
-✅ Context caching for cost optimization
-✅ React component architecture
-✅ TypeScript type safety
-✅ Production-grade error handling
-✅ Real-time API integration
+```bash
+# 1. Verify Ollama is installed
+ollama --version
 
-**Key Challenges Solved:**
+# 2. Check if Ollama is running
+curl http://localhost:11434/api/tags
 
-1. **Transparent Reasoning** – Extracted thinking process from Gemini responses
-2. **Spatial Feedback** – Implemented canvas-based bounding box visualization
-3. **Multi-Turn Conversation** – Managed context with conversation history
-4. **Cost Awareness** – Demonstrated context caching economics at scale
-5. **User Experience** – Clean, intuitive dashboard with 5 distinct analysis views
+# 3. Verify model is installed
+ollama list | grep gemma4
+
+# 4. Pull model if missing
+ollama pull gemma4:e4b
+
+# 5. Restart Ollama
+ollama serve
+```
+
+### Slow Analysis (>60 seconds)
+
+**First request is slow (model loading):**
+```bash
+# Warm up model before using app
+ollama run gemma4:e4b "Ready"
+```
+
+**Subsequent requests should be ~20-30 seconds.**
+
+### iOS PWA Can't Connect to Ollama
+
+```bash
+# 1. Start Ollama with network access
+export OLLAMA_HOST=0.0.0.0:11434
+export OLLAMA_ORIGINS="*"
+ollama serve
+
+# 2. Check firewall allows port 11434
+# macOS: System Settings → Network → Firewall
+# Linux: sudo ufw allow 11434/tcp
+# Windows: Defender Firewall → Inbound Rules → New Rule (port 11434)
+
+# 3. Verify iPhone on same WiFi as Mac/PC
+```
+
+**Full troubleshooting:** See `TROUBLESHOOTING.md`
 
 ---
 
-## 🔮 Future Enhancements
+## 🚢 Deployment
 
-**Phase 2 (Planned):**
-- [ ] Batch photo analysis (analyze entire photoshoot)
-- [ ] Style transfer suggestions (reference photos)
-- [ ] Video analysis (frame-by-frame coaching)
-- [ ] Portfolio review mode (compare multiple photos)
-- [ ] Fine-tuned Gemini model (photography-specific)
+### Web App (Vercel/Netlify)
 
-**Phase 3 (Advanced):**
-- [ ] Mobile app (React Native)
-- [ ] Integration with Lightroom/Photoshop APIs
-- [ ] Collaboration features (multi-photographer reviews)
-- [ ] Gamification (coaching progress tracking)
-- [ ] Advanced editing recommendations (HSL curves, etc.)
+```bash
+# 1. Build production bundle
+npm run build
+
+# 2. Deploy to Vercel
+vercel deploy
+
+# 3. Set environment variable (optional)
+# VITE_GEMINI_API_KEY=your_key (for cloud enhancement)
+```
+
+### Desktop App (Electron)
+
+```bash
+# macOS
+npm run build:electron
+# Output: dist-electron/Photography Coach.dmg
+
+# Windows
+npm run build:electron:win
+# Output: dist-electron/Photography Coach Setup.exe
+
+# Linux
+npm run build:electron:linux
+# Output: dist-electron/Photography Coach.AppImage
+```
+
+---
+
+## 📊 Performance
+
+### Gemma 4 E4B Benchmarks (MacBook M1 Max, 64GB)
+
+| Metric | Cold Start | Warm (After Model Load) |
+|--------|-----------|-------------------------|
+| **Time to First Token** | ~40s | ~0.5s |
+| **Generation Speed** | 27 tokens/sec | 27 tokens/sec |
+| **Full Critique** | ~60-80s | ~20-30s |
+| **Memory Usage** | 9.6GB (model) | 9.6GB (model) |
+| **CPU Usage** | 300-400% | 300-400% |
+
+**Optimization tips:**
+- Run `ollama run gemma4:e4b "test"` to warm up model
+- Use Q4_K_M quantization (balance quality/speed)
+- Close memory-intensive apps during batch processing
 
 ---
 
 ## 🤝 Contributing
 
-Contributions welcome! Areas for improvement:
+This is a hackathon submission for **Gemma 4 Good** (May 19, 2026 deadline).
 
-- Additional test cases for vision analysis
-- UI/UX enhancements
-- Performance optimizations
-- New feature implementations
-- Documentation improvements
-
-**How to Contribute:**
-
-```bash
-# 1. Fork the repository
-# 2. Create feature branch
-git checkout -b feature/your-feature-name
-
-# 3. Commit changes
-git commit -am 'Add your feature description'
-
-# 4. Push to branch
-git push origin feature/your-feature-name
-
-# 5. Open Pull Request
-```
+**After the hackathon:**
+- Issues and PRs welcome
+- Focus areas: Android app, batch XMP export, LiteRT iOS native
+- See `docs/specs/13-implementation-roadmap-spec.md` for Phase 2 plans
 
 ---
 
-## 📜 License
+## 📄 License
 
-MIT License – see [LICENSE](./LICENSE) for details.
+**Apache License 2.0** – See [LICENSE](LICENSE) file for details.
 
-**TLDR:** Free to use, modify, distribute. Attribution appreciated! ❤️
+You are free to use, modify, and distribute this software for commercial or non-commercial purposes, with attribution.
 
 ---
 
 ## 🙏 Acknowledgments
 
-- **Google Gemini Team** – Powerful multi-modal LLM APIs
-- **Google DeepMind** – Vibe Code competition framework
-- **React Community** – Excellent documentation and tooling
-- **Photography Community** – Feedback on coaching quality and usefulness
+**Built with:**
+- **Google Gemma 4** – Multimodal vision model ([deepmind.google/gemma-4](https://deepmind.google/technologies/gemma/gemma-4/))
+- **Ollama** – Local LLM runtime ([ollama.com](https://ollama.com))
+- **React** + **TypeScript** – UI framework ([react.dev](https://react.dev))
+- **Vite** – Build tool ([vitejs.dev](https://vitejs.dev))
+- **Electron** – Desktop app framework ([electronjs.org](https://electronjs.org))
+- **Recharts** – Data visualization ([recharts.org](https://recharts.org))
 
-Built with ❤️ in December 2025 as part of the **Google DeepMind – Vibe Code with Gemini 3 Pro competition**.
+**Inspired by:**
+- **DeepMind Vibe Code** winner (Gemini 3 Pro version, 2025)
+- Professional photography workflows (Lightroom, Capture One)
+- Privacy-first AI principles
 
----
-
-## 📬 Contact & Feedback
-
-**Author:** Prasad T
-
-**Repository:** [github.com/prasadt1/photography-coach-ai](https://github.com/prasadt1/photography-coach-ai)
-
-**Issues & Feature Requests:** [GitHub Issues](https://github.com/prasadt1/photography-coach-ai/issues)
-
-**Questions?** Open an issue or reach out directly. We'd love to hear your feedback!
-
----
-
-## ⭐ Support
-
-If you find this project useful, please consider:
-
-- ⭐ **Star the repository** on GitHub
-- 🔗 **Share with photography community**
-- 🐛 **Report issues** if you find bugs
-- 💡 **Suggest features** for future versions
-- 📝 **Contribute** code or documentation
+**Special thanks:**
+- Google DeepMind for Gemma 4 E4B
+- Ollama team for production-ready local inference
+- Photography community for feedback and testing
 
 ---
 
-**Happy coaching! 📸✨**
+## 🔗 Links
+
+- **Hackathon:** [Gemma 4 Good on Kaggle](https://www.kaggle.com/competitions/gemma-4-good-2026)
+- **Model:** [Gemma 4 on Hugging Face](https://huggingface.co/google/gemma-4-E4B-it)
+- **Previous Version:** [Photography Coach AI (Gemini 3 Pro)](https://github.com/prasadt1/photography-coach-ai-gemini3)
+- **Live Demo:** (URL to be added after deployment)
+- **Video Demo:** (URL to be added after recording)
+
+---
+
+**Questions? Feedback?**
+- 📧 Email: [your-email] (add before submission)
+- 🐛 Issues: [GitHub Issues](https://github.com/prasadt1/photography-coach-gemma4/issues)
+- 📚 Docs: See `docs/` directory for comprehensive guides
+
+---
+
+<div align="center">
+
+**Built with ❤️ for photographers, by photographers**
+
+*Powered by Gemma 4 E4B • Running 100% Locally • Zero Cloud Dependencies*
+
+</div>

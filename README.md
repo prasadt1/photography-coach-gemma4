@@ -342,6 +342,208 @@ photography-coach-gemma4/
 
 ---
 
+## 🏗️ Technical Architecture
+
+### Progressive Web App (PWA) Architecture
+
+L.E.N.S. is built as a Progressive Web App providing native-like experiences across platforms:
+
+**Service Worker (`public/sw.js`):**
+- **Cache-first strategy** for static assets (app shell, HTML, CSS, JS)
+- **Network-first** for API calls (Ollama, Gemini)
+- **Offline-capable** — app loads even without internet
+- **Web Share Target API** — receive photos from iOS/Android share sheet
+
+**iOS Integration (`public/manifest.json`):**
+```json
+{
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "share_target": {
+    "action": "/share-target",
+    "method": "POST",
+    "enctype": "multipart/form-data"
+  }
+}
+```
+
+**Installation:**
+- iOS: Safari → Share → "Add to Home Screen"
+- Android: Chrome → Menu → "Install app"
+- Desktop: Chrome → Install icon in address bar
+
+### Intelligent Cloud-Edge Routing 🎯 *Cactus Track*
+
+L.E.N.S. implements **adaptive runtime selection** based on connectivity and user preference:
+
+```
+┌─────────────────────────────────────────────────┐
+│         Photo Analysis Request                  │
+└─────────────────────┬───────────────────────────┘
+                      │
+                      ▼
+        ┌─────────────────────────┐
+        │   analysisOrchestrator   │
+        │   (services/analysis)    │
+        └──────────┬────────────────┘
+                   │
+        ┌──────────▼───────────┐
+        │  Is Ollama running?  │
+        │  Vault Mode active?  │
+        └──┬──────────────┬────┘
+           │              │
+    [YES]  │              │ [NO]
+           ▼              ▼
+  ┌────────────┐   ┌──────────────┐
+  │   LOCAL    │   │    CLOUD     │
+  │   Ollama   │   │   Gemini     │
+  │ gemma4:e4b │   │ 2.5-flash    │
+  │ localhost  │   │   API key    │
+  └────────────┘   └──────────────┘
+```
+
+**Routing Logic (`config.ts`):**
+```typescript
+const runtime = (() => {
+  if (mode === 'vault') return 'ollama-only';
+  if (ollamaReady) return 'ollama-preferred';
+  if (geminiApiKey) return 'gemini-fallback';
+  return 'demo-mode';
+})();
+```
+
+**Why This Matters for Hackathon Tracks:**
+- **Cactus Track**: Demonstrates intelligent task routing between local edge (Ollama) and cloud (Gemini)
+- **Use Case 1**: Artisan in workshop → routes to Mac's Ollama over LAN
+- **Use Case 2**: Artisan at market → routes to Gemini API (optional, user's key)
+- **Vault Mode**: Forces local-only routing for NDA/confidential work
+
+### LiteRT & On-Device ML Roadmap 🚀 *LiteRT Track*
+
+**Current Implementation (v2.0):**
+- **Tier 1 Runtime**: Ollama serving Gemma 4 E4B via local server
+- **Tier 2 Prototype**: WebLLM/MLC running Gemma 2B in-browser (behind `?tier2` flag)
+- **WebGPU Support**: In-browser inference with GPU acceleration
+
+**Phase 2 Roadmap (LiteRT Native):**
+
+The current architecture is **designed for eventual LiteRT deployment**:
+
+```
+iOS/Android Native Path
+┌─────────────────────────────────────────────┐
+│   React Native Shell                        │
+│   ├─ TypeScript UI (shared with web)       │
+│   ├─ Camera API integration                 │
+│   └─ LiteRT binding layer                   │
+└───────────────┬─────────────────────────────┘
+                │
+                ▼
+┌─────────────────────────────────────────────┐
+│   Google AI Edge Runtime                    │
+│   ├─ Gemma 4 E4B quantized (INT4/INT8)     │
+│   ├─ MediaPipe Tasks for CV grounding      │
+│   └─ On-device inference (no network)      │
+└─────────────────────────────────────────────┘
+```
+
+**Technical Approach:**
+1. **Quantize Gemma 4** using AI Edge Torch (INT4/INT8)
+2. **Ship model with app** (40-60MB quantized weights)
+3. **MediaPipe integration** for deterministic CV (EXIF, histogram, focus map)
+4. **Keep schema v2.0 intact** — same JSON output format
+
+**Why Not Now?**
+- LiteRT for **Gemma 4** quantized weights requires AI Edge compilation (in progress as of May 2026)
+- Current Tier 2 (WebLLM) proves the concept with Gemma 2B
+- Production deployment waits for official Gemma 4 LiteRT artifacts
+
+**Documentation:**
+- `docs/spikes/litert-evaluation.md` — Spike results for MediaPipe, WebLLM, Transformers.js
+- `services/browserLLM.ts` — Tier 2 in-browser inference prototype
+
+### Ollama Integration Deep Dive
+
+**Why Ollama?** (`services/ollamaService.ts`)
+
+Ollama provides production-grade local inference with features critical for L.E.N.S.:
+
+1. **Schema-Enforced JSON** (`format` parameter):
+   ```typescript
+   const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
+     method: 'POST',
+     body: JSON.stringify({
+       model: 'gemma4:e4b',
+       prompt: systemPrompt + userPrompt,
+       images: [base64Image],
+       format: PhotoAnalysisV2Schema,  // Zod schema → JSON Schema
+       stream: true
+     })
+   });
+   ```
+
+2. **Multi-Image Prompting** (Compare Two Photos):
+   ```typescript
+   const payload = {
+     model: 'gemma4:e4b',
+     prompt: 'Which photo is better and why?',
+     images: [photo1Base64, photo2Base64],
+     format: ComparisonSchema
+   };
+   ```
+
+3. **Token Streaming** with progress tracking:
+   ```typescript
+   for await (const chunk of streamResponse) {
+     const { response, done, eval_count, eval_duration } = JSON.parse(chunk);
+     onProgress?.(eval_count / estimated_tokens);
+   }
+   ```
+
+4. **Model Warm-Up** on app launch:
+   ```typescript
+   // Avoids 40s cold-start penalty on first photo
+   await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
+     body: JSON.stringify({
+       model: 'gemma4:e4b',
+       prompt: 'warmup',
+       keep_alive: 600  // 10min keep-alive
+     })
+   });
+   ```
+
+**Performance Benchmarks:**
+- Cold start (model load): ~40s (M4 16GB)
+- Warm inference: 18-25s per photo (M4 16GB)
+- Token generation: ~27 tok/s (Q4_K_M quantization)
+- Prefill: ~2,300 tok/s
+
+### Deployment Architecture
+
+**Production Deployment Options:**
+
+1. **Static Hosting (Vercel/Netlify):**
+   - Deploy `dist/` folder from `npm run build`
+   - Origin-based Demo Mode: if `origin !== localhost`, default to Gemini API or mock responses
+   - QR code on landing page for mobile install
+
+2. **Self-Hosted (Docker):**
+   ```dockerfile
+   FROM node:20-alpine
+   WORKDIR /app
+   COPY package*.json ./
+   RUN npm ci --production
+   COPY dist/ ./dist/
+   CMD ["npx", "serve", "-s", "dist", "-p", "5173"]
+   ```
+
+3. **Desktop (Electron):**
+   - Bundles web app + Node.js runtime
+   - OS-level network controls for Vault Mode
+   - Auto-updater for security patches
+
+---
+
 ## 🧪 Testing
 
 ### Unit Tests (49 tests)

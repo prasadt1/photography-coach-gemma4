@@ -3,10 +3,8 @@ import { Upload, Image as ImageIcon, Loader2, Aperture, ArrowUp, Brain, Zap, Tar
 
 interface PhotoUploaderProps {
   onImageSelected: (base64: string, mimeType: string, file: File, imageEl: HTMLImageElement) => void;
-  onBatchSelected?: (files: File[]) => void;
   isAnalyzing: boolean;
   analysisProgress?: { message: string; pct: number };
-  batchMode?: boolean;
 }
 
 const THINKING_STEPS = [
@@ -17,7 +15,7 @@ const THINKING_STEPS = [
   { text: "Generating critique and recommendations…", icon: Sparkles },
 ];
 
-const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, onBatchSelected, isAnalyzing, analysisProgress, batchMode = false }) => {
+const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyzing, analysisProgress }) => {
   const [dragActive, setDragActive] = useState(false);
   const [currentThinkingStep, setCurrentThinkingStep] = useState(0);
 
@@ -51,25 +49,15 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, onBatchS
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const files = Array.from(e.dataTransfer.files);
-      if (batchMode && files.length > 1 && onBatchSelected) {
-        onBatchSelected(files);
-      } else {
-        processFile(files[0]);
-      }
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processFile(e.dataTransfer.files[0]);
     }
-  }, [batchMode, onBatchSelected]);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
-    if (e.target.files && e.target.files.length > 0) {
-      const files = Array.from(e.target.files);
-      if (batchMode && files.length > 1 && onBatchSelected) {
-        onBatchSelected(files);
-      } else {
-        processFile(files[0]);
-      }
+    if (e.target.files && e.target.files[0]) {
+      processFile(e.target.files[0]);
     }
   };
 
@@ -109,7 +97,6 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, onBatchS
           className={`absolute inset-0 w-full h-full opacity-0 z-20 ${isAnalyzing ? 'pointer-events-none' : 'cursor-pointer'}`}
           onChange={handleChange}
           accept="image/*"
-          multiple={batchMode}
           disabled={isAnalyzing}
         />
         
@@ -198,15 +185,13 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, onBatchS
               </div>
 
               <h3 className="text-2xl md:text-3xl font-bold text-white mb-3 tracking-tight">
-                Upload {batchMode ? 'photos' : 'a photo'} to get <br/>
+                Upload a photo to get <br/>
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-300 to-emerald-300">expert feedback in seconds</span>
               </h3>
               <p className="text-base md:text-lg text-slate-400 max-w-md mb-8 leading-relaxed">
-                Drag and drop your {batchMode ? 'images' : 'image'} here, or click to browse.
+                Drag and drop your image here, or click to browse.
                 <br />
-                <span className="text-sm text-slate-500 mt-2 block">
-                  {batchMode ? 'Batch mode: Upload up to 50 photos at once' : 'Supports JPG, PNG, WEBP (Max 10MB)'}
-                </span>
+                <span className="text-sm text-slate-500 mt-2 block">Supports JPG, PNG, WEBP (Max 10MB)</span>
               </p>
               
               <div className="px-6 py-3 md:px-8 md:py-3.5 bg-slate-700/50 rounded-full text-slate-200 text-sm font-semibold border border-slate-600 group-hover:bg-brand-600 group-hover:text-white group-hover:border-brand-500 transition-all duration-300 shadow-lg flex items-center gap-2">

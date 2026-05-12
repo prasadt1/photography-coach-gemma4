@@ -5,12 +5,38 @@
  */
 
 import React from 'react';
-import { Zap, Shield, Check } from 'lucide-react';
+import { Zap, Shield, Check, Lock } from 'lucide-react';
 import { OperationalMode } from '../types.v2';
 
 interface ModeSelectorProps {
   mode: OperationalMode;
   onChange: (mode: OperationalMode) => void;
+}
+
+// Helper to highlight technical keywords in accent green
+function highlightTechKeywords(text: string): React.ReactNode {
+  const keywords = ['Gemma 4 E4B', 'Batch', 'Gemini'];
+  let result: React.ReactNode[] = [];
+  let remaining = text;
+  let keyIndex = 0;
+
+  for (const keyword of keywords) {
+    const index = remaining.indexOf(keyword);
+    if (index !== -1) {
+      if (index > 0) {
+        result.push(<span key={`pre-${keyIndex}`}>{remaining.substring(0, index)}</span>);
+      }
+      result.push(
+        <span key={`kw-${keyIndex}`} className="text-emerald-400 font-semibold">{keyword}</span>
+      );
+      remaining = remaining.substring(index + keyword.length);
+      keyIndex++;
+    }
+  }
+  if (remaining) {
+    result.push(<span key="rest">{remaining}</span>);
+  }
+  return result.length > 0 ? result : text;
 }
 
 const STUDIO_FEATURES = [
@@ -21,7 +47,7 @@ const STUDIO_FEATURES = [
 ];
 
 const VAULT_FEATURES = [
-  'Network-isolated — zero cloud calls',
+  '🔒 Zero Cloud Egress — IP protection',
   'Hash-chained audit log',
   'Exportable tamper-evident report',
   'NDA-safe confidential workflows',
@@ -56,7 +82,7 @@ const ModeSelector: React.FC<ModeSelectorProps> = ({ mode, onChange }) => {
             {STUDIO_FEATURES.map(f => (
               <li key={f} className="flex items-start gap-2 text-xs text-slate-400">
                 <Check className="w-3 h-3 text-emerald-500 mt-0.5 shrink-0" />
-                {f}
+                <span>{highlightTechKeywords(f)}</span>
               </li>
             ))}
           </ul>
@@ -75,14 +101,17 @@ const ModeSelector: React.FC<ModeSelectorProps> = ({ mode, onChange }) => {
             <div className={`p-1.5 rounded-lg ${mode === 'vault' ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-700/50 text-slate-400'}`}>
               <Shield className="w-4 h-4" />
             </div>
-            <span className="font-bold text-white text-sm">Vault Mode</span>
+            <span className="font-bold text-white text-sm flex items-center gap-1.5">
+              Vault Mode
+              <Lock className="w-3 h-3 text-amber-400/70" />
+            </span>
             {mode === 'vault' && (
               <span className="ml-auto text-xs font-semibold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">🔒 Active</span>
             )}
           </div>
           <ul className="space-y-1.5">
-            {VAULT_FEATURES.map(f => (
-              <li key={f} className="flex items-start gap-2 text-xs text-slate-400">
+            {VAULT_FEATURES.map((f, i) => (
+              <li key={f} className={`flex items-start gap-2 text-xs ${i === 0 ? 'text-amber-300 font-semibold' : 'text-slate-400'}`}>
                 <Check className="w-3 h-3 text-amber-500 mt-0.5 shrink-0" />
                 {f}
               </li>

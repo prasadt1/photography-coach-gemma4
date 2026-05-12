@@ -544,6 +544,54 @@ Ollama provides production-grade local inference with features critical for L.E.
 
 ---
 
+## ♿ Accessibility & Inclusion
+
+### Current Features (v2.0)
+
+**Voice-First Workflow:**
+- Toggle voice feedback on any photo analysis
+- Descriptive-first coaching: "I see a ceramic bowl on a wooden table..." then spatial guidance
+- Clock-face directions (12:00 = top, 3:00 = right, etc.) for framing
+- Sentence-by-sentence speech to avoid Chrome truncation
+- Works with screen readers and voice control
+
+**Multilingual Support:**
+- 8 languages in UI (English, Spanish, Portuguese, Hindi, French, German, Japanese, Chinese)
+- Gemma 4 supports 140+ languages natively
+- All critique output can be in user's preferred language
+
+### Phase 2 Roadmap: Blind & Low-Vision Creators
+
+These features are architecturally planned and will be implemented post-hackathon:
+
+**1. Enhanced Scene Description Mode**
+- Dedicated "Describe Scene" button for full environmental context
+- Example: *"A busy workshop table with tools scattered around. Your ceramic bowl is in the center but covered by a shadow from the left."*
+- Helps users understand their environment before attempting to photograph
+
+**2. Haptic Feedback Guidance**
+- Phone vibration when composition is "perfect" (using `navigator.vibrate()` API)
+- Double heartbeat pattern: `[100ms, 50ms, 100ms]` on center alignment
+- Allows users to "feel" the perfect shot without seeing the screen
+
+**3. Voice-First Product Photography**
+- Complete Sell Mode workflow navigable by voice commands
+- Audio confirmation: "Product centered ✓ Lighting good ✓ Ready to capture"
+- Enables blind artisans to photograph handmade goods for Etsy/eBay independently
+
+**4. Assistive Hardware Integration**
+- Bluetooth shutter button support for hands-free capture
+- External audio feedback (speaker/headphones) for noisy environments
+- Integration with iOS VoiceOver and Android TalkBack gestures
+
+**Why This Matters:**
+Visual commerce shouldn't be limited to those with perfect sight. The same Gemma 4 spatial reasoning that coaches composition can describe scenes, confirm framing, and guide blind creators through professional product photography—opening marketplaces like Etsy and Shopify to a community historically excluded from visual selling.
+
+**Technical Foundation:**
+All Phase 2 features build on existing infrastructure (voice service, spatial analysis, PWA APIs) with no architectural changes required. Estimated implementation: 15-20 hours development + user testing with accessibility consultants.
+
+---
+
 ## 🧪 Testing
 
 ### Unit Tests (49 tests)

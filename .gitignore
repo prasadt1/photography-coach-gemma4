@@ -12,6 +12,34 @@ dist
 dist-ssr
 *.local
 
+# Electron build outputs
+dist-electron/
+electron-dist/
+out/
+release/
+
+# Test artifacts
+*.xmp
+
+# Model files
+*.bin
+*.gguf
+*.litertlm
+models/
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Stray compiled JS (prevent TS from emitting next to source)
+/services/*.js
+/types.v2.js
+/*.js
+!vite.config.js
+!vitest.config.js
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

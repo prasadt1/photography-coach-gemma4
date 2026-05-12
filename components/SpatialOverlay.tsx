@@ -1,124 +1,156 @@
-import React, { useState, useMemo } from 'react';
-import { BoundingBox } from '../types';
-import { Sparkles } from 'lucide-react';
+/**
+ * SpatialOverlay — numbered pin + box-outline spatial critique overlay.
+ *
+ * Design:
+ *  - Each flaw is shown as a small numbered circle (pin) at the centre of its bounding box.
+ *  - When hovered (or activeIndex matches), the full box outline glows into view.
+ *  - Supports bidirectional hover: pin ↔ issue card in the parent.
+ */
+
+import React, { useState } from 'react';
+import { BoundingBox } from '../types.v2';
 
 interface SpatialOverlayProps {
   boundingBoxes: BoundingBox[];
   show: boolean;
+  activeIndex: number | null;
+  onHover: (idx: number | null) => void;
 }
 
-const BoxItem: React.FC<{ box: BoundingBox }> = ({ box }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  
-  // Smart positioning logic
-  const showTooltipAbove = box.y > 60; // Threshold for showing above
-  const alignRight = box.x > 50; // Threshold for aligning to the right
-
-  const getStyle = (severity: string) => {
-    switch (severity) {
-      case 'critical': return {
-        border: 'border-rose-500',
-        bg: 'bg-rose-500/5', 
-        badge: 'bg-rose-500 text-white',
-        shadow: 'shadow-[0_0_15px_rgba(244,63,94,0.4)]'
-      };
-      case 'moderate': return {
-        border: 'border-amber-500',
-        bg: 'bg-amber-500/5',
-        badge: 'bg-amber-500 text-slate-900',
-        shadow: 'shadow-[0_0_15px_rgba(245,158,11,0.4)]'
-      };
-      default: return {
-        border: 'border-sky-500',
-        bg: 'bg-sky-500/5',
-        badge: 'bg-sky-500 text-white',
-        shadow: 'shadow-[0_0_15px_rgba(14,165,233,0.4)]'
-      };
-    }
-  };
-
-  const style = getStyle(box.severity);
-
-  return (
-    <div
-      className={`absolute border-2 transition-all duration-300 ease-out cursor-help ${style.border} ${style.bg} ${isHovered ? `z-50 scale-[1.01] ${style.shadow}` : 'z-10'}`}
-      style={{
-        left: `${box.x}%`,
-        top: `${box.y}%`,
-        width: `${box.width}%`,
-        height: `${box.height}%`,
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      // Enable touch interaction for mobile
-      onClick={() => setIsHovered(!isHovered)}
-    >
-      {/* Visible Label Tag */}
-      <div className={`
-        absolute px-2 py-0.5 rounded-t-md 
-        text-[10px] font-bold uppercase tracking-wider shadow-sm flex items-center gap-1.5
-        transition-transform duration-200 backdrop-blur-sm
-        ${style.badge}
-        ${alignRight ? 'right-[-2px] origin-bottom-right' : 'left-[-2px] origin-bottom-left'}
-        ${showTooltipAbove ? 'bottom-full rounded-t-md rounded-b-none' : '-top-6 rounded-b-none rounded-t-md'}
-        ${isHovered ? 'scale-110 z-50' : 'scale-100 z-20'}
-      `}>
-        {box.type}
-      </div>
-
-      {/* Detailed Tooltip */}
-      <div className={`
-        absolute w-48 md:w-64 p-3 rounded-lg 
-        bg-slate-900/95 border border-slate-700 shadow-2xl backdrop-blur-md
-        transition-all duration-200 pointer-events-none
-        ${alignRight ? 'right-[-2px]' : 'left-[-2px]'}
-        ${showTooltipAbove 
-            ? `bottom-full mb-8 ${alignRight ? 'origin-bottom-right' : 'origin-bottom-left'}` 
-            : `top-full mt-2 ${alignRight ? 'origin-top-right' : 'origin-top-left'}`
-        }
-        ${isHovered 
-            ? 'opacity-100 scale-100 translate-y-0 z-[60]' 
-            : `opacity-0 scale-95 z-[-1] ${showTooltipAbove ? 'translate-y-2' : '-translate-y-2'}`
-        }
-      `}>
-        <div className="flex items-center justify-between mb-2 pb-2 border-b border-slate-800">
-          <span className={`text-xs font-bold uppercase ${
-            box.severity === 'critical' ? 'text-rose-400' : 
-            box.severity === 'moderate' ? 'text-amber-400' : 'text-sky-400'
-          }`}>
-            {box.severity} Issue
-          </span>
-        </div>
-        <p className="text-xs font-medium text-slate-200 mb-2 leading-relaxed">{box.description}</p>
-        <div className="flex gap-2 items-start bg-slate-800/50 p-2 rounded">
-           <Sparkles className="w-3 h-3 text-brand-400 mt-0.5 flex-shrink-0" />
-           <p className="text-[10px] text-brand-100 leading-snug">{box.suggestion}</p>
-        </div>
-      </div>
-    </div>
-  );
+const SEVERITY_STYLES = {
+  critical: {
+    border: 'border-rose-500',
+    bg: 'bg-rose-500/10',
+    pin: 'bg-rose-500 text-white ring-rose-400',
+    glow: 'shadow-[0_0_20px_rgba(244,63,94,0.5)]',
+  },
+  moderate: {
+    border: 'border-amber-400',
+    bg: 'bg-amber-400/10',
+    pin: 'bg-amber-400 text-slate-900 ring-amber-300',
+    glow: 'shadow-[0_0_20px_rgba(251,191,36,0.5)]',
+  },
+  minor: {
+    border: 'border-sky-400',
+    bg: 'bg-sky-400/10',
+    pin: 'bg-sky-400 text-white ring-sky-300',
+    glow: 'shadow-[0_0_20px_rgba(56,189,248,0.5)]',
+  },
 };
 
-const SpatialOverlay: React.FC<SpatialOverlayProps> = ({ boundingBoxes, show }) => {
-  if (!show || !boundingBoxes || boundingBoxes.length === 0) return null;
+interface BoxPinProps {
+  box: BoundingBox;
+  index: number;
+  isActive: boolean;
+  onEnter: () => void;
+  onLeave: () => void;
+}
 
-  // SORTING LOGIC:
-  // We sort boxes by area (width * height) in descending order.
-  // This ensures larger boxes (like general Composition) are rendered first (at the bottom).
-  // Smaller, specific boxes (like Focus on Eye) are rendered last (on top).
-  // This prevents large boxes from blocking interactions with smaller ones nested inside them.
-  const sortedBoxes = useMemo(() => {
-    return [...boundingBoxes].sort((a, b) => {
-      const areaA = a.width * a.height;
-      const areaB = b.width * b.height;
-      return areaB - areaA; // Large to Small
-    });
-  }, [boundingBoxes]);
+const SEVERITY_LABEL: Record<string, string> = {
+  critical: 'Critical',
+  moderate: 'Moderate',
+  minor: 'Minor',
+};
+
+const BoxPin: React.FC<BoxPinProps> = ({ box, index, isActive, onEnter, onLeave }) => {
+  const [localHover, setLocalHover] = useState(false);
+  const active = isActive || localHover;
+  const s = SEVERITY_STYLES[box.severity as keyof typeof SEVERITY_STYLES] ?? SEVERITY_STYLES.minor;
+
+  // Pin sits at the centre of the bounding box
+  const pinCx = box.x + box.width / 2;
+  const pinCy = box.y + box.height / 2;
+
+  // Tooltip positioning: avoid clipping at image edges
+  const tooltipLeft = pinCx > 60;   // flip to left side when pin is in right half
+  const tooltipAbove = pinCy > 55;  // flip upward when pin is in bottom half
 
   return (
     <>
-      {sortedBoxes.map((box, i) => (
-        <BoxItem key={i} box={box} />
+      {/* Box outline — only visible when active */}
+      <div
+        className={`absolute border-2 rounded-sm pointer-events-none transition-all duration-300 ${s.border} ${s.bg} ${
+          active ? `opacity-100 ${s.glow}` : 'opacity-0'
+        }`}
+        style={{
+          left: `${box.x}%`,
+          top: `${box.y}%`,
+          width: `${box.width}%`,
+          height: `${box.height}%`,
+          zIndex: active ? 20 : 5,
+        }}
+      />
+
+      {/* Numbered pin at the box centre */}
+      <div
+        className="absolute -translate-x-1/2 -translate-y-1/2"
+        style={{ left: `${pinCx}%`, top: `${pinCy}%`, zIndex: active ? 40 : 15 }}
+        onMouseEnter={() => { setLocalHover(true); onEnter(); }}
+        onMouseLeave={() => { setLocalHover(false); onLeave(); }}
+      >
+        <button
+          className={`flex items-center justify-center
+            w-7 h-7 rounded-full text-[11px] font-extrabold select-none
+            ring-2 transition-all duration-200 cursor-pointer shadow-lg
+            ${s.pin}
+            ${active ? 'scale-125 ring-opacity-100' : 'scale-100 ring-opacity-60'}
+          `}
+          aria-label={`Issue ${index + 1}: ${box.description}`}
+        >
+          {index + 1}
+        </button>
+
+        {/* Tooltip — visible on hover */}
+        {active && (
+          <div
+            className={`absolute z-50 w-52 rounded-xl bg-slate-900/95 border border-slate-700 shadow-2xl backdrop-blur-md p-3 pointer-events-none
+              ${tooltipLeft ? 'right-full mr-2' : 'left-full ml-2'}
+              ${tooltipAbove ? 'bottom-0' : 'top-0'}
+            `}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-800">
+              <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                box.severity === 'critical' ? 'text-rose-400' :
+                box.severity === 'moderate' ? 'text-amber-400' : 'text-sky-400'
+              }`}>
+                {SEVERITY_LABEL[box.severity] ?? box.severity} · {box.type}
+              </span>
+              <span className="text-[10px] font-bold text-slate-600 bg-slate-800 rounded px-1">#{index + 1}</span>
+            </div>
+            {/* Description */}
+            <p className="text-xs font-medium text-slate-200 leading-relaxed mb-2">{box.description}</p>
+            {/* Suggestion */}
+            <div className="flex items-start gap-1.5 bg-slate-800/60 rounded-lg p-2">
+              <span className="text-brand-400 font-bold text-xs flex-shrink-0">→</span>
+              <p className="text-[11px] text-brand-200 leading-snug">{box.suggestion}</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+};
+
+const SpatialOverlay: React.FC<SpatialOverlayProps> = ({
+  boundingBoxes,
+  show,
+  activeIndex,
+  onHover,
+}) => {
+  if (!show || !boundingBoxes || boundingBoxes.length === 0) return null;
+
+  return (
+    <>
+      {boundingBoxes.map((box, i) => (
+        <BoxPin
+          key={i}
+          box={box}
+          index={i}
+          isActive={activeIndex === i}
+          onEnter={() => onHover(i)}
+          onLeave={() => onHover(null)}
+        />
       ))}
     </>
   );

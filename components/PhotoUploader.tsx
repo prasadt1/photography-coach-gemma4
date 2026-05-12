@@ -1,20 +1,21 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import { Upload, Image as ImageIcon, Loader2, ScanLine, Aperture, ArrowUp, Brain, Zap, Target, Eye, Sparkles } from 'lucide-react';
+import { Upload, Image as ImageIcon, Loader2, Aperture, ArrowUp, Brain, Zap, Target, Eye, Sparkles } from 'lucide-react';
 
 interface PhotoUploaderProps {
-  onImageSelected: (base64: string, mimeType: string) => void;
+  onImageSelected: (base64: string, mimeType: string, file: File, imageEl: HTMLImageElement) => void;
   isAnalyzing: boolean;
+  analysisProgress?: { message: string; pct: number };
 }
 
 const THINKING_STEPS = [
-  { text: "Examining composition and framing...", icon: Brain },
-  { text: "Analyzing lighting conditions...", icon: Zap },
-  { text: "Identifying technical issues...", icon: Target },
-  { text: "Evaluating subject impact...", icon: Eye },
-  { text: "Generating recommendations...", icon: Sparkles },
+  { text: "Running CV analysis (EXIF, histogram, focus map)…", icon: Brain },
+  { text: "Analyzing composition and framing…", icon: Target },
+  { text: "Evaluating lighting and exposure…", icon: Zap },
+  { text: "Assessing technique and sharpness…", icon: Eye },
+  { text: "Generating critique and recommendations…", icon: Sparkles },
 ];
 
-const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyzing }) => {
+const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyzing, analysisProgress }) => {
   const [dragActive, setDragActive] = useState(false);
   const [currentThinkingStep, setCurrentThinkingStep] = useState(0);
 
@@ -67,8 +68,11 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyz
     }
     const reader = new FileReader();
     reader.onloadend = () => {
-      const result = reader.result as string;
-      onImageSelected(result, file.type);
+      const dataUrl = reader.result as string;
+      // Create an HTMLImageElement so cvService can read pixel data
+      const img = new Image();
+      img.onload = () => onImageSelected(dataUrl, file.type, file, img);
+      img.src = dataUrl;
     };
     reader.readAsDataURL(file);
   };
@@ -109,10 +113,26 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyz
                 <Loader2 className="w-16 h-16 text-brand-400 animate-spin relative z-10" />
               </div>
               
-              <h3 className="text-xl md:text-2xl font-bold text-white mb-2">🧠 Gemini 3 Pro is thinking...</h3>
-              
-              {/* Simulated Thinking Console */}
-              <div className="w-full mt-6 bg-slate-950/80 rounded-xl border border-slate-800 p-4 font-mono text-sm text-left shadow-inner">
+              <h3 className="text-xl md:text-2xl font-bold text-white mb-2">🧠 Gemma 4 is thinking...</h3>
+
+              {/* Live progress bar (streaming) */}
+              {analysisProgress && (
+                <div className="w-full mt-3 mb-2">
+                  <div className="flex justify-between text-xs text-slate-400 mb-1">
+                    <span>{analysisProgress.message}</span>
+                    <span>{analysisProgress.pct}%</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-brand-500 to-emerald-500 rounded-full transition-all duration-300"
+                      style={{ width: `${analysisProgress.pct}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Thinking steps (fallback when no live progress) */}
+              <div className="w-full mt-4 bg-slate-950/80 rounded-xl border border-slate-800 p-4 font-mono text-sm text-left shadow-inner">
                 <div className="space-y-3">
                   {THINKING_STEPS.map((step, index) => {
                     const isActive = index === currentThinkingStep;

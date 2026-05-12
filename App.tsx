@@ -1,42 +1,40 @@
 
-import React, { useState, useEffect } from 'react';
-import { Camera, Sparkles, Cpu, Target, Coins, ArrowRight, PlayCircle, Zap, Image as ImageIcon, Lock, ChevronRight, Github, MonitorPlay } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Camera, Cpu, Target, Coins, ArrowRight, Github, MonitorPlay, Shield, Activity } from 'lucide-react';
+import ModeSelector from './components/ModeSelector';
 import PhotoUploader from './components/PhotoUploader';
-import AnalysisResults, { TabId } from './components/AnalysisResults';
+import AnalysisResults, { TabId, MentorChatStateV2 } from './components/AnalysisResults';
+import AuditLogPanel from './components/AuditLogPanel';
 import { PresentationSlides } from './components/PresentationSlides';
-import { analyzeImage } from './services/geminiService';
-import { PhotoAnalysis, AppState, SessionCostMetric, MentorChatState } from './types';
+import { runAnalysisPipeline, checkOllamaHealth, warmUpModel, AnalysisProgress } from './services/analysisOrchestrator';
+import { setOperationalMode, exportAuditLog } from './services/auditService';
+import { AppState } from './types';
+import { PhotoAnalysisV2, OperationalMode, SessionHistoryEntry } from './types.v2';
 
-// Floating badge component for the header
-const SessionSavingsBadge: React.FC<{ 
-  sessionHistory: SessionCostMetric[]; 
+// Floating badge component showing session token count
+const SessionSavingsBadge: React.FC<{
+  sessionHistory: SessionHistoryEntry[];
   onClick: () => void;
 }> = ({ sessionHistory, onClick }) => {
   if (sessionHistory.length === 0) return null;
 
-  const totalPotentialSavings = sessionHistory.reduce((acc, curr) => acc + curr.potentialSavings, 0);
-  const totalRealCost = sessionHistory.reduce((acc, curr) => acc + curr.realCost, 0);
-  const savingsPercent = totalRealCost > 0 
-    ? (totalPotentialSavings / totalRealCost) * 100 
-    : 0;
+  const totalTokens = sessionHistory.reduce((acc, curr) => acc + curr.totalTokens, 0);
 
   return (
-    <button 
+    <button
       onClick={onClick}
-      className="flex items-center gap-2 px-2 md:px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 transition-all cursor-pointer animate-pulse-slow group relative"
-      title="Click to view projected economics"
+      className="flex items-center gap-2 px-2 md:px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 transition-all cursor-pointer group relative"
+      title="Click to view inference stats"
     >
       <Coins className="w-4 h-4" />
-      <span className="text-xs font-bold tracking-wide">
-        <span className="hidden md:inline">Projected Savings: </span>
-        ${totalPotentialSavings.toFixed(5)} 
-        <span className="hidden md:inline"> ({savingsPercent.toFixed(1)}%)</span>
+      <span className="text-xs font-bold tracking-wide font-mono">
+        <span className="hidden md:inline">Session: </span>
+        {totalTokens.toLocaleString()} tokens
       </span>
-      {/* Tooltip for first-time users */}
       {sessionHistory.length === 1 && (
         <div className="absolute top-full right-0 mt-3 w-40 md:w-48 p-2 md:p-3 bg-slate-800 border border-slate-700 rounded-lg shadow-xl text-[10px] md:text-xs text-slate-300 text-center animate-fadeIn z-50">
-          <div className="absolute -top-1 right-4 md:right-8 w-2 h-2 bg-slate-800 border-l border-t border-slate-700 rotate-45"></div>
-          💡 Scale Simulator active. See how much you'd save!
+          <div className="absolute -top-1 right-4 md:right-8 w-2 h-2 bg-slate-800 border-l border-t border-slate-700 rotate-45" />
+          100% local · $0.00 cost
         </div>
       )}
     </button>
@@ -46,75 +44,98 @@ const SessionSavingsBadge: React.FC<{
 function App() {
   const [appState, setAppState] = useState<AppState>(AppState.IDLE);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
-  const [analysis, setAnalysis] = useState<PhotoAnalysis | null>(null);
+  const [analysis, setAnalysis] = useState<PhotoAnalysisV2 | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showSlides, setShowSlides] = useState(false);
   const [initialSlide, setInitialSlide] = useState(1);
-  
+
+  // v2: operational mode + live analysis progress
+  const [mode, setMode] = useState<OperationalMode>('studio');
+  const [analysisProgress, setAnalysisProgress] = useState<AnalysisProgress | null>(null);
+  const [ollamaReady, setOllamaReady] = useState<boolean | null>(null); // null = checking
+
   // Lifted state for results tab to allow external control from header
   const [activeResultTab, setActiveResultTab] = useState<TabId>('overview');
-  
-  // Session History State
-  const [sessionHistory, setSessionHistory] = useState<SessionCostMetric[]>([]);
 
-  // Lifted Mentor Chat State to persist across tab/device switches
-  const [mentorChatState, setMentorChatState] = useState<MentorChatState>({ messages: [], isLoading: false });
+  // Session History State (v2 — token counts only, $0 local inference)
+  const [sessionHistory, setSessionHistory] = useState<SessionHistoryEntry[]>([]);
 
-  // NOTE: We do not check for API keys on mount or interaction to avoid forcing login redirects.
-  // We rely on the service layer to use shared credentials or fail gracefully with a specific error code.
+  // Lifted Mentor Chat State (v2 — no Gemini thinking field)
+  const [mentorChatState, setMentorChatState] = useState<MentorChatStateV2>({ messages: [], isLoading: false });
 
-  const handleImageSelected = async (base64: string, mimeType: string) => {
-    // We proceed directly to analysis. 
-    // The Gemini Service will attempt to fetch a shared key from the environment.
-    // If that fails, the error block below will handle the UI state.
-    
+  // Vault Mode: audit log panel visibility
+  const [showAuditLog, setShowAuditLog] = useState(false);
+
+  // Warm up Ollama on mount — eliminates ~40s cold-start penalty (Spike 1 finding).
+  // checkOllamaHealth confirms the daemon is running, then warmUpModel fires a
+  // minimal 1-token inference to preload the 9.6 GB model weights into RAM.
+  useEffect(() => {
+    checkOllamaHealth().then(({ running, modelAvailable }) => {
+      setOllamaReady(running && modelAvailable);
+      if (running && modelAvailable) {
+        warmUpModel(); // fire-and-forget; loads model weights so first real analysis is fast
+      }
+    });
+  }, []);
+
+  // Sync mode into auditService egress guard
+  const handleModeChange = useCallback((newMode: OperationalMode) => {
+    setMode(newMode);
+    setOperationalMode(newMode);
+  }, []);
+
+  const handleImageSelected = async (
+    base64: string,
+    mimeType: string,
+    file?: File,
+    imageEl?: HTMLImageElement,
+  ) => {
     setCurrentImage(base64);
     setAppState(AppState.ANALYZING);
     setError(null);
-    // Reset tabs and chat for new analysis
+    setAnalysisProgress(null);
     setActiveResultTab('overview');
     setMentorChatState({ messages: [], isLoading: false });
 
     try {
-      const result = await analyzeImage(base64, mimeType);
-      setAnalysis(result);
+      const v2Result = await runAnalysisPipeline(
+        base64,
+        mimeType,
+        imageEl,
+        file,
+        (progress) => setAnalysisProgress(progress),
+      );
 
-      // Update session history if token usage data exists
-      if (result.tokenUsage) {
-        setSessionHistory(prev => {
-          const newMetric: SessionCostMetric = {
+      setAnalysis(v2Result);
+
+      // Session history (token counts only — $0 for local inference)
+      if (v2Result.tokenUsage?.totalTokens) {
+        setSessionHistory(prev => [
+          ...prev,
+          {
             id: prev.length + 1,
             timestamp: Date.now(),
-            realCost: result.tokenUsage!.realCost,
-            projectedCost: result.tokenUsage!.projectedCostWithCache,
-            potentialSavings: result.tokenUsage!.projectedSavings,
-            // These aren't used in the main history view but good to keep
-            cachedTokens: result.tokenUsage!.realCachedTokens,
-            newTokens: result.tokenUsage!.realNewTokens
-          };
-          return [...prev, newMetric];
-        });
+            modelId: v2Result.model_id,
+            promptTokens: v2Result.tokenUsage!.promptTokens ?? 0,
+            completionTokens: v2Result.tokenUsage!.completionTokens ?? 0,
+            totalTokens: v2Result.tokenUsage!.totalTokens!,
+            latencyMs: 0,   // TODO: wire latency from analysisOrchestrator
+          } satisfies SessionHistoryEntry,
+        ]);
       }
 
       setAppState(AppState.RESULTS);
     } catch (err: any) {
-      console.error(err);
-      
-      const errorMessage = (err.message || err.toString()).toLowerCase();
-      // Check for common permission/key errors (403 Forbidden, 404 Not Found for model)
-      if (
-        errorMessage.includes("permission denied") || 
-        errorMessage.includes("403") || 
-        errorMessage.includes("404") || 
-        errorMessage.includes("requested entity was not found") ||
-        errorMessage.includes("api key") ||
-        errorMessage.includes("quota")
-      ) {
-        setError("API_KEY_ERROR"); 
+      console.error('[App] Analysis failed:', err);
+      const msg = (err.message || err.toString()).toLowerCase();
+      if (msg.includes('ollama') || msg.includes('model not found') || msg.includes('econnrefused')) {
+        setError('OLLAMA_ERROR');
       } else {
-        setError("Failed to analyze image. Please try again. " + (err.message || ""));
+        setError('Failed to analyze image. ' + (err.message || ''));
       }
       setAppState(AppState.ERROR);
+    } finally {
+      setAnalysisProgress(null);
     }
   };
 
@@ -143,16 +164,25 @@ function App() {
     setError(null);
     setMentorChatState({ messages: [], isLoading: false });
   };
+
+  const handleExportAuditLog = async () => {
+    try {
+      const jsonl = await exportAuditLog();
+      const blob = new Blob([jsonl], { type: 'application/x-ndjson' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `vault-audit-${Date.now()}.jsonl`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('[App] Audit log export failed:', e);
+    }
+  };
   
   // Handler to start presentation from beginning
   const startPresentation = () => {
     setInitialSlide(1);
-    setShowSlides(true);
-  };
-
-  // Handler to show architecture slide (Slide 3) directly from app
-  const showArchitectureSlide = () => {
-    setInitialSlide(3);
     setShowSlides(true);
   };
 
@@ -173,30 +203,34 @@ function App() {
             <div className="flex flex-col justify-center">
               <div className="flex items-center gap-3">
                 <span className="text-xl md:text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-slate-300 tracking-tight">
-                  AI Photography Coach
+                  Photography Coach
                 </span>
-                <div className="hidden sm:flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-purple-600 px-3 py-1 rounded-full shadow-lg shadow-purple-500/20 border border-white/10">
-                   <Sparkles className="w-3 h-3 text-white fill-white" />
-                   <span className="text-[11px] font-bold text-white tracking-wide uppercase">Gemini 3 Pro</span>
+                <div className="hidden sm:flex items-center gap-1.5 bg-gradient-to-r from-brand-500 to-emerald-500 px-3 py-1 rounded-full shadow-lg shadow-brand-500/20 border border-white/10">
+                  <Cpu className="w-3 h-3 text-white" />
+                  <span className="text-[11px] font-bold text-white tracking-wide uppercase">Gemma 4 · Local</span>
+                </div>
+                {/* Ollama status dot */}
+                <div className={`hidden sm:flex items-center gap-1 text-xs font-medium ${ollamaReady === null ? 'text-slate-500' : ollamaReady ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  <Activity className="w-3 h-3" />
+                  <span>{ollamaReady === null ? 'checking…' : ollamaReady ? 'Ollama ready' : 'Ollama offline'}</span>
                 </div>
               </div>
               <span className="text-[11px] md:text-xs text-brand-400 font-semibold tracking-wide hidden sm:block uppercase opacity-90">
-                AI Photography Mentor &bull; Spatial Critique &bull; Restoration
+                {mode === 'vault' ? '🔒 Vault Mode · Network Isolated' : 'Studio Mode · Gemma 4 E4B · Offline AI'}
               </span>
             </div>
           </div>
           
           <div className="flex items-center gap-4 relative">
              {/* Economics Badge */}
-             <SessionSavingsBadge 
-               sessionHistory={sessionHistory} 
+             <SessionSavingsBadge
+               sessionHistory={sessionHistory}
                onClick={() => {
                  if (appState === AppState.RESULTS) {
-                   setActiveResultTab('economics');
-                   // Smooth scroll to top of content
+                   setActiveResultTab('stats');
                    window.scrollTo({ top: 0, behavior: 'smooth' });
                  }
-               }} 
+               }}
              />
           </div>
         </div>
@@ -218,26 +252,29 @@ function App() {
                 Coaching, <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-emerald-400">Reimagined.</span>
               </h1>
               <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
-                The <span className="font-semibold text-slate-300">AI Photography Coach</span> uses Gemini 3 Pro to analyze your photos, visualize mistakes, and generate corrections in real-time.
+                Powered by <span className="font-semibold text-slate-300">Gemma 4 E4B</span> running 100% locally — no API keys, no data leaves your machine.
               </p>
 
               {/* Feature Badges */}
               <div className="flex flex-wrap justify-center gap-3 md:gap-4 relative z-10 px-4">
                 <div className="flex items-center gap-2 px-4 py-2 md:px-6 md:py-3 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/50 shadow-xl backdrop-blur-md group hover:border-brand-500/30 transition-colors">
+                  <Cpu className="w-4 h-4 md:w-5 md:h-5 text-brand-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs md:text-sm font-semibold text-slate-200">100% Local AI</span>
+                </div>
+                <div className="flex items-center gap-2 px-4 py-2 md:px-6 md:py-3 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/50 shadow-xl backdrop-blur-md group hover:border-brand-500/30 transition-colors">
+                  <Shield className="w-4 h-4 md:w-5 md:h-5 text-amber-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs md:text-sm font-semibold text-slate-200">Vault Mode</span>
+                </div>
+                <div className="flex items-center gap-2 px-4 py-2 md:px-6 md:py-3 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/50 shadow-xl backdrop-blur-md group hover:border-brand-500/30 transition-colors">
                   <Target className="w-4 h-4 md:w-5 md:h-5 text-rose-400 group-hover:scale-110 transition-transform" />
                   <span className="text-xs md:text-sm font-semibold text-slate-200">Spatial Critique</span>
-                </div>
-                <div className="flex items-center gap-2 px-4 py-2 md:px-6 md:py-3 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/50 shadow-xl backdrop-blur-md group hover:border-brand-500/30 transition-colors">
-                  <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-amber-400 group-hover:scale-110 transition-transform" />
-                  <span className="text-xs md:text-sm font-semibold text-slate-200">AI Image Generation</span>
-                </div>
-                <div className="flex items-center gap-2 px-4 py-2 md:px-6 md:py-3 rounded-full bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/50 shadow-xl backdrop-blur-md group hover:border-brand-500/30 transition-colors">
-                  <Coins className="w-4 h-4 md:w-5 md:h-5 text-emerald-400 group-hover:scale-110 transition-transform" />
-                  <span className="text-xs md:text-sm font-semibold text-slate-200">Context Caching</span>
                 </div>
               </div>
             </div>
             
+            {/* Mode selector */}
+            <ModeSelector mode={mode} onChange={handleModeChange} />
+
             {/* Uploader */}
             <PhotoUploader onImageSelected={handleImageSelected} isAnalyzing={false} />
 
@@ -299,74 +336,59 @@ function App() {
         {appState === AppState.ANALYZING && (
            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-8 animate-pulse">
               <div className="w-full max-w-2xl mx-auto">
-                 {/* Re-use uploader in 'analyzing' state for visual continuity */}
-                 <PhotoUploader onImageSelected={() => {}} isAnalyzing={true} />
+                 <PhotoUploader
+                   onImageSelected={() => {}}
+                   isAnalyzing={true}
+                   analysisProgress={analysisProgress ?? undefined}
+                 />
               </div>
            </div>
         )}
 
         {appState === AppState.RESULTS && analysis && currentImage && (
-          <AnalysisResults 
-            analysis={analysis} 
-            imageSrc={currentImage} 
-            onReset={handleReset} 
+          <AnalysisResults
+            analysis={analysis}
+            imageSrc={currentImage}
+            mode={mode}
+            onReset={handleReset}
             sessionHistory={sessionHistory}
             activeTab={activeResultTab}
             onTabChange={setActiveResultTab}
             mentorChatState={mentorChatState}
             setMentorChatState={setMentorChatState}
-            onShowArchitecture={showArchitectureSlide}
+            onViewAuditLog={mode === 'vault' ? () => setShowAuditLog(true) : undefined}
+            onExportLog={mode === 'vault' ? handleExportAuditLog : undefined}
           />
         )}
 
         {appState === AppState.ERROR && (
           <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-6">
             <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-2xl text-center max-w-md shadow-2xl backdrop-blur-sm">
-              {error === "API_KEY_ERROR" ? (
+              {error === 'OLLAMA_ERROR' ? (
                 <>
-                   <div className="w-16 h-16 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Lock className="w-8 h-8 text-amber-500" />
-                   </div>
-                   <h3 className="text-xl font-bold text-white mb-2">Access Required</h3>
-                   <p className="text-slate-400 mb-6 text-sm leading-relaxed">
-                     To use the premium Gemini 3 Pro features, please connect a Google Cloud Project with billing enabled.
-                   </p>
-                   <div className="space-y-3">
-                     <button 
-                      onClick={async () => {
-                        if ((window as any).aistudio) {
-                          try {
-                            await (window as any).aistudio.openSelectKey();
-                            handleReset(); // Reset to let them try uploading again with the new key
-                          } catch (e) {
-                            console.error(e);
-                          }
-                        }
-                      }}
-                      className="w-full px-6 py-3 bg-brand-600 hover:bg-brand-500 text-white rounded-lg transition-colors flex items-center justify-center gap-2 font-medium"
-                    >
-                      <Coins className="w-4 h-4" />
-                      Connect Project
-                    </button>
-                    <button 
-                      onClick={handleReset}
-                      className="w-full px-6 py-3 bg-transparent hover:bg-slate-700/50 text-slate-400 hover:text-white rounded-lg transition-colors text-sm"
-                    >
-                      Cancel
-                    </button>
-                   </div>
+                  <div className="w-16 h-16 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Cpu className="w-8 h-8 text-amber-500" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Ollama Not Running</h3>
+                  <p className="text-slate-400 mb-4 text-sm leading-relaxed">
+                    Gemma 4 runs locally via Ollama. Make sure Ollama is running and the model is pulled.
+                  </p>
+                  <div className="bg-slate-900/80 rounded-lg p-3 text-left font-mono text-xs text-emerald-400 mb-6 space-y-1">
+                    <div>$ ollama serve</div>
+                    <div>$ ollama pull gemma4:latest</div>
+                  </div>
+                  <button onClick={handleReset} className="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors font-medium">
+                    Try Again
+                  </button>
                 </>
               ) : (
                 <>
                   <div className="w-16 h-16 bg-rose-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                     <Target className="w-8 h-8 text-rose-500" />
+                    <Target className="w-8 h-8 text-rose-500" />
                   </div>
                   <h3 className="text-xl font-bold text-white mb-2">Analysis Failed</h3>
                   <p className="text-slate-400 mb-6 text-sm">{error}</p>
-                  <button 
-                    onClick={handleReset}
-                    className="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors font-medium"
-                  >
+                  <button onClick={handleReset} className="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors font-medium">
                     Try Again
                   </button>
                 </>
@@ -377,8 +399,11 @@ function App() {
 
       </main>
 
+      {/* Vault Mode audit log panel (modal) */}
+      {showAuditLog && <AuditLogPanel onClose={() => setShowAuditLog(false)} />}
+
       <footer className="border-t border-slate-800 mt-12 py-8 flex flex-col items-center gap-4 text-slate-600 text-sm">
-        <p>&copy; {new Date().getFullYear()} AI Photography Coach. Built with Google Gemini 3 Pro.</p>
+        <p>&copy; {new Date().getFullYear()} Photography Coach v2. Powered by Gemma 4 E4B · Runs 100% locally via Ollama.</p>
         <div className="flex gap-4">
           <a 
             href="https://github.com/prasadt1/photography-coach-ai-gemini3" 

@@ -1,8 +1,8 @@
 /**
- * SellMode.tsx — Product photo coaching for marketplace listings
+ * SellMode.tsx — Artisan Studio
  *
- * Helps sellers take better product photos for eBay, Etsy, Poshmark, etc.
- * Scores photos on listing-readiness and gives actionable fixes.
+ * Voice-guided photography coaching for marketplace sellers.
+ * Designed for low-vision artisans who create beautiful handmade work.
  */
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
@@ -289,9 +289,9 @@ const SellMode: React.FC<SellModeProps> = ({
           ← Back
         </button>
 
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/30">
-          <Package className="w-5 h-5 text-orange-400" />
-          <span className="text-sm font-bold text-orange-300">Product Photo Coach</span>
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/30">
+          <Package className="w-5 h-5 text-amber-400" />
+          <span className="text-sm font-bold text-amber-300">Artisan Studio</span>
         </div>
       </header>
 
@@ -304,11 +304,11 @@ const SellMode: React.FC<SellModeProps> = ({
             </div>
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
-                Sell Mode
+                Artisan Studio
               </h1>
               <p className="text-slate-400">
-                Get your product photos marketplace-ready. AI scores your listing photo
-                and tells you exactly what to fix for faster sales.
+                Voice-guided photography coaching for marketplace sellers. Get spoken feedback
+                on composition, lighting, and framing — designed for artisans who create beautiful work.
               </p>
             </div>
           </div>
@@ -317,7 +317,7 @@ const SellMode: React.FC<SellModeProps> = ({
         {/* Status messages */}
         {ollamaReady === false && (
           <div className="bg-red-900/30 border border-red-500/30 rounded-2xl p-6 text-center mb-6" role="alert">
-            <p className="text-red-300">Ollama is offline. Start Ollama to use Sell Mode.</p>
+            <p className="text-red-300">Ollama is offline. Start Ollama to use Artisan Studio.</p>
           </div>
         )}
 
@@ -746,7 +746,7 @@ const SellMode: React.FC<SellModeProps> = ({
 
       {/* Footer */}
       <footer className="text-center mt-12 text-sm text-slate-600 max-w-4xl mx-auto">
-        <p>Optimize your listings for eBay, Etsy, Poshmark, and more. All analysis happens locally.</p>
+        <p>Voice-guided coaching for Etsy, eBay, Poshmark, and more. 100% local, 100% private.</p>
       </footer>
     </div>
   );

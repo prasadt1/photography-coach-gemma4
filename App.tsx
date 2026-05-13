@@ -516,18 +516,10 @@ function App() {
               <button
                 type="button"
                 onClick={() => handleModeChange('sell')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 transition-colors ${mode === 'sell' ? 'bg-orange-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-300'}`}
-                title="Product photo coaching for marketplaces"
+                className={`flex items-center gap-1.5 px-3 py-1.5 transition-colors ${mode === 'sell' ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-300'}`}
+                title="Voice-guided product photography for artisans"
               >
-                💼 Sell
-              </button>
-              <button
-                type="button"
-                onClick={() => handleModeChange('quest')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 transition-colors ${mode === 'quest' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-300'}`}
-                title="Daily photo challenges with PASS/FAIL"
-              >
-                🎯 Quest
+                💎 Artisan
               </button>
               {isElectron && (
                 <button

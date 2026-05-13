@@ -307,8 +307,8 @@ const SellMode: React.FC<SellModeProps> = ({
                 Artisan Studio
               </h1>
               <p className="text-slate-400">
-                Voice-guided photography coaching for marketplace sellers. Get spoken feedback
-                on composition, lighting, and framing — designed for artisans who create beautiful work.
+                For blind and low-vision artisans. Hear what's working in your product photos, what isn't,
+                and exactly how to fix it — so your handmade goods earn the price they deserve.
               </p>
             </div>
           </div>

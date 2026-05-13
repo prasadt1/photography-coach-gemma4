@@ -155,7 +155,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady, stats, v
 
             <h3 className="text-3xl font-bold text-white mb-3">Artisan Studio</h3>
             <p className="text-amber-200/80 mb-5 text-base leading-relaxed max-w-2xl">
-              Voice-guided photography coaching for marketplace sellers. Get spoken feedback on composition, lighting, and framing — designed for low-vision artisans who create beautiful handmade goods but need help capturing photos that sell.
+              For blind and low-vision artisans. Hear what's working in your product photos, what isn't, and exactly how to fix it — so your handmade goods earn the price they deserve.
             </p>
 
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6 text-sm text-amber-100/70">

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Cpu, Target, Coins, Github, Shield,
-  Image as ImageIcon, Zap, Scale, MonitorPlay, Volume2, VolumeX,
+  Image as ImageIcon, Zap, Scale, Volume2, VolumeX,
   ImagePlus, ArrowRight, X,
 } from 'lucide-react';
 import HomePage from './components/HomePage';
@@ -67,7 +67,6 @@ function App() {
   const [analysis, setAnalysis] = useState<PhotoAnalysisV2 | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showSlides, setShowSlides] = useState(false);
-  const [initialSlide, setInitialSlide] = useState(1);
 
   const [mode, setMode] = useState<OperationalMode>('studio');
   const [showHome, setShowHome] = useState(true); // Start on HomePage
@@ -410,13 +409,8 @@ function App() {
     }
   };
 
-  const startPresentation = () => {
-    setInitialSlide(1);
-    setShowSlides(true);
-  };
-
   if (showSlides) {
-    return <PresentationSlides onExit={() => setShowSlides(false)} initialSlide={initialSlide} />;
+    return <PresentationSlides onExit={() => setShowSlides(false)} initialSlide={1} />;
   }
 
   // Show HomePage when in home state
@@ -970,10 +964,6 @@ function App() {
             <Github className="w-4 h-4" />
             <span>View Source on GitHub</span>
           </a>
-          <button type="button" onClick={startPresentation} className="flex items-center gap-2 hover:text-emerald-400 transition-colors">
-            <MonitorPlay className="w-4 h-4" />
-            <span>Presentation Mode</span>
-          </button>
         </div>
       </footer>
     </div>

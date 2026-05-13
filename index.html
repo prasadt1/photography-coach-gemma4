@@ -10,13 +10,14 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="LENS" />
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:wght@400;600;700&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         theme: {
           extend: {
             fontFamily: {
               sans: ['Inter', 'sans-serif'],
+              serif: ['Source Serif 4', 'Georgia', 'serif'],
             },
             colors: {
               brand: {
@@ -30,6 +31,18 @@
                 700: '#15803d',
                 800: '#166534',
                 900: '#14532d',
+              },
+              terracotta: {
+                50: '#fef7f4',
+                100: '#fce8e1',
+                200: '#f9cfc3',
+                300: '#f4ad96',
+                400: '#eb8464',
+                500: '#e06442',
+                600: '#cd4a2d',
+                700: '#ab3b24',
+                800: '#8c3323',
+                900: '#742e22',
               }
             },
             animation: {

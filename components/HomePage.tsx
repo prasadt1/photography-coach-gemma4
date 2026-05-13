@@ -46,25 +46,35 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady, stats, v
   };
 
   return (
-    <div className="min-h-screen bg-[#0f0f13] text-white">
-      {/* Background gradient */}
+    <div className="min-h-screen bg-[#0f0f13] text-white relative">
+      {/* Craft imagery hero background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-amber-500/5 rounded-full blur-[150px]" />
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-[150px]" />
+        {/* Low-opacity craft imagery */}
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-[0.04]"
+          style={{
+            backgroundImage: 'url(https://images.unsplash.com/photo-1452860606245-08befc0ff44b?w=1920&q=80)',
+          }}
+        />
+        {/* Warm gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0f0f13] via-[#0f0f13]/80 to-[#0f0f13]" />
+        {/* Terracotta/amber accent glows */}
+        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-terracotta-500/8 rounded-full blur-[150px]" />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-amber-500/6 rounded-full blur-[150px]" />
       </div>
 
       <div className="relative z-10 max-w-4xl mx-auto px-4 py-8 md:py-12">
         {/* Header with Logo */}
         <header className="flex items-center justify-between mb-10">
-          <div className="flex items-center gap-3">
-            <div className="relative w-12 h-12 rounded-xl overflow-hidden shadow-lg shadow-amber-500/20">
+          <div className="flex items-center gap-4">
+            <div className="relative w-14 h-14 md:w-16 md:h-16 rounded-2xl overflow-hidden shadow-xl shadow-terracotta-500/30 ring-2 ring-terracotta-500/20">
               <img src="/lens-logo.png" alt="L.E.N.S." className="w-full h-full object-cover" />
             </div>
             <div className="flex flex-col justify-center gap-0.5">
-              <h1 className="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-slate-300 tracking-[0.2em] leading-tight">
+              <h1 className="text-2xl md:text-3xl font-bold font-serif bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-slate-300 tracking-[0.15em] leading-tight">
                 L.E.N.S.
               </h1>
-              <p className="text-[10px] text-slate-500 font-medium tracking-wider uppercase -mt-0.5">Local Edge Native Studio</p>
+              <p className="text-[10px] text-terracotta-400/70 font-medium tracking-wider uppercase -mt-0.5">Local Edge Native Studio</p>
             </div>
           </div>
 
@@ -96,9 +106,9 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady, stats, v
 
         {/* Hero Section - Accessibility-led messaging */}
         <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-5 leading-tight">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold font-serif mb-5 leading-tight">
             Helping artisans get the
-            <span className="bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 bg-clip-text text-transparent"> price their work deserves</span>
+            <span className="bg-gradient-to-r from-terracotta-400 via-amber-400 to-terracotta-500 bg-clip-text text-transparent"> price their work deserves</span>
           </h2>
           <p className="text-lg text-slate-400 max-w-2xl mx-auto mb-6 leading-relaxed">
             L.E.N.S. helps blind and low-vision artisans capture marketplace-quality photos of their handmade work — fully on-device, no internet, no subscription.
@@ -126,58 +136,58 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady, stats, v
         {/* HERO CARD: Artisan Studio */}
         <button
           onClick={() => onSelectMode('sell')}
-          className="group relative w-full overflow-hidden rounded-2xl p-8 text-left transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl hover:shadow-amber-500/15 mb-6"
+          className="group relative w-full overflow-hidden rounded-3xl p-8 text-left transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl hover:shadow-terracotta-500/20 mb-6"
           style={{
-            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.20) 0%, rgba(251, 146, 60, 0.10) 50%, rgba(15, 15, 19, 0.98) 100%)',
-            border: '2px solid rgba(245, 158, 11, 0.35)',
+            background: 'linear-gradient(135deg, rgba(224, 100, 66, 0.18) 0%, rgba(235, 132, 100, 0.08) 50%, rgba(15, 15, 19, 0.98) 100%)',
+            border: '2px solid rgba(224, 100, 66, 0.35)',
           }}
           aria-label="Enter Artisan Studio - Voice-guided product photography for marketplace listings"
         >
           {/* Background watermark */}
           <div className="absolute -bottom-12 -right-12 w-64 h-64 opacity-[0.04] pointer-events-none">
-            <Gem className="w-full h-full text-amber-400" strokeWidth={0.6} />
+            <Gem className="w-full h-full text-terracotta-400" strokeWidth={0.6} />
           </div>
 
           <div className="relative">
             <div className="flex items-center gap-3 mb-5">
-              <div className="p-3 rounded-xl bg-amber-500/25 border border-amber-500/40">
-                <Gem className="w-7 h-7 text-amber-400" />
+              <div className="p-3.5 rounded-xl bg-terracotta-500/25 border border-terracotta-500/40">
+                <Gem className="w-7 h-7 text-terracotta-400" />
               </div>
               <div className="flex flex-wrap gap-2">
-                <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-terracotta-500/20 text-terracotta-300 border border-terracotta-500/30">
                   Voice-Guided
                 </span>
-                <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
                   Accessibility-First
                 </span>
               </div>
             </div>
 
-            <h3 className="text-3xl font-bold text-white mb-3">Artisan Studio</h3>
-            <p className="text-amber-200/80 mb-5 text-base leading-relaxed max-w-2xl">
+            <h3 className="text-3xl font-bold font-serif text-white mb-3">Artisan Studio</h3>
+            <p className="text-terracotta-200/80 mb-5 text-base leading-relaxed max-w-2xl">
               For blind and low-vision artisans. Hear what's working in your product photos, what isn't, and exactly how to fix it — so your handmade goods earn the price they deserve.
             </p>
 
-            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6 text-sm text-amber-100/70">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6 text-sm text-terracotta-100/70">
               <li className="flex items-center gap-2">
-                <AudioLines className="w-4 h-4 text-amber-400" />
+                <AudioLines className="w-4 h-4 text-terracotta-400" />
                 Descriptive voice feedback
               </li>
               <li className="flex items-center gap-2">
-                <Camera className="w-4 h-4 text-amber-400" />
+                <Camera className="w-4 h-4 text-terracotta-400" />
                 Spatial framing guidance
               </li>
               <li className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-amber-400" />
+                <Sparkles className="w-4 h-4 text-terracotta-400" />
                 Alt-text generation
               </li>
               <li className="flex items-center gap-2">
-                <Eye className="w-4 h-4 text-amber-400" />
+                <Eye className="w-4 h-4 text-terracotta-400" />
                 Color accuracy confirmation
               </li>
             </ul>
 
-            <div className="flex items-center gap-2 text-amber-400 font-semibold text-base group-hover:gap-3 transition-all">
+            <div className="flex items-center gap-2 text-terracotta-400 font-semibold text-base group-hover:gap-3 transition-all">
               <span>Enter Artisan Studio</span>
               <ArrowRight className="w-5 h-5" />
             </div>
@@ -223,7 +233,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady, stats, v
             <Sparkles className="w-5 h-5" />
             <span className="font-medium">Free Forever</span>
           </div>
-          <div className="flex items-center gap-2 text-amber-500">
+          <div className="flex items-center gap-2 text-terracotta-400">
             <Gem className="w-5 h-5" />
             <span className="font-semibold">Powered by Gemma 4 E4B via Ollama</span>
           </div>

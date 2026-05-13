@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { analyzeForSellMode } from '../services/analysisOrchestrator';
 import { parseSellResponse, speak } from '../services/voiceCoach';
+import { DEMO_SAMPLES, DemoSample, simulateProcessing } from '../services/demoMode';
 
 interface SellModeProps {
   onBack: () => void;
@@ -60,8 +61,37 @@ const SellMode: React.FC<SellModeProps> = ({
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [processedPreload, setProcessedPreload] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Demo Mode: handle sample selection with pre-recorded response
+  const handleDemoSampleSelect = useCallback(async (sample: DemoSample) => {
+    setError(null);
+    setIsAnalyzing(true);
+    setResult(null);
+    setIsDemoMode(true);
+
+    // Simulate ~2s processing delay
+    await simulateProcessing();
+
+    const parsed = parseSellResponse(sample.response);
+    setResult({
+      ...parsed,
+      imageBase64: sample.imageUrl,
+      rawResponse: sample.response,
+    });
+
+    // Voice feedback (always enabled in demo mode for accessibility showcase)
+    if (voiceEnabled || true) { // Always speak in demo mode
+      const voiceText = parsed.whatISee
+        ? `${parsed.whatISee} ${parsed.colorCheck || ''} ${parsed.fix || ''} ${parsed.nextAction || ''}`
+        : `Listing score: ${parsed.score} out of 10. ${parsed.verdict}.`;
+      speak(voiceText);
+    }
+
+    setIsAnalyzing(false);
+  }, [voiceEnabled]);
 
   // Auto-analyze preloaded image from Studio mode ("Optimize for Marketplace" flow)
   useEffect(() => {
@@ -239,6 +269,7 @@ const SellMode: React.FC<SellModeProps> = ({
   const handleRetry = () => {
     setResult(null);
     setError(null);
+    setIsDemoMode(false);
   };
 
   // Score color and icon based on value
@@ -289,9 +320,17 @@ const SellMode: React.FC<SellModeProps> = ({
           ← Back
         </button>
 
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/30">
-          <Package className="w-5 h-5 text-amber-400" />
-          <span className="text-sm font-bold text-amber-300">Artisan Studio</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/30">
+            <Package className="w-5 h-5 text-amber-400" />
+            <span className="text-sm font-bold text-amber-300">Artisan Studio</span>
+          </div>
+          {(ollamaReady === false || isDemoMode) && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/20 border border-purple-500/40">
+              <Sparkles className="w-4 h-4 text-purple-400" />
+              <span className="text-xs font-bold text-purple-300">Demo Mode</span>
+            </div>
+          )}
         </div>
       </header>
 
@@ -314,10 +353,36 @@ const SellMode: React.FC<SellModeProps> = ({
           </div>
         </div>
 
-        {/* Status messages */}
-        {ollamaReady === false && (
-          <div className="bg-red-900/30 border border-red-500/30 rounded-2xl p-6 text-center mb-6" role="alert">
-            <p className="text-red-300">Ollama is offline. Start Ollama to use Artisan Studio.</p>
+        {/* Demo Mode: Show sample products when Ollama is offline */}
+        {ollamaReady === false && !result && !isAnalyzing && (
+          <div className="bg-purple-900/20 border border-purple-500/30 rounded-2xl p-6 mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Sparkles className="w-5 h-5 text-purple-400" />
+              <h2 className="text-lg font-bold text-purple-200">Demo Mode</h2>
+            </div>
+            <p className="text-purple-200/70 text-sm mb-6">
+              Ollama isn't running, but you can try our pre-recorded demos. Select a sample product photo to hear how L.E.N.S. coaches artisans.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {DEMO_SAMPLES.map((sample) => (
+                <button
+                  key={sample.id}
+                  onClick={() => handleDemoSampleSelect(sample)}
+                  className="group relative h-48 rounded-xl overflow-hidden border-2 border-purple-500/30 hover:border-purple-400 transition-all hover:scale-[1.02]"
+                >
+                  <img
+                    src={sample.thumbnailUrl}
+                    alt={sample.label}
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/30 to-transparent" />
+                  <div className="absolute bottom-3 left-3 right-3">
+                    <span className="text-xs font-bold text-purple-400 uppercase tracking-wider">Sample</span>
+                    <p className="text-white font-semibold">{sample.label}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 

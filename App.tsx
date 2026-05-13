@@ -6,6 +6,7 @@ import {
   ImagePlus, ArrowRight, X,
 } from 'lucide-react';
 import HomePage from './components/HomePage';
+import DemoBanner from './components/DemoBanner';
 import ModeSelector from './components/ModeSelector';
 import PhotoUploader from './components/PhotoUploader';
 import ComparePanel from './components/ComparePanel';
@@ -441,6 +442,9 @@ function App() {
         <div className="absolute top-1/4 left-1/4 w-[420px] h-[420px] bg-brand-500/6 rounded-full blur-[120px]" />
         <div className="absolute bottom-1/4 right-1/4 w-[380px] h-[380px] bg-violet-500/6 rounded-full blur-[100px]" />
       </div>
+
+      {/* Demo banner for deployed environments - explains Ollama requirement to judges */}
+      <DemoBanner />
 
       <header className="border-b border-slate-800 bg-slate-900/90 backdrop-blur-xl sticky top-0 z-50 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 h-16 md:h-20 flex items-center justify-between">

@@ -284,6 +284,7 @@ const SellMode: React.FC<SellModeProps> = ({
         <button
           onClick={onBack}
           className="px-4 py-2 rounded-xl text-sm font-semibold bg-slate-800 hover:bg-slate-700 transition-all"
+          aria-label="Go back to home page"
         >
           ← Back
         </button>
@@ -315,13 +316,13 @@ const SellMode: React.FC<SellModeProps> = ({
 
         {/* Status messages */}
         {ollamaReady === false && (
-          <div className="bg-red-900/30 border border-red-500/30 rounded-2xl p-6 text-center mb-6">
+          <div className="bg-red-900/30 border border-red-500/30 rounded-2xl p-6 text-center mb-6" role="alert">
             <p className="text-red-300">Ollama is offline. Start Ollama to use Sell Mode.</p>
           </div>
         )}
 
         {error && (
-          <div className="bg-red-900/30 border border-red-500/30 rounded-2xl p-6 text-center mb-6">
+          <div className="bg-red-900/30 border border-red-500/30 rounded-2xl p-6 text-center mb-6" role="alert" aria-live="assertive">
             <p className="text-red-300">{error}</p>
             <button
               onClick={handleRetry}
@@ -334,7 +335,7 @@ const SellMode: React.FC<SellModeProps> = ({
 
         {/* Result display */}
         {result && (
-          <div className="space-y-6 mb-6">
+          <div className="space-y-6 mb-6" role="region" aria-label="Analysis results" aria-live="polite">
             {/* Score + Verdict Row */}
             <div className="flex flex-col md:flex-row gap-6">
               {/* Photo */}
@@ -555,6 +556,7 @@ const SellMode: React.FC<SellModeProps> = ({
                             ? 'bg-emerald-500/20 text-emerald-300 scale-110'
                             : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300'
                         }`}
+                        aria-label={copiedField === 'description' ? 'Description copied to clipboard' : 'Copy product description to clipboard'}
                       >
                         {copiedField === 'description' ? (
                           <>
@@ -589,6 +591,7 @@ const SellMode: React.FC<SellModeProps> = ({
                             ? 'bg-emerald-500/20 text-emerald-300 scale-110'
                             : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300'
                         }`}
+                        aria-label={copiedField === 'altText' ? 'Alt text copied to clipboard' : 'Copy alt text to clipboard'}
                       >
                         {copiedField === 'altText' ? (
                           <>
@@ -622,6 +625,7 @@ const SellMode: React.FC<SellModeProps> = ({
                             ? 'bg-emerald-500/20 text-emerald-300 scale-110'
                             : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300'
                         }`}
+                        aria-label={copiedField === 'tags' ? 'Tags copied to clipboard' : 'Copy all tags to clipboard'}
                       >
                         {copiedField === 'tags' ? (
                           <>
@@ -673,6 +677,7 @@ const SellMode: React.FC<SellModeProps> = ({
               bg-slate-800/30 hover:bg-slate-800/50 transition-all duration-300
               flex flex-col items-center justify-center gap-4 group
               disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-slate-600"
+            aria-label="Take or upload a product photo for analysis"
           >
             <div className="w-20 h-20 rounded-2xl bg-orange-500/20 border border-orange-500/30
               flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -687,9 +692,14 @@ const SellMode: React.FC<SellModeProps> = ({
 
         {/* Analyzing state */}
         {isAnalyzing && (
-          <div className="w-full h-64 md:h-80 rounded-3xl border-2 border-orange-500/30
-            bg-slate-800/50 flex flex-col items-center justify-center gap-4">
-            <Loader2 className="w-12 h-12 text-orange-400 animate-spin" />
+          <div
+            className="w-full h-64 md:h-80 rounded-3xl border-2 border-orange-500/30
+            bg-slate-800/50 flex flex-col items-center justify-center gap-4"
+            role="status"
+            aria-live="polite"
+            aria-busy="true"
+          >
+            <Loader2 className="w-12 h-12 text-orange-400 animate-spin" aria-hidden="true" />
             <div className="text-center">
               <p className="text-xl font-bold text-white mb-1">Analyzing Product Photo...</p>
               <p className="text-slate-400">Checking background, lighting, and focus</p>

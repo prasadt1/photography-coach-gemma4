@@ -81,8 +81,8 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyz
     <div className="w-full max-w-4xl mx-auto z-10 relative">
       <div
         className={`relative group flex flex-col items-center justify-center w-full min-h-[320px] md:min-h-[400px] rounded-[2rem] md:rounded-[2.5rem] border-2 border-dashed transition-all duration-500 ease-out cursor-pointer overflow-hidden
-          ${dragActive 
-            ? 'border-brand-400 bg-brand-500/10 scale-[1.02] shadow-2xl shadow-brand-500/20' 
+          ${dragActive
+            ? 'border-brand-400 bg-brand-500/10 scale-[1.02] shadow-2xl shadow-brand-500/20'
             : 'border-slate-700/50 bg-slate-800/30 hover:bg-slate-800/50 hover:border-brand-500/50 hover:shadow-2xl hover:shadow-brand-500/10'
           }
           ${isAnalyzing ? 'border-brand-500/20 bg-slate-900/80 cursor-default' : ''}
@@ -91,6 +91,8 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyz
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
+        role="region"
+        aria-label={isAnalyzing ? 'Photo analysis in progress' : 'Photo upload area. Drag and drop an image or click to browse.'}
       >
         <input
           type="file"
@@ -98,6 +100,7 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyz
           onChange={handleChange}
           accept="image/*"
           disabled={isAnalyzing}
+          aria-label="Upload a photo for analysis. Supports JPG, PNG, and WEBP formats up to 10MB"
         />
         
         {/* Decorative background elements */}
@@ -107,13 +110,13 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyz
 
         <div className="flex flex-col items-center justify-center p-6 md:p-8 text-center relative z-10 w-full max-w-lg">
           {isAnalyzing ? (
-            <div className="w-full animate-fadeIn flex flex-col items-center">
+            <div className="w-full animate-fadeIn flex flex-col items-center" role="status" aria-live="polite" aria-busy="true">
               <div className="relative mb-8">
-                <div className="absolute inset-0 bg-brand-500/20 blur-xl rounded-full animate-pulse"></div>
-                <Loader2 className="w-16 h-16 text-brand-400 animate-spin relative z-10" />
+                <div className="absolute inset-0 bg-brand-500/20 blur-xl rounded-full animate-pulse" aria-hidden="true"></div>
+                <Loader2 className="w-16 h-16 text-brand-400 animate-spin relative z-10" aria-hidden="true" />
               </div>
-              
-              <h3 className="text-xl md:text-2xl font-bold text-white mb-2">🧠 Gemma 4 is thinking...</h3>
+
+              <h3 className="text-xl md:text-2xl font-bold text-white mb-2">Gemma 4 is thinking...</h3>
 
               {/* Live progress bar (streaming) */}
               {analysisProgress && (

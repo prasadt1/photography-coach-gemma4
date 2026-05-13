@@ -1,5 +1,7 @@
 # 📷 L.E.N.S. — Voice-Guided Photography for Artisans
 
+> *The lens between the artisan's hands and the sighted marketplace.*
+
 **Helping artisans get the price their work deserves**
 
 [![Gemma 4 E4B](https://img.shields.io/badge/Powered%20by-Gemma%204%20E4B-4285F4?style=for-the-badge&logo=google)](https://deepmind.google/technologies/gemma/gemma-4/)

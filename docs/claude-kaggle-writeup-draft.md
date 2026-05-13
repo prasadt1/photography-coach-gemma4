@@ -1,5 +1,7 @@
 # L.E.N.S.: Voice-Guided Photography Coaching for Blind and Low-Vision Artisans, On-Device
 
+*The lens between the artisan's hands and the sighted marketplace — on-device, voice-guided, powered by Gemma 4 E4B via Ollama.*
+
 **Tracks:** Digital Equity & Inclusivity | Ollama Special Technology | Main Track
 
 **Links:**
@@ -8,6 +10,8 @@
 - **Video (YouTube, ≤3 min):** [VIDEO_URL]
 
 ---
+
+L.E.N.S. — Local Edge Native Studio — is the lens between the artisan's hands and the sighted marketplace. For 85–90% of legally blind people who retain some residual vision, the gap between making beautiful work and photographing it to sell is the gap L.E.N.S. closes.
 
 ## The Problem
 

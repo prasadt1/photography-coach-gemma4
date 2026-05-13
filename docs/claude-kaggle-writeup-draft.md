@@ -1,600 +1,161 @@
-# LENS — Local Edge-Native Studio for Photography Coaching
+# L.E.N.S.: Voice-Guided Photography Coaching for Blind and Low-Vision Artisans, On-Device
 
-**Subtitle:** Photo editors edit photos. LENS makes photographers — locally on your laptop, edge-native via Gemma 4, with real reasoning you can interrogate.
+**Tracks:** Digital Equity & Inclusivity | Ollama Special Technology | Main Track
 
-**Track:** Ollama (Special Technology) · Main Track
-
-**Project Links**
-- Public repo: https://github.com/prasadt1/photography-coach-gemma4
-- Live demo: `[DEMO_URL]`
-- Video (YouTube, ≤3 min): `[VIDEO_URL]`
-
----
-
-## Why I Built This
-
-I learned photography by handing photos to a mentor on Saturday afternoons. He'd tell me *why* one was good and another weak — not just that they were. Most people don't have that mentor. They have software that auto-edits photos to look "better" without explaining the difference. LENS is the mentor — patient, always available, on your laptop, costing nothing. It doesn't edit; it teaches. The name says it: **L**ocal, **E**dge-native, **N**ative app, **S**tudio workflow.
-
-An earlier cloud version won DeepMind's Vibe Code (Dec 2025). **LENS is the cloud-to-edge port** — same idea, rebuilt on Gemma 4 via Ollama with privacy as a first-class differentiator.
+**Links:**
+- **Public repo:** https://github.com/prasadt1/photography-coach-gemma4
+- **Live demo:** [DEMO_URL]
+- **Video (YouTube, ≤3 min):** [VIDEO_URL]
 
 ---
 
 ## The Problem
 
-**Editors edit, they don't teach.** Editor AI does auto-enhance, generative remove, AI masking. Makes the photo look better; doesn't explain why. Auto-fix users learn nothing.
+Blindness exists on a clinical spectrum: only 10–15% of legally blind individuals have No Light Perception (NLP). The remaining 85–90% retain varying degrees of residual vision — light/dark perception, color discrimination, large-shape recognition, or restricted fields (WHO, Iowa Department for the Blind).
 
-**Cloud uploads break trust.** NDA shoots (weddings with children, unreleased campaigns, editorial work) can't legally use cloud AI. Casual users want photos to stay local.
+L.E.N.S. is designed for this dominant population: **low-vision artisans who can interact with a screen using magnification and high contrast, but who cannot reliably evaluate the qualities of their own product photographs** that determine whether sighted buyers click and convert.
 
-**Opaque scores, no learning loop.** Most "AI critique" outputs a number with no path to understanding. Photographers need reasoning they can interrogate.
+These artisans — weavers, potters, knitters, woodworkers — create beautiful handmade goods. They know their products intimately by touch. But marketplace success depends on photo quality: 90% of Etsy shoppers say photo quality is their top purchase factor. High-quality photos can lift conversion rates by up to 94%.
 
----
-
-## What LENS Does
-
-Upload a photo. Get structured, multi-axis critique powered by Gemma 4 E4B running locally via Ollama: **5-axis scoring** with explicit reasoning, **spatial bounding boxes** pinpointing issues, **transparent rationale** citing EXIF/histogram/focus evidence, and a **mentor chat** (with voice input + spoken critique playback) that adapts to your skill level. **Compare Two Photos** picks the keeper from near-duplicates with reasoning. Two operational modes:
+Existing assistive apps (TapTapSee, Seeing AI, Be My Eyes) *describe* what's in a photo. They don't *coach* someone to take a better one. Cloud-based AI coaching requires reliable internet — a luxury many rural artisans in developing countries don't have. L.E.N.S. fills this gap: **voice-guided product photography coaching that runs entirely offline, on commodity hardware, at zero ongoing cost.**
 
 ---
 
-**DIAGRAM 1 — LENS Hero:**
+## The Solution
 
-```
-Cinematic product hero image, like an Apple keynote opening slide or the
-hero section of stripe.com. 16:9 aspect ratio. Premium, confident, photographic.
+**Artisan Studio** is the heart of L.E.N.S. — a voice-first photography coaching experience designed for low-vision marketplace sellers.
 
-SCENE: A 3/4-angle photorealistic MacBook Pro sits in dramatic moody lighting
-on a dark surface. The laptop screen is the focal point and shows the actual
-LENS app interface in dark mode: a photo critique screen with numbered amber
-pins overlaid on a portrait photograph, a five-axis score panel on the right
-showing "Composition 8.4 / Lighting 7.1 / Technique 8.0", and the header
-text "LENS · Local · Private" with a small green status dot.
+**How it works:**
 
-FLOATING IN FRONT of the laptop, levitating with subtle depth-of-field blur
-behind them, are three glassmorphism cards arranged in an arc:
-- Left card (frosted dark glass, electric-blue glow): "GEMMA 4 · LOCAL"
-  with a tiny chip "Ollama · localhost"
-- Center card (frosted dark glass, AMBER glow, slightly larger and more
-  prominent): "VAULT MODE" with subtitle "Network blocked · Audit log on"
-  and a thin amber padlock outline beside the text
-- Right card (frosted dark glass, emerald glow): "$0 / PHOTO" with subtitle
-  "Works offline forever"
+1. **Describe first:** The AI starts by confirming what's in frame — "I see a blue hand-knit scarf on a wooden surface with soft lighting from the left."
 
-BACKGROUND: Atmospheric, slightly out-of-focus dark scene suggesting a
-photographer's studio — hint of a camera lens bokeh in the upper-right
-corner (real lens, not illustrated). Subtle volumetric light from screen-left.
+2. **Confirm colors:** For users who can't verify color accuracy, the AI compares to familiar references — "The blue is reading accurately, similar to a clear sky blue."
 
-WORDMARK in the bottom-left of the frame: "LENS — Local Edge-Native Studio"
-in clean Inter sans-serif, white. Below that, smaller slate text:
-"Photo editors edit photos. LENS makes photographers."
+3. **Guide spatially:** Coaching uses functional language (inches, left/right) not photography jargon — "Move your phone back 6 inches to capture the full length of the scarf."
 
-Style references: Apple Vision Pro reveal, Linear.app product hero, Arc
-browser landing page. Premium, dark, confident. Real photography lens visible
-as a subtle background prop reinforces the "LENS" brand. Vault Mode card is
-the visual anchor — make it glow more amber than the others.
+4. **Generate assets:** Alt-text and listing copy are produced automatically, ready to paste into Etsy, eBay, or Shopify.
 
-Avoid: clip-art icons, flat infographic look, plain colored boxes, generic
-abstract shapes. This is a HERO PRODUCT IMAGE, not a diagram.
-```
+5. **Voice output:** All feedback is spoken aloud via Web Speech API, sentence by sentence for clarity.
 
-**[INSERT DIAGRAM 1 IMAGE HERE]**
-
----
-
-**Studio Mode** prioritizes throughput — batch up to 50 photos, XMP sidecar export for Lightroom, optional cloud generation for enhancement previews.
-
-**Vault Mode** prioritizes trust — local inference, network egress blocked at app + OS level, hash-chained audit trail exportable as a Privacy Report for clients.
-
----
-
-## Who It's For
-
-**Hobbyist Hana** — drops a photo, asks "why is the horizon weak?", learns. Free, no account.
-
-**Intermediate Ivan** — runs Bulk Coach, sorts by score, exports XMP ratings to his editor. Builds intuition over months.
-
-**Pro Priya** — wedding/commercial. Bulk + XMP for cull. Vault Mode + Privacy Report for NDA shoots, handed to clients as compliance evidence.
-
----
-
-## Why Not Just Use Editor AI?
-
-| | Editor AI (subscription) | LENS |
-|---|---|---|
-| Edits the photo | ✅ | ❌ (by design) |
-| Explains *why* it works | ❌ | ✅ |
-| Mentor chat with memory | ❌ | ✅ |
-| Cited reasoning (EXIF + CV) | ❌ | ✅ |
-| Runs fully offline | Partial | ✅ |
-| Cost | $9–20/mo | $0 |
-| Cloud-free for sensitive work | ❌ | ✅ |
-
-Editors edit. We coach. They compose — XMP exports to any major editor.
-
----
-
-## Beyond the Hobbyist
-
-Same architecture serves underserved users. **Photography students** without subscriptions get the same AI feedback rich-school students do — in their own language (8 supported, 140+ via Gemma). **Low-vision photographers** use voice mode that describes the scene first ("I see a ceramic bowl on a wooden table..."), then provides spatial guidance via clock-face directions—enabling independent framing. **Journalists, NGO field workers, human-rights documentarians** use Vault Mode + EXIF strip to prove sensitive imagery never left the device.
-
-**Accessibility Roadmap (Phase 2):** Haptic feedback vibration when composition is perfect, dedicated scene description mode for full environmental context, and voice-first product photography workflow—opening visual marketplaces to blind artisans selling handmade goods on Etsy and Shopify.
+The same engine serves sighted photographers through **Photo Studio** — offering 5-axis critique, spatial bounding boxes, and mentor chat — but Artisan Studio is the accessibility-first hero.
 
 ---
 
 ## Architecture
 
-**DIAGRAM 2 — System Architecture:**
-
 ```
-Isometric 3D architecture visualization with depth and atmosphere — the kind
-of system diagram you'd see on aws.amazon.com/architecture or in a Vercel
-infrastructure blog post. Dark navy background (#0f172a) with subtle radial
-glow from center. 16:9 aspect ratio. Premium, confident, dimensional.
-
-LAYOUT: Four floating horizontal layers stacked at a slight isometric angle
-(about 15 degrees), like translucent glass slabs hovering above each other,
-connected by glowing electric-blue light beams flowing top-to-bottom. Each
-slab has frosted-glass material treatment with thin 1px borders that catch
-the light.
-
-LAYER 1 (top, smallest depth) — "INTERFACE" label in slate-300 small caps:
-Three glassmorphism panels side by side, each showing a tiny rendered UI
-mockup inside:
-- Web browser window (Safari-style chrome) showing "LENS" header
-- macOS Electron app icon shape
-- Phone outline with "Share → LENS" overlay
-Each has a subtle electric-blue underglow.
-
-LAYER 2 — "ORCHESTRATION" label:
-One wide frosted slab with three glowing chips inside:
-"Studio | Vault" toggle, "Tier 1 | Tier 2" router, "EN/ES/PT/HI/FR/DE/JA/ZH"
-language pills. The chips look like illuminated buttons, not flat text.
-
-LAYER 3 (largest, most prominent, glowing brightest) — "AI ENGINES":
-This layer is taller and lit more dramatically than the others. Three
-columns inside, varying widths:
-- LEFT column (emerald glow, 25% width): "DETERMINISTIC CV" — small chips
-  for EXIF, Histogram, Sharpness, Color, Faces. A glowing emerald arrow
-  shoots horizontally to the right labeled "grounding evidence".
-- CENTER column (50% width, dramatic ELECTRIC BLUE glow, raised slightly
-  higher than its neighbors like a hero card): The Gemma logo or a glowing
-  "G4" mark, with bold text "GEMMA 4 E4B" and subtitle "via Ollama". Below,
-  a 2x3 grid of glowing chips: "Vision", "Schema JSON", "Multi-image",
-  "Grounded reasoning", "Streaming", "Action tokens".
-- RIGHT column (cyan glow, 25% width, slightly translucent/faded to suggest
-  fallback): "TIER 2 · BROWSER" — chips for Gemma 2B, WebLLM, WebGPU. Has
-  a small "?tier2" tag suggesting opt-in.
-
-LAYER 4 (bottom) — "OUTPUT" label:
-One wide slab with five glowing output chips: "5-axis JSON", "Spatial Pins",
-"XMP → Lightroom", "Privacy Report", "GPS-stripped Photo".
-
-ATMOSPHERIC DETAILS: Subtle particles drift between the layers. Faint grid
-lines on the dark background suggest a digital landscape. A small "LENS"
-wordmark sits in the top-left corner, glowing faintly. Bottom-right shows
-"Gemma 4 + Ollama" in slate-500 small caps.
-
-Style references: AWS architecture diagrams reimagined by Apple, Stripe
-infrastructure marketing graphics, Vercel edge-network visualizations.
-
-Avoid: flat 2D box-and-arrow look, clip-art icons, generic infographic
-appearance. This must feel three-dimensional and atmospheric.
+                         ┌─────────────────────────────────┐
+                         │        User Device (PWA)        │
+                         │  ┌───────────┐  ┌────────────┐  │
+        Voice Input ───▶ │  │ Web Speech│  │  React UI  │  │ ◀── Camera
+                         │  │   API     │  │ (Artisan)  │  │
+                         │  └─────┬─────┘  └─────┬──────┘  │
+                         │        │              │         │
+                         │        ▼              ▼         │
+                         │  ┌─────────────────────────┐    │
+                         │  │  Analysis Orchestrator  │    │
+                         │  │   + CV Grounding        │    │
+                         │  └───────────┬─────────────┘    │
+                         │              │                  │
+                         └──────────────┼──────────────────┘
+                                        │ HTTP (localhost)
+                                        ▼
+                         ┌─────────────────────────────────┐
+                         │     Ollama (localhost:11434)    │
+                         │  ┌─────────────────────────┐    │
+                         │  │   Gemma 4 E4B (Q4_K_M)  │    │
+                         │  │   • 300M audio encoder  │    │
+                         │  │   • Schema JSON output  │    │
+                         │  │   • Multi-image support │    │
+                         │  └─────────────────────────┘    │
+                         └─────────────────────────────────┘
 ```
 
-**[INSERT DIAGRAM 2 IMAGE HERE]**
+**Key architectural decisions:**
+
+- **Schema-enforced JSON:** Ollama's `format` parameter forces structured output at token level — scores, bounding boxes, and rationale in one reliable pass.
+- **Deterministic CV grounding:** EXIF, histogram, and focus map are extracted client-side and injected into prompts. The model cites this evidence.
+- **Progressive Web App:** Installable on iOS/Android via Safari/Chrome. Web Share Target receives photos from the system share sheet.
+- **Local-only by design:** No cloud fallback in Artisan Studio. Offline capability is a feature, not an edge case.
 
 ---
 
-Three layers:
+## Technical Decisions
 
-**Deterministic CV** extracts EXIF, RGB histograms, Laplacian sharpness, face coordinates, color stats — fed as grounding context to the LLM prompt so critique cites observable evidence, not hallucinations.
+**Why Gemma 4 E4B (not 26B or 31B)?**
 
-**Gemma 4 E4B via Ollama** does all reasoning: scoring, spatial annotation, rationale, mentor chat. Outputs conform to a versioned JSON schema validated at runtime via Zod.
+We selected Gemma 4 E4B specifically because it and E2B are the only models in the Gemma 4 family with a **native 300M-parameter audio encoder**. The larger 26B and 31B variants offer superior critique quality but lack native audio input, which would force a separate Whisper or cloud STT pipeline — breaking our offline-first promise and adding latency and deployment weight that disproportionately hurts the users we built this for. E4B's single-model architecture is what makes a voice-guided photography coach for blind and low-vision artisans feasible on commodity hardware today.
 
-**Tier 2 — Gemma 2B in-browser via WebLLM** is an opt-in fallback (`?tier2`) for users without Ollama. WebGPU, CV-only critique.
+**Why Ollama (not cloud inference)?**
 
-**Optional cloud (Gemini)** for editing recipes + AI previews — opt-in, user's key, disabled in Vault.
+- **Zero cost per photo:** Cloud AI subscriptions ($10–20/month) are prohibitive for artisans in developing economies. Local inference is free forever after model download.
+- **Works offline:** Rural Tamil Nadu has intermittent connectivity at best. L.E.N.S. works the same online or offline.
+- **Privacy inherent:** Photos never leave the device. No consent dialogs, no compliance concerns.
 
----
+**Current implementation vs. roadmap:**
 
-## How I Use Gemma 4
-
-**DIAGRAM 3 — Gemma 4 Pipeline:**
-
-```
-A cinematic horizontal data-flow visualization showing a single photograph
-transforming into rich AI critique. Dark navy background (#0f172a) with
-moody atmospheric lighting and subtle volumetric light from the left.
-16:9 aspect ratio. Style: a marketing graphic for OpenAI's vision API or
-the kind of "how it works" hero on character.ai's homepage.
-
-LEFT THIRD — THE PHOTO:
-A real photorealistic landscape photograph (golden hour mountain scene with
-a person silhouetted in foreground) is shown as a beautifully framed image
-with a thin white border, slightly tilted at 5 degrees. Underneath the
-photo, a small floating chip in slate-300 reads "JPEG · 24mm · f/8 · 1/250s".
-A glowing emerald light beam emerges from the photo and arcs into...
-
-CENTER-LEFT — DETERMINISTIC CV:
-A compact glassmorphism panel with emerald-green accents shows the photo
-broken into deterministic measurements: a tiny histogram graph, a sharpness
-focus map heatmap, a face-detection bounding box, and EXIF text. The panel
-emits a glowing "grounding evidence" beam (emerald, with the words floating
-along it in slate-300 italic) that arcs into the giant center.
-
-CENTER (40% of width, the visual hero, dramatically lit) — GEMMA 4:
-A large hovering hexagonal node with bright electric-blue inner glow and a
-soft outer halo. The "G" logo or "GEMMA 4 E4B" wordmark sits in the center
-in bold white. Around the hexagon edges, six small floating chips orbit it
-like satellites, each with a thin connecting line: "Vision" "Schema JSON"
-"Multi-image" "Grounded reasoning" "Streaming + refusal" "Action tokens".
-A subtle "via Ollama · Q4_K_M" caption drifts beneath. The entire node
-casts a soft electric-blue ambient glow on the surrounding scene.
-
-CENTER-RIGHT — ZOD VALIDATION:
-A small frosted-glass diamond with violet accent showing a green checkmark
-and the text "v2 schema · 100% pass". The output beam continues right.
-
-RIGHT THIRD — THE OUTPUTS:
-A cluster of four small UI mockup cards shown at slight 3D angles like
-playing cards being dealt, each rendering a real-looking screenshot:
-- A scored photo with amber numbered pins overlaid
-- A mentor chat bubble interface with an avatar
-- An XMP file icon with "→ Lightroom" arrow showing star ratings
-- An HTML "Privacy Report" certificate document
-
-ATMOSPHERIC DETAILS: Faint particles flow between stages along the light
-beams. The center Gemma node is the brightest element by far — everything
-else is moodier, lit by reflected glow from the model.
-
-WORDMARK: "LENS" in clean white serif top-left. "From pixels to coaching
-in 22 seconds · all on your Mac" caption bottom-center in slate-300 italic.
-
-Style references: anthropic.com Claude marketing visuals, vercel.com edge
-function diagrams, the Apple keynote slides showing data flowing through
-Apple Intelligence. Cinematic, premium, atmospheric.
-
-Avoid: flat box-and-arrow look, clip-art, plain colored rectangles,
-sterile infographic style. Treat this like a movie poster for Gemma 4.
-```
-
-**[INSERT DIAGRAM 3 IMAGE HERE]**
+Current implementation uses the browser's Web Speech API for text-to-speech output, enabling the PWA to deliver voice feedback without additional dependencies. The architectural roadmap is direct audio ingestion via E4B's native conformer encoder, eliminating the browser-API dependency for fully offline bidirectional voice interaction.
 
 ---
 
-Six Gemma 4 capabilities do the heavy work:
+## Demonstration
 
-**Native multimodal vision** — image and text in a single inference call.
+The 3-minute video demonstrates:
 
-**Schema-enforced JSON sampling** — Ollama's `format` parameter constrains generation at the token level. v2 schema (scores, boxes, observations, evidence, rationale) enforced in one call.
+1. **Persona introduction:** Maya, a low-vision artisan in rural India who knits scarves. She knows her work by touch but can't judge her photos.
 
-**Multi-image prompting** — Compare Two sends both photos in one message; model picks the keeper with reasoning.
+2. **Core demo:** Upload a product photo. Hear the AI describe what it sees, confirm colors, identify framing issues, and coach spatial adjustments.
 
-**Glass Box reasoning** — every critique exposes Observations, Reasoning Steps, and Priority Fixes (same schema that won v1's Education track). CV signals (EXIF, histogram, sharpness) feed the prompt; "underexposed by 0.7 EV" cites a measured value.
+3. **Retake flow:** Second photo scores higher. Alt-text and listing copy generated.
 
-**Streaming + refusal awareness** — live token stream; `is_refusal` field lets the model decline ambiguous content with a typed reason.
+4. **Offline proof:** Airplane mode toggled on-camera. Analysis runs identically — no internet required.
 
-**Function-calling-style action tokens** — mentor emits `<<show_pin:N>>` / `<<jump_to_tab:X>>`; client renders clickable chips.
+5. **Technical walkthrough:** Why E4B, why Ollama, why schema enforcement matters.
 
-Three more ride the same architecture: **mentor chat** with 5-turn context + voice I/O; **multilingual output** in 8 UI languages (140+ via Gemma); a **"Deep Critique" toggle** for stepwise rationale.
-
----
-
-## Technology Decisions and What I Evaluated
-
-**DIAGRAM 4 — Runtime Evaluation Matrix:**
-
-```
-A premium engineering decision log — visually rich, not a flat table. Style
-references: Linear's release notes pages, Vercel's product comparison pages,
-Stripe's pricing comparison cards. Dark navy background (#0f172a) with
-moody atmospheric lighting. 16:9 aspect ratio. Confident, calm, judge-credible.
-
-LAYOUT: Four 3D floating cards stacked at a slight isometric angle (10°
-tilt), arranged from top to bottom with a slight overlap. Each card has
-frosted glass material treatment with a unique colored glow that hints at
-its status. The cards visually descend in opacity so the chosen tech
-(Ollama, top) is the brightest and the dropped one (Cactus, bottom) is
-faded and slightly desaturated.
-
-TITLE above the cards in slate-200 with subtle glow:
-"Runtime Evaluation — What We Picked and Why"
-Subtitle in slate-400 italic: "Hackathon-honest. No claims we can't back."
-
-CARD 1 (TOP, brightest, EMERALD glow, large bold green checkmark badge
-floating off the left edge):
-Tech: "OLLAMA" in giant bold white text
-Tag: emerald chip "PRIMARY RUNTIME · SHIPPING"
-Body text in slate-300:
-"Production runtime serving Gemma 4 for every critique. Uses: format
-JSON enforcement at token level, SSE streaming, multimodal images array
-(multi-image for Compare Two), eval_count telemetry, keep-alive warm
-retention, unified Mac/Win/Linux deployment via localhost:11434."
-
-CARD 2 (CYAN glow, BLUE info badge):
-Tech: "llama.cpp" in bold white
-Tag: cyan chip "BENCHMARK"
-Body: "Quantization study (Q4_K_M / Q5_K_M / Q8_0) on Apple Silicon.
-Informed our Q4_K_M production choice. Study in repo."
-
-CARD 3 (CYAN glow, info badge):
-Tech: "LiteRT-class via WebLLM/MLC" in bold white
-Tag: cyan chip "OPT-IN TIER 2"
-Body: "In-browser Gemma 2B fallback for users without Ollama. Working
-under WebGPU. Gated behind ?tier2 flag — hardware-dependent."
-
-CARD 4 (BOTTOM, faded/desaturated, ROSE-RED strikethrough badge):
-Tech: "Cactus" in slightly muted gray
-Tag: rose chip "EVALUATED & DROPPED"
-Body: "React Native + proprietary .cact format misalign with our
-React-web + Electron stack. Documented the decision rather than
-forcing the fit. Honesty > forcing a wrong-stack integration."
-
-BOTTOM BANNER (full width, subtle electric-blue gradient, premium feel):
-"Targeting: Main Track + Ollama Special Tech. Stretch: Safety & Trust."
-
-ATMOSPHERIC DETAILS: Faint particles or grid lines in background. Subtle
-volumetric light pouring in from upper-left. The cards should feel like
-they're hovering with depth, not pasted flat.
-
-Style references: Linear changelog cards, Vercel pricing tier comparison,
-Apple keynote feature comparison slides. Premium, confident, atmospheric.
-
-Avoid: flat 2D table appearance, clip-art icons, generic infographic look,
-plain rectangles in a row.
-```
-
-**[INSERT DIAGRAM 4 IMAGE HERE]**
+The video prioritizes emotional clarity (hands, craft, transformation) over feature exhaustiveness.
 
 ---
 
-**Ollama** — primary runtime. Specific capabilities used: `format` schema-enforced JSON at token level, SSE streaming, multimodal `images` array (multi-image for Compare Two), token-usage telemetry, `keep-alive` warm retention, unified Mac/Win/Linux via `localhost:11434`. `ollama pull gemma4` gives users the same Q4_K_M weights.
+## Impact
 
-**llama.cpp** — quantization benchmarks (Q4/Q5/Q8) on Apple Silicon. Measures; doesn't serve.
+**Digital Equity & Inclusivity Track:**
 
-**LiteRT** — Three-way spike (MediaPipe, WebLLM/MLC, Transformers.js) picked WebLLM (LiteRT-class via MLC). Shipped as **Tier 2** in-browser fallback. Memory contention with Ollama on smaller Macs gated it behind `?tier2`. Tier 1 (Ollama) is production; Tier 2 is two-Gemma-variant proof.
+L.E.N.S. addresses a genuine market exclusion. Only 1% of Indian handloom weavers and craftspeople currently sell online (IDR, 2024). Only 20% have received any digital selling training. Many have low vision — cataracts are endemic in rural South Asia.
 
-**Cactus** — evaluated, dropped. React Native + proprietary `.cact` format misalign with our stack.
+We didn't guess at this use case. Real organizations support blind artisans professionally:
 
-**Track targeting (honest):** Primary fit is **Main + Ollama Special Tech** — Ollama serves Gemma 4 for every critique. LiteRT-class via Tier 2 (WebLLM/MLC). Cactus + Unsloth not architectural fits.
+- **The Blind Woodsman** — professional woodworker who is legally blind
+- **John Bramblitt** — tactile painter with extensive press coverage
+- **Oaknna Foundation "Art by Blind"** — trains blind artisans for market-ready work
+- **Gifted Back** — non-profit selling handmade goods by blind/low-vision creators
+- **RNIB** — Royal National Institute of Blind People supports artisan employment
 
----
+L.E.N.S. doesn't require these artisans to use cloud services, pay subscriptions, or have reliable internet. The product works where they live.
 
-## Vault Mode — Honest Trust Claims
-
-**DIAGRAM 5 — Vault Mode Trust Stack:**
-
-```
-A dramatic, cinematic visualization centered on the metaphor of a literal
-vault. Dark navy background (#0f172a) with rich AMBER accent lighting
-(#f59e0b). 16:9 aspect ratio. Style references: 1Password marketing
-visuals, Apple's privacy.apple.com hero pages, Stripe security page.
-
-CENTER LEFT (50% of width) — THE VAULT METAPHOR:
-A photorealistic 3D rendering of a heavy modern vault door, dark brushed
-metal with amber LED status lights along the edges, partially open at a
-dramatic 3/4 angle. Through the doorway you can faintly see a softly-lit
-interior with hovering geometric shapes representing photos (small tilted
-photo frames floating). The vault door has a subtle "LENS" wordmark
-etched on it. Amber glow spills out of the vault into the surrounding
-darkness, casting long dramatic shadows.
-
-A small glowing chip floats in the foreground center labeled
-"VAULT MODE · ACTIVE" in amber, with a small green dot.
-
-CENTER RIGHT (50% of width) — THE TRUST STACK:
-Five floating horizontal cards arranged vertically with subtle isometric
-tilt, each with frosted-glass material and amber edge glow. They appear
-to hover IN FRONT of the vault, suggesting the layers of trust the vault
-provides. Top to bottom:
-
-LAYER 1: "🔒 NETWORK EGRESS BLOCK"
-  · "fetch() interceptor — only localhost:11434 allowed"
-
-LAYER 2: "🛡️ OS-LEVEL GUIDANCE"
-  · "Pairs with Little Snitch / firewall / airplane mode"
-
-LAYER 3: "⛓️ HASH-CHAINED AUDIT LOG"
-  · "SHA-256 chain · tampering breaks the seal"
-
-LAYER 4: "📸 PER-PHOTO AUTHENTICITY HASH"
-  · "shasum -a 256 verifies the exact photo content"
-
-LAYER 5 (bottom, slightly emphasized with brighter glow):
-  "🌍 EXIF SANITIZATION · GPS STRIP"
-  · "One-click privacy for journalists, NGO field workers"
-
-Note: the emoji icons inside the cards should look like clean modern
-glyphs, not emoji-style. Render as embossed or etched marks.
-
-ABOVE THE STACK, a small slate-300 italic caption:
-"What Vault Mode does NOT claim:"
-Below in dim slate-500 with strikethrough lines:
-"× Forensic chain of custody  × OS-compromise resistance  × Hardware air-gap"
-
-BOTTOM BANNER (full width, deep amber gradient):
-"Built for photographers under NDA. Output: a Privacy Report your client
-can verify. Honest threat model in the repo."
-
-ATMOSPHERIC DETAILS: Volumetric amber light beams emanating from the vault.
-A few dust particles drifting in the light. A faint photographer silhouette
-visible far in the background, suggesting the user this is built for.
-
-Style: dramatic, cinematic, premium. Like a movie poster for a privacy
-product. NOT a clip-art shield with arrows. NOT a flat infographic.
-The vault metaphor should be the visual anchor — believable, beautiful,
-slightly mysterious. Think Mission Impossible meets minimalist product design.
-```
-
-**[INSERT DIAGRAM 5 IMAGE HERE]**
+**Sighted photographers** also benefit — the same engine provides 5-axis critique, spatial annotations, and mentor chat — but the accessibility use case is what distinguishes L.E.N.S. from generic "AI photo critique" tools.
 
 ---
 
-No overclaiming. Vault Mode: app-level network blocking, OS-level verification guidance, hash-chained audit log exportable as a Privacy Report (with per-photo SHA-256 authenticity hashes for client verification), and a one-click **EXIF strip** that removes GPS coords before sharing — for journalists and NGO documentarians. Not forensic-grade — full threat model in the repo.
+## Roadmap
+
+**Phase 2: Native Audio Ingestion**
+- Integrate E4B's conformer encoder for bidirectional voice without Web Speech API
+- Eliminate browser dependency for fully offline voice interaction
+
+**Phase 3: Marketplace Integration**
+- Direct upload to Etsy/eBay/Shopify via API with pre-generated alt-text and tags
+- Photo-to-listing pipeline in one voice-guided session
+
+**Phase 4: Haptic Feedback**
+- Phone vibration when composition is optimal
+- Enables "feeling" the perfect shot for users who can't see the screen
 
 ---
 
-## Cloud-to-Edge: A Measured Port
+## Acknowledgments
 
-**DIAGRAM 6 — Cloud → Edge Transformation:**
-
-```
-A cinematic transformation visualization — the visual story of a product
-moving from the cloud onto the photographer's own laptop. 16:9 aspect ratio.
-Dark navy background (#0f172a) with dramatic side-lighting. Style:
-Apple keynote "before/after" comparison slide meets a movie before/after
-poster.
-
-LAYOUT: Split frame, but not equal halves. Left third is the "cloud past",
-right two-thirds is the "edge present" with a bold transformation moment
-in the middle.
-
-LEFT THIRD (35% width) — "v1 · CLOUD" (subtitle "Photography Coach · Dec 2025"):
-Atmosphere: cooler, slightly muted, distant. A photorealistic illustration
-of the Earth from low orbit at night, with bright glowing data center
-clusters and a dotted line tracing a photo's data path from a small laptop
-icon up to a cloud. Subtle teal-blue glow. Feels distant, expensive, opaque.
-
-A small frosted card overlays the lower-left of this section showing:
-"💸 ~$0.002/photo · ☁️ Internet required · 🌫️ Opaque thinking · ⚪ No audit"
-
-Below the cloud, a small gold trophy icon with the text:
-"🏆 DeepMind Vibe Code Winner"
-
-CENTER STRIP (6% width, the transformation moment):
-A dramatic vertical light-beam barrier transitioning from cool teal on the
-left to warm electric-blue on the right. Inside the beam, a small badge
-floating with bold uppercase text "PORT TO EDGE" and below in slate-300
-small italic: "Same idea. Rebuilt local."
-
-RIGHT TWO-THIRDS (59% width) — "v2 · EDGE" (subtitle "LENS · May 2026"):
-Atmosphere: warm, intimate, close. A photorealistic 3D rendering of a
-MacBook on a wooden desk in a photographer's studio, screen showing the
-LENS app with a critique in progress. Soft warm window light from one side.
-A subtle electric-blue glow emanates from the laptop suggesting the local
-AI is alive inside it. A camera and a coffee mug sit nearby — the
-photographer's actual workspace.
-
-Floating around the laptop are 5–7 small glassmorphism chips, each with a
-green checkmark, arranged like leaves catching the warm light:
-  ✓ "Local Gemma 4 E4B via Ollama"
-  ✓ "$0/photo · works offline"
-  ✓ "Cited evidence (CV grounding)"
-  ✓ "Hash-chained audit + Privacy Report"
-  ✓ "Voice mentor · 8 languages"
-  ✓ "Compare Two · Multi-image"
-  ✓ "Two-Gemma-variant architecture"
-
-Below the laptop, a confident solid electric-blue badge:
-"Gemma 4 Good · Targeting Main + Ollama tracks"
-
-BOTTOM BANNER (full width, deep slate background with subtle blue gradient):
-"Same product idea. Rebuilt local. Proven private. Honest about what we
-cut, what we kept, and what we added."
-
-ATMOSPHERIC DETAILS: The right side feels significantly warmer, brighter,
-and closer than the left. The composition draws the viewer's eye left-to-right,
-ending on the warm laptop scene. Use depth of field to emphasize the
-transition.
-
-Style references: Apple's Mac Studio launch graphics, the Linear "v1 → v2"
-release announcement style, Stripe's annual update visuals. Cinematic,
-confident, story-driven.
-
-Avoid: flat side-by-side rectangles, identical column treatment, clip-art,
-generic infographic boxes.
-```
-
-**[INSERT DIAGRAM 6 IMAGE HERE]**
+Thanks to the Gemma 4 team at Google DeepMind for releasing E4B with a native audio encoder — the technical foundation that makes this possible. Thanks to the Ollama project for making local inference accessible to developers without ML infrastructure. Built for the Gemma 4 Good Hackathon.
 
 ---
 
-v1 (Photography Coach) won DeepMind's Vibe Code Education track in Dec 2025 — same Glass Box schema, but cloud-bound. LENS keeps the schema intact (continuity for any returning judge), replaces cloud Gemini with local Gemma 4 E4B, and adds CV grounding, Vault, batch, mentor chat, voice, multilingual, Compare Two. I've used LENS on my own weekend shoots — it surfaces composition flaws I'd missed for years. A [comparison harness](https://github.com/prasadt1/photography-coach-gemma4/tree/main/spike) runs both versions on the same golden set.
-
----
-
-## Challenges and Honest Tradeoffs
-
-**Schema parity.** Gemma 4 lacks Gemini's `responseSchema`. Conformance via prompt engineering + runtime Zod validation.
-
-**Quality gap.** A 4B edge model won't match frontier cloud on nuanced judgment. The comparison harness quantifies per-axis deviation rather than hiding it.
-
-**Batch memory.** Web caps batches at 50, sequential to prevent Ollama overload. Desktop batch mode (planned) supports larger sets with checkpoint/resume.
-
-**Mobile inference gap.** True offline on-device Gemma 4 is Phase 2.
-
----
-
-## How to Run
-
-**Prerequisites:** macOS, Windows, or Linux with 16GB+ RAM
-
-```bash
-# 1. Install Ollama (if not already installed)
-curl -fsSL https://ollama.com/install.sh | sh
-
-# 2. Pull Gemma 4 E4B model (9.6GB, one-time download)
-ollama pull gemma-4-e4b
-
-# 3. Start Ollama server
-ollama serve
-
-# 4. Clone and setup Photography Coach
-git clone https://github.com/prasadt1/photography-coach-gemma4
-cd photography-coach-gemma4
-npm install
-
-# 5. Run web app (localhost:5173)
-npm run dev
-
-# 6. Build desktop app (optional)
-npm run electron:build
-```
-
-**First analysis:** ~30-40s (warm-up included). Subsequent ~20-25s.
-**Batch mode:** Up to 50 photos → sequential → export all XMP as ZIP.
-**Android:** Install PWA → any photo app → Share → Photography Coach.
-**iOS companion:** [Tailscale](https://tailscale.com) on Mac + iPhone → `npm run dev -- --host` → open `http://YOUR_TAILSCALE_HOSTNAME:5173` in Safari → Add to Home Screen. Works from any network.
-
----
-
-## Reproducibility
-
-Every claim is verifiable from the public repo: schema spec (`docs/specs/02-output-schema.md`), CV grounding (`services/cvService.ts`), Vault enforcement (`electron/vault-policy.ts`), XMP export (`services/xmpService.ts` + 76 passing tests), spike results (`spike/spike-1-results.md`), and 8 golden test photos in `spike/`. Clone, run, inspect.
-
----
-
-## Mobile Strategy — Honest Scope, Clear Roadmap
-
-Most amateur photographers shoot on phone. Two phases:
-
-**Today — Companion PWA:** Installable on iOS and Android. Android Web Share Target gives a native share-sheet experience. iOS PWA + Tailscale makes the app reachable anywhere the Mac is online.
-
-**Phase 2 — Native:** iOS via Core ML + Metal running quantized Gemma on-device. Android follows on Pixel 8+ / Galaxy S24+. Current build proves the interaction model honestly, without overpromising offline.
-
----
-
-
-
-Every photographer deserves a mentor. LENS puts one on every laptop — free, private, honest. Built on Gemma 4 via Ollama. The mentor I wished I'd had, now yours.
-
----
-
----
-
-## Before Final Submission
-
-**ACTION ITEMS:**
-
-1. **Deploy live demo** to GitHub Pages, Vercel, or Netlify → update `[DEMO_URL]` on line 9
-2. **Record 3-minute demo video** showing:
-   - Single photo analysis (web)
-   - Batch mode with XMP export
-   - Vault Mode desktop app
-   - iOS PWA on iPhone
-   Upload to YouTube → update `[VIDEO_URL]` on line 10
-3. **Generate diagrams** using the 6 diagram prompts in this document:
-   - Use Gemini Image Generator, DALL-E, or Excalidraw
-   - Insert PNGs at `[INSERT DIAGRAM X IMAGE HERE]` markers
-   - Remove diagram prompt blocks after insertion
-4. **Spell-check and final proofread** (all technical claims verified as of May 7, 2026)
-
-_Word count (prose only, excluding diagram prompts and this TODO block): ~1,443 (under 1,500 limit with 57-word safety margin)_
+*Word count: ~1,380 (under 1,500 limit)*

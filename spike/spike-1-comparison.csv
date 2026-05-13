@@ -1,29 +1,6 @@
-photo,gemini_composition,gemini_lighting,gemini_technique,gemini_creativity,gemini_subject,gemma_composition,gemma_lighting,gemma_technique,gemma_creativity,gemma_subject,delta_max,within_tolerance,notes
-test-landscape.jpg,N/A,N/A,N/A,N/A,N/A,6.5,4.0,5.5,5.0,3.5,N/A,SKIPPED,"Gemini comparison skipped: no Gemini API key available at time of spike. Gemma scores recorded from spike-1-validation.json."
-test-portrait.jpg,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,SKIPPED,"Gemini API key required for baseline comparison. See spike-1-results.md §Known Gaps."
-test-macro.jpg,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,SKIPPED,"Gemini API key required for baseline comparison."
-test-lowquality.jpg,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,SKIPPED,"Gemini API key required for baseline comparison."
-test-edgecase.jpg,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,SKIPPED,"Gemini API key required for baseline comparison."
-
-# KNOWN GAP — spike-1-comparison.csv
-# ====================================
-# The ±2-point Gemini vs Gemma comparison was intentionally deferred.
-#
-# Reason: No Gemini API key was available on the development machine at the time of
-# Spike 1 execution. The previous winning project (photography-coach-ai-gemini3)
-# used a project-specific key that was not available in this environment.
-#
-# Impact assessment:
-#   - Spike 1 GO/NO-GO decision was based on schema validation (5/5 pass) and
-#     absolute score reasonableness, not relative comparison.
-#   - The ±2-point tolerance check is a quality gate, not a blocking requirement for
-#     the hackathon submission.
-#
-# Mitigation:
-#   - Gemma 4 scores were manually reviewed against known-good reference photographs
-#     and judged reasonable by the lead developer.
-#   - Integration tests (tests/integration/ollama.test.ts) verify score range (0-10)
-#     and schema validity on every CI run.
-#   - Full Gemini comparison can be run post-submission if an API key becomes available.
-#
-# Status: DOCUMENTED SKIP — does not block Days 2-5.
+photo,gemini_composition,gemini_lighting,gemini_technique,gemini_creativity,gemini_subject,gemma_composition,gemma_lighting,gemma_technique,gemma_creativity,gemma_subject,delta_max,delta_avg,within_tolerance,gemma_latency_s,gemini_latency_s,notes
+test-landscape.jpg,N/A,N/A,N/A,N/A,N/A,3.5,2.5,4,3,3,N/A,N/A,N/A,168.4,2.1,"GEMINI_ERROR: Parse failed — model returned unparseable response"
+test-portrait.jpg,N/A,N/A,N/A,N/A,N/A,4,3,5,1,2,N/A,N/A,N/A,162.2,2.2,"GEMINI_ERROR: Parse failed — model returned unparseable response"
+test-lowquality.jpg,N/A,N/A,N/A,N/A,N/A,1.5,2,2.5,1,1,N/A,N/A,N/A,107.2,1.9,"GEMINI_ERROR: Parse failed — model returned unparseable response"
+test-street.jpg,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,16.0,0.5,"GEMMA_ERROR: Ollama HTTP 500: {"error":"Failed to create new sequence: failed to process inputs: image: unknown format"}"
+test-macro.jpg,N/A,N/A,N/A,N/A,N/A,4,6,5,2,2,N/A,N/A,N/A,225.4,2.6,"GEMINI_ERROR: Parse failed — model returned unparseable response"

@@ -20,7 +20,7 @@ function createWindow(mode: 'studio' | 'vault'): void {
     height: 800,
     minWidth: 900,
     minHeight: 600,
-    title: `Photography Coach — ${mode === 'vault' ? '🔒 Vault Mode' : '⚡ Studio Mode'}`,
+    title: `LENS — ${mode === 'vault' ? '🔒 Vault Mode' : '⚡ Studio Mode'}`,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -38,9 +38,13 @@ function createWindow(mode: 'studio' | 'vault'): void {
     console.log('[main] Vault Mode: network isolation active');
   }
 
-  // Load React renderer from the Vite build output.
-  // electron-dist/ is one level below the project root, so ../dist/ is correct.
-  mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+  // In dev mode load from Vite dev server (HMR); in prod load built files.
+  const devServerUrl = process.env.VITE_DEV_SERVER_URL;
+  if (devServerUrl) {
+    mainWindow.loadURL(devServerUrl);
+  } else {
+    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+  }
 
   mainWindow.on('closed', () => {
     mainWindow = null;

@@ -1,0 +1,125 @@
+{
+  "timestamp": "2026-05-07T23:54:37.343Z",
+  "gemmaModel": "gemma4:latest",
+  "geminiModelsAvailable": [
+    "gemini-2.5-flash",
+    "gemini-2.0-flash",
+    "gemini-1.5-flash"
+  ],
+  "results": [
+    {
+      "photo": "test-landscape.jpg",
+      "gemma": {
+        "success": true,
+        "scores": {
+          "composition": 3.5,
+          "lighting": 2.5,
+          "technique": 4,
+          "creativity": 3,
+          "subjectImpact": 3
+        },
+        "latencyMs": 168421,
+        "rawText": "```json\n{\n  \"schema_version\": \"2.0\",\n  \"model_id\": \"gemma-4-e4b\",\n  \"scores\": {\n    \"composition\": 3.5,\n    \"lighting\": 2.5,\n    \"technique\": 4.0,\n    \"creativity\": 3.0,\n    \"subjectImpact\": 3.0\n  },\n  \"critique\": {\n    \"composition\": \"The composition is extremely simple and centered, which is safe ",
+        "promptTokens": 625,
+        "completionTokens": 1200
+      },
+      "gemini": {
+        "success": false,
+        "error": "Parse failed — model returned unparseable response",
+        "latencyMs": 2058,
+        "model": "gemini-2.5-flash",
+        "rawText": "Here is the JSON requested:\n"
+      },
+      "delta": null
+    },
+    {
+      "photo": "test-portrait.jpg",
+      "gemma": {
+        "success": true,
+        "scores": {
+          "composition": 4,
+          "lighting": 3,
+          "technique": 5,
+          "creativity": 1,
+          "subjectImpact": 2
+        },
+        "latencyMs": 162235,
+        "rawText": "```json\n{\n  \"schema_version\": \"2.0\",\n  \"model_id\": \"gemma-4-e4b\",\n  \"scores\": {\n    \"composition\": 4.0,\n    \"lighting\": 3.0,\n    \"technique\": 5.0,\n    \"creativity\": 1.0,\n    \"subjectImpact\": 2.0\n  },\n  \"critique\": {\n    \"composition\": \"The composition is extremely minimal, relying solely on a center",
+        "promptTokens": 625,
+        "completionTokens": 1200
+      },
+      "gemini": {
+        "success": false,
+        "error": "Parse failed — model returned unparseable response",
+        "latencyMs": 2219,
+        "model": "gemini-2.5-flash",
+        "rawText": "Here is the JSON requested:\n"
+      },
+      "delta": null
+    },
+    {
+      "photo": "test-lowquality.jpg",
+      "gemma": {
+        "success": true,
+        "scores": {
+          "composition": 1.5,
+          "lighting": 2,
+          "technique": 2.5,
+          "creativity": 1,
+          "subjectImpact": 1
+        },
+        "latencyMs": 107233,
+        "rawText": "```json\n{\n  \"schema_version\": \"2.0\",\n  \"model_id\": \"gemma-4-e4b\",\n  \"scores\": {\n    \"composition\": 1.5,\n    \"lighting\": 2.0,\n    \"technique\": 2.5,\n    \"creativity\": 1.0,\n    \"subjectImpact\": 1.0\n  },\n  \"critique\": {\n    \"composition\": \"The image lacks any discernible compositional elements (leading ",
+        "promptTokens": 625,
+        "completionTokens": 1200
+      },
+      "gemini": {
+        "success": false,
+        "error": "Parse failed — model returned unparseable response",
+        "latencyMs": 1907,
+        "model": "gemini-2.5-flash",
+        "rawText": "Here is the JSON requested:\n"
+      },
+      "delta": null
+    },
+    {
+      "photo": "test-street.jpg",
+      "gemma": {
+        "success": false,
+        "error": "Ollama HTTP 500: {\"error\":\"Failed to create new sequence: failed to process inputs: image: unknown format\"}",
+        "latencyMs": 16039
+      },
+      "gemini": {
+        "success": false,
+        "error": "Gemini HTTP 400: {\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Unable to process input image. Please retry or report in https://developers.generativeai.google/guide/troubleshooting\",\n    \"status\": \"INVALID_ARGUMENT\"",
+        "latencyMs": 481
+      },
+      "delta": null
+    },
+    {
+      "photo": "test-macro.jpg",
+      "gemma": {
+        "success": true,
+        "scores": {
+          "composition": 4,
+          "lighting": 6,
+          "technique": 5,
+          "creativity": 2,
+          "subjectImpact": 2
+        },
+        "latencyMs": 225424,
+        "rawText": "```json\n{\n  \"schema_version\": \"2.0\",\n  \"model_id\": \"gemma-4-e4b\",\n  \"scores\": {\n    \"composition\": 4.0,\n    \"lighting\": 6.0,\n    \"technique\": 5.0,\n    \"creativity\": 2.0,\n    \"subjectImpact\": 2.0\n  },\n  \"critique\": {\n    \"composition\": \"The placement of the single element is too centered, which creat",
+        "promptTokens": 625,
+        "completionTokens": 1200
+      },
+      "gemini": {
+        "success": false,
+        "error": "Parse failed — model returned unparseable response",
+        "latencyMs": 2559,
+        "model": "gemini-2.5-flash",
+        "rawText": "Here is the JSON requested:\n"
+      },
+      "delta": null
+    }
+  ]
+}

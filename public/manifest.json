@@ -1,8 +1,9 @@
 {
-  "name": "Photography Coach",
-  "short_name": "Photo Coach",
-  "description": "AI-powered photography coaching with Gemma 4 — local, private, offline-capable",
+  "name": "LENS - Photography Coach",
+  "short_name": "LENS",
+  "description": "Local Edge-Native Studio for photography coaching with Gemma 4 — private, offline-capable",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#111827",
@@ -22,5 +23,18 @@
     }
   ],
   "categories": ["photo", "productivity"],
-  "screenshots": []
+  "screenshots": [],
+  "share_target": {
+    "action": "/share-target",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "photo",
+          "accept": ["image/jpeg", "image/png", "image/webp", "image/gif", "image/*"]
+        }
+      ]
+    }
+  }
 }

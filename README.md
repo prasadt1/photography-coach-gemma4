@@ -1,6 +1,6 @@
-# 📷 Photography Coach – Gemma 4 Edition
+# 📷 L.E.N.S. — Voice-Guided Photography for Artisans
 
-**Professional AI Photography Coaching Running 100% Locally**
+**Helping artisans get the price their work deserves**
 
 [![Gemma 4 E4B](https://img.shields.io/badge/Powered%20by-Gemma%204%20E4B-4285F4?style=for-the-badge&logo=google)](https://deepmind.google/technologies/gemma/gemma-4/)
 [![Ollama](https://img.shields.io/badge/Runtime-Ollama-000000?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxMCIgZmlsbD0id2hpdGUiLz48L3N2Zz4=)](https://ollama.com)
@@ -12,30 +12,50 @@
 
 ## 🏆 Built for Gemma 4 Good Hackathon
 
-An intelligent photography coaching system powered by **Google Gemma 4 E4B** running entirely on your device. Get professional-grade critique, spatial annotations, and personalized recommendations—**with zero cloud dependencies and complete privacy**.
+**L.E.N.S. (Local Edge-Native Studio)** is a voice-guided AI photography coach that helps blind and low-vision artisans capture marketplace-quality product photos — so they can sell what they make at the price their work deserves. **Entirely on-device, with no internet, no subscription, and no cloud.**
 
-**Three platforms. One AI. Full control.**
-- 🌐 **Web App** (Studio Mode) – Batch processing, cloud-optional
-- 🖥️ **Desktop App** (Vault Mode) – Network-isolated, cryptographically air-gapped
-- 📱 **iOS PWA** – Mobile critique with full vision support
+### Target Tracks
+- 🎯 **Digital Equity & Inclusivity** (Primary)
+- 🎯 **Ollama Special Technology Track** (Primary)
+- 🏅 **Main Track** (Secondary)
+
+### Why This Matters
+
+Blindness exists on a clinical spectrum: **only 10–15% of legally blind individuals have no light perception**. The remaining 85–90% retain varying degrees of residual vision — light/dark perception, color discrimination, large-shape recognition, or restricted fields. L.E.N.S. is designed for this dominant population: **low-vision artisans who can interact with a screen using magnification but cannot reliably evaluate the qualities of their own product photographs** that determine whether sighted buyers click and convert.
+
+### Why Gemma 4 E4B
+
+We selected **Gemma 4 E4B** specifically because it is one of only two models in the Gemma 4 family with a **native 300M-parameter audio encoder** (alongside E2B). The larger 26B and 31B variants offer superior critique quality but lack native audio input, which would force a separate Whisper or cloud STT pipeline — breaking our offline-first promise and adding latency and deployment weight that disproportionately hurts the users we built this for. E4B's single-model architecture is what makes a voice-guided photography coach for blind and low-vision artisans **feasible on commodity hardware today**.
 
 ---
 
 ## ✨ What Makes This Different
 
-### 🔒 Privacy-First Architecture
+### 🎙️ Artisan Studio (Hero Feature)
 
-**Vault Mode** (Desktop only):
-- **Cryptographic network isolation** – OS-level egress guard prevents ANY network traffic
-- **Hash-chained audit log** – Tamper-evident record of every analysis
-- **Zero-knowledge architecture** – Photos never leave your machine
-- **Use case:** Confidential client work, NDAs, competitive intelligence
+**Voice-guided photography coaching for marketplace sellers:**
 
-**Studio Mode** (Web/Desktop):
-- **Local-first with cloud fallback** – Ollama primary, optional Gemini enhancement
-- **Batch processing** – Analyze 50-200 photos with outlier detection
-- **XMP export for Lightroom** – Star ratings, color labels, IPTC keywords
-- **Use case:** Wedding photographers, stock photography, portfolio review
+- **Descriptive-first feedback:** "I see a blue hand-knit scarf on a wooden surface..." before any critique
+- **Spatial guidance:** "Move your phone back 6 inches to capture the full length" — not percentages
+- **Color confirmation:** "The blue is reading accurately — similar to a clear sky blue" — for users who can't verify colors
+- **Accessibility-optimized prompts:** No jargon (bokeh, rule of thirds) — functional language only
+- **Alt-text generation:** SEO-optimized accessibility descriptions for marketplace listings
+- **Listing copy:** Compelling product descriptions ready to paste
+
+**100% Local Execution (Gemma 4 E4B via Ollama):**
+- No internet required — works in rural/low-connectivity regions
+- No subscription — zero per-photo cost after model download
+- No cloud uploads — photos never leave the device
+- Works offline forever once Ollama is installed
+
+### 📸 Photo Studio (Secondary)
+
+**General photography critique for sighted photographers:**
+- 5-axis scoring (composition, lighting, technique, creativity, subject impact)
+- Spatial bounding boxes pinpointing issues
+- Deterministic CV grounding (EXIF, histogram, focus map)
+- Mentor chat for follow-up questions
+- Compare Two Photos side-by-side analysis
 
 ### 🎯 Professional Features
 

@@ -36,32 +36,57 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// ─── Fetch: cache-first for assets, network-first for Ollama ─────────────────
+// ─── Web Share Target: POST /share-target ─────────────────────────────────────
+// Android sends shared images here. We stash the blob in Cache Storage and
+// redirect to /?shared=1 so the app can pick it up on mount.
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Always network-first for Ollama API (localhost:11434)
-  if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
-    event.respondWith(fetch(event.request));
+  if (event.request.method === 'POST' && url.pathname === '/share-target') {
+    event.respondWith((async () => {
+      const formData = await event.request.formData();
+      const file = formData.get('photo');
+      if (file && file instanceof File) {
+        const cache = await caches.open('shared-image');
+        await cache.put('/shared-image', new Response(file, {
+          headers: { 'Content-Type': file.type || 'image/jpeg' },
+        }));
+      }
+      return Response.redirect('/?shared=1', 303);
+    })());
+    return;
+  }
+});
+
+// ─── Fetch: cache-first for SAME-ORIGIN GET only; everything else passes through ─────
+
+self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
+  // Pass-through (do NOT call respondWith) for:
+  //  - Non-GET requests (POSTs to Gemini, Ollama, etc. — caching breaks them)
+  //  - Cross-origin requests (Gemini API, fonts, CDN, anything off our origin)
+  //  - The /share-target route (handled by the earlier listener)
+  if (
+    event.request.method !== 'GET' ||
+    url.origin !== self.location.origin ||
+    url.pathname === '/share-target'
+  ) {
     return;
   }
 
-  // Cache-first for everything else (JS/CSS/fonts)
+  // Cache-first for SAME-ORIGIN GET (HTML/JS/CSS/fonts/images for the app shell)
   event.respondWith(
-    caches.match(event.request).then(
-      (cached) => cached || fetch(event.request).then((response) => {
-        // Only cache successful GET responses for same-origin assets
-        if (
-          event.request.method === 'GET' &&
-          response.status === 200 &&
-          url.origin === self.location.origin
-        ) {
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(event.request).then((response) => {
+        if (response.status === 200) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
         return response;
-      })
-    )
+      });
+    })
   );
 });

@@ -6,8 +6,8 @@
 
 import React, { useState, useCallback } from 'react';
 import { PhotoAnalysisV2 } from '../types.v2';
-import { generateEnhancementTips, EnhancementTips } from '../services/geminiService';
-import { Sparkles, Key, Loader2, ChevronRight, Lightbulb, Edit3, Camera, Zap } from 'lucide-react';
+import { generateEnhancementTips, generateCorrectedImage, EnhancementTips } from '../services/geminiService';
+import { Sparkles, Key, Loader2, ChevronRight, Lightbulb, Edit3, Camera, Zap, Image as ImageIcon, Download } from 'lucide-react';
 
 interface GeminiEnhancementPanelProps {
   analysis: PhotoAnalysisV2;
@@ -25,6 +25,9 @@ const GeminiEnhancementPanel: React.FC<GeminiEnhancementPanelProps> = ({
   const [loading, setLoading] = useState(false);
   const [tips, setTips] = useState<EnhancementTips | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [imageLoading, setImageLoading] = useState(false);
+  const [enhancedImage, setEnhancedImage] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   // Key is kept in React state only — never written to localStorage or disk
   const handleSaveKey = useCallback((val: string) => setApiKey(val), []);
@@ -60,6 +63,46 @@ const GeminiEnhancementPanel: React.FC<GeminiEnhancementPanelProps> = ({
     }
   };
 
+  const handleGenerateImage = async () => {
+    if (!apiKey.trim()) { setImageError('Please enter your Gemini API key first.'); return; }
+    setImageLoading(true);
+    setImageError(null);
+    setEnhancedImage(null);
+    try {
+      const result = await generateCorrectedImage(
+        imageSrc,
+        imageMimeType,
+        analysis.improvements,
+        apiKey.trim(),
+      );
+      setEnhancedImage(result);
+    } catch (e: any) {
+      const msg = e?.message ?? String(e);
+      if (msg.includes('API_KEY_INVALID') || msg.includes('401') || msg.includes('403')) {
+        setImageError('Invalid API key for image generation.');
+      } else if (msg.includes('quota') || msg.includes('429')) {
+        setImageError('Quota exceeded. Image generation has lower quota than text on the free tier.');
+      } else if (msg.includes('not found') || msg.includes('404')) {
+        setImageError('Image model unavailable on your API key. gemini-3-pro-image-preview may require paid tier access.');
+      } else {
+        setImageError(`Image generation failed: ${msg}`);
+      }
+    } finally {
+      setImageLoading(false);
+    }
+  };
+
+  const handleDownloadImage = () => {
+    if (!enhancedImage) return;
+    const href = enhancedImage.startsWith('data:')
+      ? enhancedImage
+      : `data:image/png;base64,${enhancedImage}`;
+    const a = document.createElement('a');
+    a.href = href;
+    a.download = `enhanced-${Date.now()}.png`;
+    a.click();
+  };
+
   return (
     <div className="space-y-6 animate-fadeIn">
 
@@ -77,8 +120,9 @@ const GeminiEnhancementPanel: React.FC<GeminiEnhancementPanelProps> = ({
               </span>
             </h3>
             <p className="text-slate-400 text-sm leading-relaxed">
-              Get professional post-processing recipes, reframing suggestions, and reshoot notes — 
-              powered by Gemini 2.0 Flash using <strong className="text-slate-300">your own API key</strong>.
+              Get professional post-processing recipes, reframing suggestions, and reshoot notes (Gemini 2.0 Flash) —
+              and optionally generate an AI-corrected preview of your photo (Gemini 3 Pro Image). Powered by{' '}
+              <strong className="text-slate-300">your own API key</strong>.
             </p>
             <p className="text-xs text-slate-500 mt-2">
               Your key is held in memory only — never saved to disk or sent anywhere. Clears on page refresh. Not available in Vault Mode.
@@ -213,6 +257,87 @@ const GeminiEnhancementPanel: React.FC<GeminiEnhancementPanelProps> = ({
             </div>
           )}
 
+        </div>
+      )}
+
+      {/* Image generation section — separate action, separate cost warning */}
+      {tips && (
+        <div className="bg-slate-800/50 border border-purple-700/30 rounded-2xl p-4 md:p-5 space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400 shrink-0">
+              <ImageIcon className="w-5 h-5" />
+            </div>
+            <div className="flex-1">
+              <h4 className="text-white font-bold text-sm mb-1">Want a generated preview of the enhanced photo?</h4>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Gemini 3 Pro Image will generate a corrected version of your photo applying the improvements above.
+                <span className="block mt-1 text-amber-400/80">
+                  ⚠️ Image generation uses more quota than text and may require a paid Gemini tier.
+                </span>
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={handleGenerateImage}
+            disabled={imageLoading || !apiKey.trim()}
+            className="w-full py-3 flex items-center justify-center gap-3 rounded-xl font-semibold text-white
+              bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500
+              disabled:opacity-50 disabled:cursor-not-allowed
+              shadow-lg shadow-purple-500/20 transition-all duration-200"
+          >
+            {imageLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Gemini 3 Pro Image is generating… (~20-40s)
+              </>
+            ) : enhancedImage ? (
+              <>
+                <ImageIcon className="w-5 h-5" />
+                Regenerate
+              </>
+            ) : (
+              <>
+                <ImageIcon className="w-5 h-5" />
+                Generate enhanced image preview
+              </>
+            )}
+          </button>
+
+          {imageError && (
+            <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-3 text-sm text-rose-300">
+              {imageError}
+            </div>
+          )}
+
+          {enhancedImage && (
+            <div className="space-y-3 animate-fadeIn">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[11px] uppercase tracking-wider text-slate-500 mb-1.5">Original</p>
+                  <img src={imageSrc} alt="Original" className="rounded-lg border border-slate-700 w-full h-auto" />
+                </div>
+                <div>
+                  <p className="text-[11px] uppercase tracking-wider text-purple-400 mb-1.5">Enhanced (Gemini 3 Pro)</p>
+                  <img
+                    src={enhancedImage.startsWith('data:') ? enhancedImage : `data:image/png;base64,${enhancedImage}`}
+                    alt="Enhanced"
+                    className="rounded-lg border border-purple-500/40 w-full h-auto"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={handleDownloadImage}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Download enhanced image
+              </button>
+              <p className="text-[11px] text-slate-500 text-center">
+                AI-generated preview — for inspiration. The Editing Recipe above gets you the same look in your editor with full control.
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

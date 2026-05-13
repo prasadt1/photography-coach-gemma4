@@ -15,6 +15,7 @@ interface SpatialOverlayProps {
   show: boolean;
   activeIndex: number | null;
   onHover: (idx: number | null) => void;
+  onPinClick?: (idx: number) => void;
 }
 
 const SEVERITY_STYLES = {
@@ -44,6 +45,7 @@ interface BoxPinProps {
   isActive: boolean;
   onEnter: () => void;
   onLeave: () => void;
+  onClick: () => void;
 }
 
 const SEVERITY_LABEL: Record<string, string> = {
@@ -52,7 +54,7 @@ const SEVERITY_LABEL: Record<string, string> = {
   minor: 'Minor',
 };
 
-const BoxPin: React.FC<BoxPinProps> = ({ box, index, isActive, onEnter, onLeave }) => {
+const BoxPin: React.FC<BoxPinProps> = ({ box, index, isActive, onEnter, onLeave, onClick }) => {
   const [localHover, setLocalHover] = useState(false);
   const active = isActive || localHover;
   const s = SEVERITY_STYLES[box.severity as keyof typeof SEVERITY_STYLES] ?? SEVERITY_STYLES.minor;
@@ -89,13 +91,14 @@ const BoxPin: React.FC<BoxPinProps> = ({ box, index, isActive, onEnter, onLeave 
         onMouseLeave={() => { setLocalHover(false); onLeave(); }}
       >
         <button
+          onClick={onClick}
           className={`flex items-center justify-center
             w-7 h-7 rounded-full text-[11px] font-extrabold select-none
             ring-2 transition-all duration-200 cursor-pointer shadow-lg
             ${s.pin}
             ${active ? 'scale-125 ring-opacity-100' : 'scale-100 ring-opacity-60'}
           `}
-          aria-label={`Issue ${index + 1}: ${box.description}`}
+          aria-label={`Issue ${index + 1}: ${box.description} — click to see details`}
         >
           {index + 1}
         </button>
@@ -103,10 +106,12 @@ const BoxPin: React.FC<BoxPinProps> = ({ box, index, isActive, onEnter, onLeave 
         {/* Tooltip — visible on hover */}
         {active && (
           <div
-            className={`absolute z-50 w-52 rounded-xl bg-slate-900/95 border border-slate-700 shadow-2xl backdrop-blur-md p-3 pointer-events-none
+            className={`absolute z-50 w-56 rounded-xl bg-slate-900/95 border border-slate-700 shadow-2xl backdrop-blur-md p-3
               ${tooltipLeft ? 'right-full mr-2' : 'left-full ml-2'}
               ${tooltipAbove ? 'bottom-0' : 'top-0'}
             `}
+            onMouseEnter={onEnter}
+            onMouseLeave={onLeave}
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-800">
@@ -121,10 +126,17 @@ const BoxPin: React.FC<BoxPinProps> = ({ box, index, isActive, onEnter, onLeave 
             {/* Description */}
             <p className="text-xs font-medium text-slate-200 leading-relaxed mb-2">{box.description}</p>
             {/* Suggestion */}
-            <div className="flex items-start gap-1.5 bg-slate-800/60 rounded-lg p-2">
+            <div className="flex items-start gap-1.5 bg-slate-800/60 rounded-lg p-2 mb-3">
               <span className="text-brand-400 font-bold text-xs flex-shrink-0">→</span>
               <p className="text-[11px] text-brand-200 leading-snug">{box.suggestion}</p>
             </div>
+            {/* Action button */}
+            <button
+              onClick={onClick}
+              className="w-full py-1.5 text-[11px] font-semibold text-brand-400 hover:text-white bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/30 rounded-lg transition-colors"
+            >
+              View in Details →
+            </button>
           </div>
         )}
       </div>
@@ -137,6 +149,7 @@ const SpatialOverlay: React.FC<SpatialOverlayProps> = ({
   show,
   activeIndex,
   onHover,
+  onPinClick,
 }) => {
   if (!show || !boundingBoxes || boundingBoxes.length === 0) return null;
 
@@ -150,6 +163,7 @@ const SpatialOverlay: React.FC<SpatialOverlayProps> = ({
           isActive={activeIndex === i}
           onEnter={() => onHover(i)}
           onLeave={() => onHover(null)}
+          onClick={() => onPinClick?.(i)}
         />
       ))}
     </>

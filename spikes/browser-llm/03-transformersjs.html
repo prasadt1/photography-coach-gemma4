@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Spike: Transformers.js (Gemma 2B)</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; background: #0f172a; color: #e2e8f0; line-height: 1.6; }
+  h1 { color: #f472b6; }
+  .panel { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin: 16px 0; }
+  .stat { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #334155; font-family: monospace; font-size: 13px; }
+  .stat:last-child { border: none; }
+  .stat .label { color: #94a3b8; }
+  .stat .value { color: #fbbf24; }
+  button { background: #ec4899; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; margin: 4px; }
+  button:disabled { background: #475569; cursor: not-allowed; }
+  pre { background: #0f172a; padding: 12px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+  .progress { background: #334155; height: 8px; border-radius: 4px; overflow: hidden; margin: 8px 0; }
+  .progress-fill { background: #f472b6; height: 100%; transition: width 0.2s; }
+</style>
+</head>
+<body>
+<h1>Spike 03: Transformers.js</h1>
+<p>Library: <code>@huggingface/transformers</code> (HF · ONNX runtime, WebGPU/WASM) · Model: <code>onnx-community/gemma-2-2b-it</code></p>
+
+<div class="panel">
+  <div class="stat"><span class="label">Status</span><span id="status" class="value">idle</span></div>
+  <div class="stat"><span class="label">Backend</span><span id="backend" class="value">—</span></div>
+  <div class="stat"><span class="label">Model load time</span><span id="load-time" class="value">—</span></div>
+  <div class="stat"><span class="label">First token (TTFT)</span><span id="ttft" class="value">—</span></div>
+  <div class="stat"><span class="label">Tokens/sec</span><span id="tps" class="value">—</span></div>
+  <div class="stat"><span class="label">Total tokens</span><span id="tokens" class="value">—</span></div>
+  <div class="progress"><div id="progress-fill" class="progress-fill" style="width: 0%"></div></div>
+</div>
+
+<button id="load-btn" onclick="loadModel()">1. Load Gemma 2B (~2 GB first time)</button>
+<button id="run-btn" onclick="runInference()" disabled>2. Run photo critique test</button>
+
+<div class="panel">
+  <strong>Output</strong>
+  <pre id="output">(none yet)</pre>
+</div>
+
+<div class="panel">
+  <strong>Console</strong>
+  <pre id="log"></pre>
+</div>
+
+<script type="module">
+const PROMPT = `You are a photography coach. A user uploaded a photo with the following observed properties:
+
+- Filename: sunset-coast.jpg
+- Camera: shot at 35mm, f/2.8, 1/200s, ISO 200
+- Histogram: balanced exposure, slightly under in shadows
+- Composition: subject placed near the centre
+- Time of day: golden hour (warm tones)
+
+Write a 3-sentence constructive critique of this photo. Focus on composition and lighting.`;
+
+const log = (msg) => {
+  const el = document.getElementById('log');
+  el.textContent += `[${new Date().toLocaleTimeString()}] ${msg}\n`;
+  el.scrollTop = el.scrollHeight;
+};
+const setStatus = (s) => document.getElementById('status').textContent = s;
+const setStat = (id, v) => document.getElementById(id).textContent = v;
+
+let pipe = null;
+
+window.loadModel = async () => {
+  document.getElementById('load-btn').disabled = true;
+  setStatus('loading library...');
+  log('Importing @huggingface/transformers from CDN...');
+
+  try {
+    const tj = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers');
+    const { pipeline } = tj;
+    log('Library loaded, creating text-generation pipeline...');
+
+    setStatus('downloading model...');
+    const startTime = performance.now();
+
+    // Try webgpu first, fall back to wasm
+    const device = navigator.gpu ? 'webgpu' : 'wasm';
+    setStat('backend', device);
+    log(`Using backend: ${device}`);
+
+    pipe = await pipeline('text-generation', 'onnx-community/gemma-2-2b-it', {
+      device,
+      dtype: 'q4',
+      progress_callback: (p) => {
+        if (p.status === 'progress' && p.progress) {
+          const pct = Math.round(p.progress);
+          document.getElementById('progress-fill').style.width = pct + '%';
+          setStatus(`downloading: ${p.file} ${pct}%`);
+        } else if (p.status === 'done') {
+          log(`done: ${p.file}`);
+        }
+      },
+    });
+
+    const loadTime = ((performance.now() - startTime) / 1000).toFixed(1);
+    setStat('load-time', loadTime + 's');
+    setStatus('✅ ready');
+    log(`Engine ready in ${loadTime}s`);
+    document.getElementById('run-btn').disabled = false;
+  } catch (e) {
+    setStatus('❌ failed');
+    log('ERROR: ' + e.message);
+    console.error(e);
+  }
+};
+
+window.runInference = async () => {
+  if (!pipe) return;
+  document.getElementById('run-btn').disabled = true;
+  setStatus('generating...');
+  document.getElementById('output').textContent = '';
+
+  const start = performance.now();
+  let firstTokenTime = null;
+  let tokenCount = 0;
+
+  try {
+    const result = await pipe(
+      [{ role: 'user', content: PROMPT }],
+      {
+        max_new_tokens: 250,
+        do_sample: false,
+        return_full_text: false,
+        callback_function: (beams) => {
+          if (firstTokenTime === null) {
+            firstTokenTime = performance.now();
+            setStat('ttft', ((firstTokenTime - start) / 1000).toFixed(2) + 's');
+          }
+          tokenCount++;
+          // streaming output is via the beam token ids — we need to decode after. This is a rough proxy.
+          if (tokenCount % 5 === 0) {
+            setStat('tokens', tokenCount);
+          }
+        },
+      }
+    );
+
+    const totalTime = (performance.now() - firstTokenTime) / 1000;
+    const tps = (tokenCount / totalTime).toFixed(1);
+    setStat('tokens', tokenCount);
+    setStat('tps', tps + ' tok/s');
+    setStatus('✅ done');
+
+    const outText = Array.isArray(result) ? result[0].generated_text : result.generated_text;
+    document.getElementById('output').textContent = typeof outText === 'string' ? outText : JSON.stringify(outText, null, 2);
+    log(`Generated ${tokenCount} tokens at ${tps} tok/s`);
+  } catch (e) {
+    setStatus('❌ failed');
+    log('ERROR: ' + e.message);
+  }
+
+  document.getElementById('run-btn').disabled = false;
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Spike: MediaPipe LLM Inference (Gemma 2B)</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; background: #0f172a; color: #e2e8f0; line-height: 1.6; }
+  h1 { color: #34d399; }
+  .panel { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin: 16px 0; }
+  .stat { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #334155; font-family: monospace; font-size: 13px; }
+  .stat:last-child { border: none; }
+  .stat .label { color: #94a3b8; }
+  .stat .value { color: #fbbf24; }
+  button { background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; margin: 4px; }
+  button:disabled { background: #475569; cursor: not-allowed; }
+  pre { background: #0f172a; padding: 12px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+  .note { background: #422006; border-left: 4px solid #f59e0b; padding: 12px; border-radius: 4px; }
+  input { background: #0f172a; color: #e2e8f0; border: 1px solid #334155; padding: 8px; border-radius: 4px; width: 100%; box-sizing: border-box; font-family: monospace; }
+</style>
+</head>
+<body>
+<h1>Spike 02: MediaPipe LLM Inference</h1>
+<p>Library: <code>@mediapipe/tasks-genai</code> (Google · LiteRT-based) · Model: Gemma-2-2B IT (.task)</p>
+
+<div class="note">
+  <strong>⚠️ Setup gotcha:</strong> MediaPipe needs a <code>.task</code> file. Google hosts gated builds at
+  <a href="https://www.kaggle.com/models/google/gemma-2/tfLite/gemma-2-2b-it-gpu-int4" style="color: #fbbf24;" target="_blank">Kaggle</a> (accept terms first).
+  Download <code>gemma-2-2b-it-gpu-int4.task</code> (~1.5 GB), then place it in this folder or paste a URL below.
+</div>
+
+<div class="panel">
+  <label for="model-url">Model URL or relative path:</label>
+  <input id="model-url" value="./gemma-2-2b-it-gpu-int4.task" />
+</div>
+
+<div class="panel">
+  <div class="stat"><span class="label">Status</span><span id="status" class="value">idle</span></div>
+  <div class="stat"><span class="label">Model load time</span><span id="load-time" class="value">—</span></div>
+  <div class="stat"><span class="label">First token (TTFT)</span><span id="ttft" class="value">—</span></div>
+  <div class="stat"><span class="label">Tokens/sec</span><span id="tps" class="value">—</span></div>
+  <div class="stat"><span class="label">Total tokens</span><span id="tokens" class="value">—</span></div>
+</div>
+
+<button id="load-btn" onclick="loadModel()">1. Load Gemma 2B</button>
+<button id="run-btn" onclick="runInference()" disabled>2. Run photo critique test</button>
+
+<div class="panel">
+  <strong>Output</strong>
+  <pre id="output">(none yet)</pre>
+</div>
+
+<div class="panel">
+  <strong>Console</strong>
+  <pre id="log"></pre>
+</div>
+
+<script type="module">
+const PROMPT = `You are a photography coach. A user uploaded a photo with the following observed properties:
+
+- Filename: sunset-coast.jpg
+- Camera: shot at 35mm, f/2.8, 1/200s, ISO 200
+- Histogram: balanced exposure, slightly under in shadows
+- Composition: subject placed near the centre
+- Time of day: golden hour (warm tones)
+
+Write a 3-sentence constructive critique of this photo. Focus on composition and lighting.`;
+
+const log = (msg) => {
+  const el = document.getElementById('log');
+  el.textContent += `[${new Date().toLocaleTimeString()}] ${msg}\n`;
+  el.scrollTop = el.scrollHeight;
+};
+const setStatus = (s) => document.getElementById('status').textContent = s;
+const setStat = (id, v) => document.getElementById(id).textContent = v;
+
+let llm = null;
+
+window.loadModel = async () => {
+  document.getElementById('load-btn').disabled = true;
+  setStatus('loading library...');
+  log('Importing @mediapipe/tasks-genai from CDN...');
+
+  try {
+    const { FilesetResolver, LlmInference } = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai/genai_bundle.mjs');
+    log('Library loaded, resolving WASM fileset...');
+
+    const fileset = await FilesetResolver.forGenAiTasks(
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai/wasm'
+    );
+
+    const modelUrl = document.getElementById('model-url').value;
+    setStatus('loading model...');
+    log(`Loading model from ${modelUrl} ...`);
+
+    const startTime = performance.now();
+
+    llm = await LlmInference.createFromOptions(fileset, {
+      baseOptions: { modelAssetPath: modelUrl },
+      maxTokens: 512,
+      topK: 40,
+      temperature: 0.7,
+      randomSeed: 42,
+    });
+
+    const loadTime = ((performance.now() - startTime) / 1000).toFixed(1);
+    setStat('load-time', loadTime + 's');
+    setStatus('✅ ready');
+    log(`Engine ready in ${loadTime}s`);
+    document.getElementById('run-btn').disabled = false;
+  } catch (e) {
+    setStatus('❌ failed');
+    log('ERROR: ' + e.message);
+    console.error(e);
+  }
+};
+
+window.runInference = async () => {
+  if (!llm) return;
+  document.getElementById('run-btn').disabled = true;
+  setStatus('generating...');
+  document.getElementById('output').textContent = '';
+
+  const start = performance.now();
+  let firstTokenTime = null;
+  let tokenCount = 0;
+
+  try {
+    llm.generateResponse(PROMPT, (partial, done) => {
+      if (firstTokenTime === null) {
+        firstTokenTime = performance.now();
+        setStat('ttft', ((firstTokenTime - start) / 1000).toFixed(2) + 's');
+      }
+      document.getElementById('output').textContent += partial;
+      tokenCount += partial.split(/\s+/).filter(Boolean).length; // rough — MediaPipe streams text not tokens
+
+      if (done) {
+        const totalTime = (performance.now() - firstTokenTime) / 1000;
+        const tps = (tokenCount / totalTime).toFixed(1);
+        setStat('tokens', tokenCount + ' (approx)');
+        setStat('tps', tps + ' word/s (approx)');
+        setStatus('✅ done');
+        log(`Generated ~${tokenCount} words at ~${tps} word/s`);
+        document.getElementById('run-btn').disabled = false;
+      }
+    });
+  } catch (e) {
+    setStatus('❌ failed');
+    log('ERROR: ' + e.message);
+    document.getElementById('run-btn').disabled = false;
+  }
+};
+</script>
+</body>
+</html>

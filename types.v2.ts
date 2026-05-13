@@ -115,6 +115,12 @@ export interface PhotoAnalysisV2 {
   is_refusal?: boolean;
   refusal_reason?: string;
   refusal_category?: RefusalCategory;
+
+  // Provenance flags stamped post-validation (not from the model)
+  wasDeepMode?: boolean;
+  /** True when analysis used minimal cull schema (fast batch path). */
+  wasCullBatch?: boolean;
+  outputLanguage?: string;
 }
 
 // ─── CV data from cvService ────────────────────────────────────────────────────
@@ -150,7 +156,7 @@ export interface CVData {
 
 // ─── Operational mode ─────────────────────────────────────────────────────────
 
-export type OperationalMode = 'studio' | 'vault';
+export type OperationalMode = 'studio' | 'voice' | 'quest' | 'sell' | 'vault';
 
 // ─── App state (v2) ───────────────────────────────────────────────────────────
 
@@ -220,6 +226,9 @@ export interface SessionHistoryEntry {
   completionTokens: number;
   totalTokens: number;
   latencyMs: number;
+  thumbnail?: string;  // base64 thumbnail (~100px)
+  filename?: string;
+  analysisId?: string; // for future reference
 }
 
 // ─── Web batch upload (browser File objects) ─────────────────────────────────
@@ -228,6 +237,8 @@ export interface WebBatchItem {
   id: string;
   file: File;
   base64: string;
+  /** Small preview retained for restored/history cards when full image bytes are unavailable. */
+  thumbnail?: string;
   mimeType: string;
   imageEl: HTMLImageElement | null;
   status: 'pending' | 'analyzing' | 'completed' | 'failed';

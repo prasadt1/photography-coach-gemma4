@@ -25,6 +25,21 @@ const GENESIS_HASH = '0000000000000000000000000000000000000000000000000000000000
 let currentMode: OperationalMode = 'studio';
 let lastHash = GENESIS_HASH;
 let seqCounter = 0;
+let seqInitialized = false;
+
+async function initSeqCounter(): Promise<void> {
+  if (seqInitialized) return;
+  seqInitialized = true;
+  try {
+    const entries = await getAllEntries();
+    if (entries.length > 0) {
+      seqCounter = Math.max(...entries.map(e => e.seq));
+      lastHash = entries[entries.length - 1].hash;
+    }
+  } catch {
+    // If we can't read IDB, start from 0 — not ideal but safe
+  }
+}
 
 // ─── Mode guard ───────────────────────────────────────────────────────────────
 
@@ -80,12 +95,13 @@ function uninstallEgressGuard(): void {
 export async function logAnalysis(
   imageBytes: ArrayBuffer,
   analysis: PhotoAnalysisV2,
+  filename?: string,
 ): Promise<AuditLogEntry> {
   if (currentMode !== 'vault') return null as unknown as AuditLogEntry; // No-op in Studio Mode
 
   const imageHash = await sha256(new Uint8Array(imageBytes));
   const resultHash = await sha256(JSON.stringify(analysis));
-  return logEvent('analysis_complete', imageHash, resultHash, analysis.model_id);
+  return logEvent('analysis_complete', imageHash, resultHash, analysis.model_id, filename ? { filename } : undefined);
 }
 
 export async function logRefusal(imageBytes: ArrayBuffer, reason: string): Promise<void> {
@@ -103,6 +119,7 @@ async function logEvent(
   modelId: string,
   metadata?: Record<string, unknown>,
 ): Promise<AuditLogEntry> {
+  await initSeqCounter();
   seqCounter++;
   const entryWithoutSelfHash = {
     seq: seqCounter,
@@ -155,7 +172,7 @@ const _memoryFallback: AuditLogEntry[] = [];
 async function persistEntry(entry: AuditLogEntry): Promise<void> {
   try {
     const db = await getDB();
-    await db.add(STORE_NAME, entry);
+    await db.put(STORE_NAME, entry);
   } catch {
     // Fallback 1: localStorage (web, capped at ~5MB, last 50 entries)
     try {

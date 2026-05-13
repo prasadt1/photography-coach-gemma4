@@ -283,15 +283,28 @@ export const analyzeImage = async (base64Image: string, mimeType: string): Promi
   return result;
 };
 
-export const generateCorrectedImage = async (base64Image: string, mimeType: string, improvements: string[]): Promise<string> => {
-  // Use the dynamic client helper
-  const ai = await getGenAIClient();
+/**
+ * Generate an enhanced/corrected version of the user's photo using Gemini 3 Pro Image.
+ * Studio Mode only — Vault blocks at the orchestration layer.
+ *
+ * @param base64Image  - Original image (with or without data: prefix)
+ * @param mimeType     - e.g. "image/jpeg"
+ * @param improvements - List of issues to address (from Gemma 4 critique)
+ * @param userApiKey   - Optional user-supplied API key. If omitted, falls back to shared/env key.
+ */
+export const generateCorrectedImage = async (
+  base64Image: string,
+  mimeType: string,
+  improvements: string[],
+  userApiKey?: string,
+): Promise<string> => {
+  const ai = userApiKey ? new GoogleGenAI({ apiKey: userApiKey }) : await getGenAIClient();
   const cleanedImage = cleanBase64(base64Image);
   const improvementsText = improvements.join(', ');
 
   const generateImg = async () => {
     return await ai.models.generateContent({
-      model: 'gemini-3-pro-image-preview', // COMPETITION REQUIREMENT: Gemini 3 Pro Image
+      model: 'gemini-3-pro-image-preview',
       contents: {
         role: 'user',
         parts: [
@@ -308,7 +321,7 @@ export const generateCorrectedImage = async (base64Image: string, mimeType: stri
       },
       config: {
           imageConfig: {
-              imageSize: "1K", // Available in Pro
+              imageSize: "1K",
           }
       }
     });

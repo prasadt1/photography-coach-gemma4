@@ -10,7 +10,6 @@ import DemoBanner from './components/DemoBanner';
 import ModeSelector from './components/ModeSelector';
 import PhotoUploader from './components/PhotoUploader';
 import ComparePanel from './components/ComparePanel';
-import QuestMode from './components/QuestMode';
 import SellMode from './components/SellMode';
 import AnalysisResults, { TabId, MentorChatStateV2 } from './components/AnalysisResults';
 import AuditLogPanel from './components/AuditLogPanel';
@@ -497,7 +496,7 @@ function App() {
               <span className="hidden md:inline">{voiceEnabled ? 'Voice ON' : 'Voice'}</span>
             </button>
 
-            {/* Mode selector - 3 core modes + Vault */}
+            {/* Mode selector - Studio + Artisan (+ Vault on desktop) */}
             <div className="hidden sm:flex items-center rounded-lg border border-slate-700 overflow-hidden text-xs font-semibold">
               <button
                 type="button"
@@ -539,16 +538,7 @@ function App() {
         </div>
       </header>
 
-      {/* Quest Mode — Daily photo challenges */}
-      {mode === 'quest' && (
-        <QuestMode
-          onBack={handleGoHome}
-          ollamaReady={ollamaReady}
-          voiceEnabled={voiceEnabled}
-        />
-      )}
-
-      {/* Sell Mode — Product photo coaching */}
+      {/* Artisan Studio — Voice-guided product photo coaching */}
       {mode === 'sell' && (
         <SellMode
           onBack={handleGoHome}

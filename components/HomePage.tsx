@@ -47,27 +47,28 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady, stats, v
 
   return (
     <div className="min-h-screen bg-[#0f0f13] text-white relative">
-      {/* Craft imagery hero background */}
+      {/* Craft imagery hero background - hands working with material */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        {/* Low-opacity craft imagery */}
+        {/* Low-opacity craft hands image (~15% opacity) */}
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-[0.04]"
+          className="absolute inset-0 bg-cover bg-center opacity-[0.12]"
           style={{
-            backgroundImage: 'url(https://images.unsplash.com/photo-1452860606245-08befc0ff44b?w=1920&q=80)',
+            backgroundImage: 'url(https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=1920&q=80)',
           }}
         />
         {/* Warm gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0f0f13] via-[#0f0f13]/80 to-[#0f0f13]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0f0f13] via-[#0f0f13]/70 to-[#0f0f13]" />
         {/* Terracotta/amber accent glows */}
-        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-terracotta-500/8 rounded-full blur-[150px]" />
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-amber-500/6 rounded-full blur-[150px]" />
+        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-terracotta-500/10 rounded-full blur-[150px]" />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-amber-500/8 rounded-full blur-[150px]" />
       </div>
 
       <div className="relative z-10 max-w-4xl mx-auto px-4 py-8 md:py-12">
         {/* Header with Logo */}
         <header className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-4">
-            <div className="relative w-14 h-14 md:w-16 md:h-16 rounded-2xl overflow-hidden shadow-xl shadow-terracotta-500/30 ring-2 ring-terracotta-500/20">
+            {/* Doubled logo size: was 12x12, now 24x24 / 28x28 */}
+            <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden shadow-xl shadow-terracotta-500/30 ring-2 ring-terracotta-500/20">
               <img src="/lens-logo.png" alt="L.E.N.S." className="w-full h-full object-cover" />
             </div>
             <div className="flex flex-col justify-center gap-0.5">

@@ -84,8 +84,11 @@ function App() {
   const [quickGlanceMode, setQuickGlanceMode] = useState(false);
 
   // Global voice toggle for accessibility across all modes
+  // Default ON for new users (accessibility-first), respects saved preference for returning users
   const [voiceEnabled, setVoiceEnabled] = useState(() => {
     const saved = localStorage.getItem('lens-voice-enabled');
+    // If no saved preference, default to ON (accessibility-first)
+    if (saved === null) return true;
     return saved === 'true';
   });
 

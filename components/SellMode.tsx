@@ -12,7 +12,7 @@ import {
   Grid3X3, FileText, Accessibility, Copy, Volume2,
 } from 'lucide-react';
 import { analyzeForSellMode } from '../services/analysisOrchestrator';
-import { parseSellResponse, parseArtisanResponseV3, speak, stopSpeaking } from '../services/voiceCoach';
+import { parseSellResponse, parseArtisanResponseV3, speak, stopSpeaking, resumeSpeech, hasPausedSpeech, isSpeechCompleted, clearPausedSpeech } from '../services/voiceCoach';
 import { DEMO_RESPONSES, DemoResponse, simulateProcessing, getComparisonSamples, DEMO_COMPARISON_RESULT } from '../src/data/demoResponses';
 import { ComparisonResult } from '../services/ollamaService';
 
@@ -78,20 +78,33 @@ const SellMode: React.FC<SellModeProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Stop speaking only when component unmounts (leaving the page)
+  // Stop speaking and clear state when component unmounts (leaving the page)
   useEffect(() => {
     return () => {
       stopSpeaking();
+      clearPausedSpeech();
     };
   }, []);
 
-  // Stop current speech when voice is toggled OFF (but don't reset other state)
+  // Handle voice toggle: pause when OFF, resume when ON
   useEffect(() => {
     if (!voiceEnabled) {
+      // Turning OFF: pause speech
       stopSpeaking();
       setIsSpeaking(false);
+    } else {
+      // Turning ON: try to resume, or announce if completed
+      if (hasPausedSpeech()) {
+        // Resume from where we left off
+        setIsSpeaking(true);
+        resumeSpeech();
+      } else if (result && isSpeechCompleted()) {
+        // Analysis complete, just announce voice is on
+        speak('Voice mode on.');
+      }
+      // If no result yet, voice will start when analysis completes
     }
-  }, [voiceEnabled]);
+  }, [voiceEnabled, result]);
 
   // Demo Mode: handle sample selection with pre-recorded v3 response
   const handleDemoSampleSelect = useCallback(async (sample: DemoResponse) => {
@@ -427,6 +440,8 @@ const SellMode: React.FC<SellModeProps> = ({
 
   // Back button: if showing result/compare, go back to sample selection; otherwise go home
   const handleBack = () => {
+    stopSpeaking();
+    clearPausedSpeech();
     if (result || showCompare) {
       handleRetry();
     } else {

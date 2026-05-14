@@ -51,6 +51,11 @@ let storedDetails = '';
 let isCancelled = false;
 let pendingTimeout: ReturnType<typeof setTimeout> | null = null;
 
+// Resume state for pause/resume functionality
+let pausedSentences: string[] = [];
+let pausedIndex = 0;
+let speechCompleted = false;
+
 /**
  * Speak text using Web Speech API
  *
@@ -62,6 +67,7 @@ export function speak(text: string, rate = 0.95, onEnd?: () => void): void {
 
   // Reset cancellation flag when starting new speech
   isCancelled = false;
+  speechCompleted = false;
   if (pendingTimeout) {
     clearTimeout(pendingTimeout);
     pendingTimeout = null;
@@ -97,19 +103,38 @@ export function speak(text: string, rate = 0.95, onEnd?: () => void): void {
     .split(/(?<=[.!?])\s+/)
     .filter(s => s.trim().length > 0);
 
+  // Store for resume functionality
+  pausedSentences = sentences;
+  pausedIndex = 0;
+
   console.log('[voiceCoach] Split into', sentences.length, 'sentences');
 
-  let currentIndex = 0;
+  speakFromIndex(sentences, 0, rate, preferredVoice, onEnd);
+}
+
+// Internal function to speak from a specific index
+function speakFromIndex(
+  sentences: string[],
+  startIndex: number,
+  rate: number,
+  preferredVoice: SpeechSynthesisVoice | null | undefined,
+  onEnd?: () => void
+): void {
+  let currentIndex = startIndex;
 
   const speakNextSentence = () => {
     // Check if cancelled before speaking next sentence
     if (isCancelled) {
-      console.log('[voiceCoach] Speech cancelled, stopping');
+      console.log('[voiceCoach] Speech paused at sentence', currentIndex + 1);
+      pausedIndex = currentIndex; // Save position for resume
       return;
     }
 
     if (currentIndex >= sentences.length) {
       console.log('[voiceCoach] All sentences spoken');
+      speechCompleted = true;
+      pausedSentences = [];
+      pausedIndex = 0;
       if (onEnd) onEnd();
       return;
     }
@@ -127,26 +152,85 @@ export function speak(text: string, rate = 0.95, onEnd?: () => void): void {
     }
 
     utterance.onend = () => {
-      if (isCancelled) return;
+      if (isCancelled) {
+        pausedIndex = currentIndex + 1; // Save next position
+        return;
+      }
       console.log(`[voiceCoach] Sentence ${currentIndex + 1} completed`);
       currentIndex++;
+      pausedIndex = currentIndex; // Track progress
       // Small delay between sentences for natural flow
       pendingTimeout = setTimeout(speakNextSentence, 100);
     };
 
     utterance.onerror = (e: any) => {
-      if (isCancelled) return;
+      if (isCancelled) {
+        pausedIndex = currentIndex + 1;
+        return;
+      }
       console.error('[voiceCoach] Speech error:', e.error, e);
-      // Try next sentence even if this one failed
       currentIndex++;
+      pausedIndex = currentIndex;
       pendingTimeout = setTimeout(speakNextSentence, 100);
     };
 
     speechSynthesis.speak(utterance);
   };
 
-  // Start speaking
   speakNextSentence();
+}
+
+/**
+ * Resume speech from where it was paused
+ * Returns true if there was something to resume, false otherwise
+ */
+export function resumeSpeech(rate = 0.95): boolean {
+  if (pausedSentences.length === 0 || pausedIndex >= pausedSentences.length) {
+    console.log('[voiceCoach] Nothing to resume, speech was completed');
+    return false;
+  }
+
+  console.log('[voiceCoach] Resuming from sentence', pausedIndex + 1, 'of', pausedSentences.length);
+
+  isCancelled = false;
+  if (pendingTimeout) {
+    clearTimeout(pendingTimeout);
+    pendingTimeout = null;
+  }
+
+  const voices = speechSynthesis.getVoices();
+  const preferredVoice = voices.find(v =>
+    v.name.includes('Samantha') ||
+    v.name.includes('Google US') ||
+    v.name.includes('Microsoft Zira') ||
+    (v.lang.startsWith('en') && v.localService)
+  ) || voices.find(v => v.lang.startsWith('en'));
+
+  speakFromIndex(pausedSentences, pausedIndex, rate, preferredVoice);
+  return true;
+}
+
+/**
+ * Check if speech was completed (vs paused mid-way)
+ */
+export function isSpeechCompleted(): boolean {
+  return speechCompleted;
+}
+
+/**
+ * Check if there's paused speech that can be resumed
+ */
+export function hasPausedSpeech(): boolean {
+  return pausedSentences.length > 0 && pausedIndex < pausedSentences.length;
+}
+
+/**
+ * Clear paused speech state (call on navigation)
+ */
+export function clearPausedSpeech(): void {
+  pausedSentences = [];
+  pausedIndex = 0;
+  speechCompleted = false;
 }
 
 /**

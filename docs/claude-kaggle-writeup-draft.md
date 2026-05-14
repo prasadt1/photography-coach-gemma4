@@ -6,7 +6,7 @@
 
 **Links:**
 - **Public repo:** https://github.com/prasadt1/photography-coach-gemma4
-- **Live demo:** https://lens-app-iota.vercel.app/
+- **Live demo:** https://lens-app-gemma4.vercel.app/
 - **Video (YouTube, ≤3 min):** [VIDEO_URL]
 
 ---

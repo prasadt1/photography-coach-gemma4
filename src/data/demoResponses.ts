@@ -21,6 +21,9 @@
  * - ready_to_list: boolean
  */
 
+// Cache-busting version - increment when images change
+const IMG_VERSION = 'v2';
+
 export interface DemoResponseV3 {
   subject: string;
   critique: {
@@ -70,7 +73,7 @@ export const DEMO_RESPONSES: DemoResponse[] = [
   {
     id: 'sample-1',
     label: 'Hand-Knit Scarf (Photo A)',
-    imagePath: '/demo-samples/sample-1.jpg',
+    imagePath: `/demo-samples/sample-1.jpg?${IMG_VERSION}`,
     category: 'Textiles',
     isComparisonSample: true,
     comparePairId: 'sample-2',
@@ -90,7 +93,7 @@ export const DEMO_RESPONSES: DemoResponse[] = [
   {
     id: 'sample-2',
     label: 'Hand-Knit Scarf (Photo B)',
-    imagePath: '/demo-samples/sample-2.jpg',
+    imagePath: `/demo-samples/sample-2.jpg?${IMG_VERSION}`,
     category: 'Textiles',
     isComparisonSample: true,
     comparePairId: 'sample-1',
@@ -110,7 +113,7 @@ export const DEMO_RESPONSES: DemoResponse[] = [
   {
     id: 'sample-3',
     label: 'Ceramic Bowl',
-    imagePath: '/demo-samples/sample-3.jpg',
+    imagePath: `/demo-samples/sample-3.jpg?${IMG_VERSION}`,
     category: 'Ceramics',
     isComparisonSample: false,
     response: {

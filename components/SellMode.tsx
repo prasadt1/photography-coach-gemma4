@@ -78,16 +78,19 @@ const SellMode: React.FC<SellModeProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Stop speaking when component unmounts or voice is disabled
+  // Stop speaking only when component unmounts (leaving the page)
+  useEffect(() => {
+    return () => {
+      stopSpeaking();
+    };
+  }, []);
+
+  // Stop current speech when voice is toggled OFF (but don't reset other state)
   useEffect(() => {
     if (!voiceEnabled) {
       stopSpeaking();
       setIsSpeaking(false);
     }
-    // Cleanup: stop speaking when leaving this page
-    return () => {
-      stopSpeaking();
-    };
   }, [voiceEnabled]);
 
   // Demo Mode: handle sample selection with pre-recorded v3 response
@@ -418,6 +421,17 @@ const SellMode: React.FC<SellModeProps> = ({
     setResult(null);
     setError(null);
     setIsDemoMode(false);
+    setShowCompare(false);
+    setDemoCompareResult(null);
+  };
+
+  // Back button: if showing result/compare, go back to sample selection; otherwise go home
+  const handleBack = () => {
+    if (result || showCompare) {
+      handleRetry();
+    } else {
+      onBack();
+    }
   };
 
 
@@ -437,9 +451,9 @@ const SellMode: React.FC<SellModeProps> = ({
       {/* Header */}
       <header className="flex items-center justify-between mb-6 max-w-4xl mx-auto">
         <button
-          onClick={onBack}
+          onClick={handleBack}
           className="px-4 py-2 rounded-xl text-sm font-semibold bg-slate-800 hover:bg-slate-700 transition-all"
-          aria-label="Go back to home page"
+          aria-label={result || showCompare ? "Go back to sample selection" : "Go back to home page"}
         >
           ← Back
         </button>

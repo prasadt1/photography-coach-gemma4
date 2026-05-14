@@ -46,7 +46,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady, stats, v
   };
 
   return (
-    <div className="min-h-screen bg-[#0f0f13] text-white relative">
+    <div className="min-h-[100dvh] bg-[#0f0f13] text-white relative">
       {/* Craft imagery hero background - hands working with material */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         {/* Low-opacity craft hands image (~15% opacity) */}

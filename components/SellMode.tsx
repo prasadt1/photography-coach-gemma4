@@ -451,7 +451,7 @@ const SellMode: React.FC<SellModeProps> = ({
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-900 to-orange-950/20 text-slate-200 p-4 md:p-8">
+    <div className="min-h-[100dvh] bg-gradient-to-b from-slate-900 via-slate-900 to-orange-950/20 text-slate-200 p-4 md:p-8">
       {/* Skip to main content link for screen readers */}
       <a
         href="#artisan-main"

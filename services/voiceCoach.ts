@@ -48,6 +48,8 @@ declare global {
 
 let lastSpokenText = '';
 let storedDetails = '';
+let isCancelled = false;
+let pendingTimeout: ReturnType<typeof setTimeout> | null = null;
 
 /**
  * Speak text using Web Speech API
@@ -58,6 +60,13 @@ let storedDetails = '';
 export function speak(text: string, rate = 0.95, onEnd?: () => void): void {
   console.log('[voiceCoach] speak() called with:', text.slice(0, 50) + '...');
 
+  // Reset cancellation flag when starting new speech
+  isCancelled = false;
+  if (pendingTimeout) {
+    clearTimeout(pendingTimeout);
+    pendingTimeout = null;
+  }
+
   lastSpokenText = text;
 
   // Get voices first
@@ -67,7 +76,9 @@ export function speak(text: string, rate = 0.95, onEnd?: () => void): void {
   if (voices.length === 0) {
     console.log('[voiceCoach] Voices not loaded, waiting...');
     speechSynthesis.onvoiceschanged = () => {
-      speak(text, rate, onEnd);
+      if (!isCancelled) {
+        speak(text, rate, onEnd);
+      }
     };
     return;
   }
@@ -86,12 +97,17 @@ export function speak(text: string, rate = 0.95, onEnd?: () => void): void {
     .split(/(?<=[.!?])\s+/)
     .filter(s => s.trim().length > 0);
 
-  console.log('[voiceCoach] NEW CHUNKED VERSION - Split into', sentences.length, 'sentences');
-  console.log('[voiceCoach] Sentences:', sentences);
+  console.log('[voiceCoach] Split into', sentences.length, 'sentences');
 
   let currentIndex = 0;
 
   const speakNextSentence = () => {
+    // Check if cancelled before speaking next sentence
+    if (isCancelled) {
+      console.log('[voiceCoach] Speech cancelled, stopping');
+      return;
+    }
+
     if (currentIndex >= sentences.length) {
       console.log('[voiceCoach] All sentences spoken');
       if (onEnd) onEnd();
@@ -111,17 +127,19 @@ export function speak(text: string, rate = 0.95, onEnd?: () => void): void {
     }
 
     utterance.onend = () => {
+      if (isCancelled) return;
       console.log(`[voiceCoach] Sentence ${currentIndex + 1} completed`);
       currentIndex++;
       // Small delay between sentences for natural flow
-      setTimeout(speakNextSentence, 100);
+      pendingTimeout = setTimeout(speakNextSentence, 100);
     };
 
     utterance.onerror = (e: any) => {
+      if (isCancelled) return;
       console.error('[voiceCoach] Speech error:', e.error, e);
       // Try next sentence even if this one failed
       currentIndex++;
-      setTimeout(speakNextSentence, 100);
+      pendingTimeout = setTimeout(speakNextSentence, 100);
     };
 
     speechSynthesis.speak(utterance);
@@ -207,10 +225,15 @@ export function speakMore(): void {
 }
 
 /**
- * Stop speaking - the ONLY place we should call cancel()
+ * Stop speaking - cancels current speech and prevents queued sentences
  */
 export function stopSpeaking(): void {
   console.log('[voiceCoach] stopSpeaking() called');
+  isCancelled = true;
+  if (pendingTimeout) {
+    clearTimeout(pendingTimeout);
+    pendingTimeout = null;
+  }
   speechSynthesis.cancel();
 }
 

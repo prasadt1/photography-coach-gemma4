@@ -33,7 +33,7 @@
   </g>
 
   <!-- Central opening -->
-  <circle cx="50" cy="50" r="18" fill="#FBF6F0"/>
+  <circle cx="50" cy="50" r="18" fill="#F5F3ED"/>
 
   <!-- Inner ring accent -->
   <circle cx="50" cy="50" r="18" fill="none" stroke="#D97756" stroke-width="2"/>

@@ -48,12 +48,12 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
   };
 
   return (
-    <div className="min-h-[100dvh] bg-[#FBF6F0]">
+    <div className="min-h-[100dvh] bg-[#F5F3ED]">
       {/* Compact header bar */}
-      <header className="border-b border-warmgray-200 bg-[#FBF6F0]/95 backdrop-blur sticky top-0 z-50">
+      <header className="border-b border-warmgray-200 bg-[#F5F3ED]/95 backdrop-blur sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg overflow-hidden shadow-sm ring-1 ring-terracotta-200 bg-[#FBF6F0]">
+            <div className="w-10 h-10 rounded-lg overflow-hidden shadow-sm ring-1 ring-terracotta-200 bg-[#F5F3ED]">
               <img src="/lens-logo.svg" alt="L.E.N.S." className="w-full h-full object-contain p-1" />
             </div>
             <div>
@@ -70,7 +70,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${
                 voiceEnabled
                   ? 'bg-terracotta-500 border-terracotta-500 text-white'
-                  : 'bg-[#FBF6F0] border-warmgray-300 text-warmgray-700'
+                  : 'bg-[#F5F3ED] border-warmgray-300 text-warmgray-700'
               }`}
               aria-pressed={voiceEnabled}
             >
@@ -155,7 +155,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="rounded-lg p-5 bg-[#F5EDE3] border border-warmgray-200">
+            <div className="rounded-lg p-5 bg-[#EBE8DD] border border-warmgray-200">
               <div className="w-10 h-10 rounded-lg bg-terracotta-100 flex items-center justify-center mb-3">
                 <User className="w-5 h-5 text-terracotta-600" />
               </div>
@@ -164,7 +164,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
               <p className="text-sm text-warmgray-600">You make beautiful things. L.E.N.S. helps you show them.</p>
             </div>
 
-            <div className="rounded-lg p-5 bg-[#F5EDE3] border border-warmgray-200">
+            <div className="rounded-lg p-5 bg-[#EBE8DD] border border-warmgray-200">
               <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center mb-3">
                 <Wrench className="w-5 h-5 text-amber-600" />
               </div>
@@ -173,7 +173,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
               <p className="text-sm text-warmgray-600">Wood, textiles, clay, metal — marketplace-ready photos.</p>
             </div>
 
-            <div className="rounded-lg p-5 bg-[#F5EDE3] border border-warmgray-200">
+            <div className="rounded-lg p-5 bg-[#EBE8DD] border border-warmgray-200">
               <div className="w-10 h-10 rounded-lg bg-forest-100 flex items-center justify-center mb-3">
                 <Smartphone className="w-5 h-5 text-forest-600" />
               </div>
@@ -194,7 +194,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-            <div className="rounded-xl p-8 bg-[#F5EDE3] border border-warmgray-200 text-center">
+            <div className="rounded-xl p-8 bg-[#EBE8DD] border border-warmgray-200 text-center">
               <div className="w-16 h-16 mx-auto rounded-full bg-terracotta-100 flex items-center justify-center mb-3">
                 <AudioLines className="w-8 h-8 text-terracotta-600" />
               </div>
@@ -248,10 +248,10 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <div className="group rounded-lg overflow-hidden border border-warmgray-200 bg-[#F5EDE3] hover:shadow-md transition-shadow">
+            <div className="group rounded-lg overflow-hidden border border-warmgray-200 bg-[#EBE8DD] hover:shadow-md transition-shadow">
               <div className="aspect-square overflow-hidden">
                 <img
-                  src="/images-homepage/Wood.jpg"
+                  src="/images-homepage/Wood-work.jpg"
                   alt="Woodwork"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                 />
@@ -261,7 +261,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
               </div>
             </div>
 
-            <div className="group rounded-lg overflow-hidden border border-warmgray-200 bg-[#F5EDE3] hover:shadow-md transition-shadow">
+            <div className="group rounded-lg overflow-hidden border border-warmgray-200 bg-[#EBE8DD] hover:shadow-md transition-shadow">
               <div className="aspect-square overflow-hidden">
                 <img
                   src="/demo-samples/sample-1.jpg"
@@ -274,7 +274,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
               </div>
             </div>
 
-            <div className="group rounded-lg overflow-hidden border border-warmgray-200 bg-[#F5EDE3] hover:shadow-md transition-shadow">
+            <div className="group rounded-lg overflow-hidden border border-warmgray-200 bg-[#EBE8DD] hover:shadow-md transition-shadow">
               <div className="aspect-square overflow-hidden">
                 <img
                   src="/images-homepage/Clay.jpg"
@@ -287,7 +287,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
               </div>
             </div>
 
-            <div className="group rounded-lg overflow-hidden border border-warmgray-200 bg-[#F5EDE3] hover:shadow-md transition-shadow">
+            <div className="group rounded-lg overflow-hidden border border-warmgray-200 bg-[#EBE8DD] hover:shadow-md transition-shadow">
               <div className="aspect-square overflow-hidden">
                 <img
                   src="/images-homepage/Weave.jpg"
@@ -300,7 +300,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
               </div>
             </div>
 
-            <div className="group rounded-lg border-2 border-dashed border-warmgray-300 bg-[#F5EDE3] hover:border-terracotta-400 hover:bg-terracotta-50/30 transition-all">
+            <div className="group rounded-lg border-2 border-dashed border-warmgray-300 bg-[#EBE8DD] hover:border-terracotta-400 hover:bg-terracotta-50/30 transition-all">
               <div className="aspect-square flex flex-col items-center justify-center p-3">
                 <div className="w-10 h-10 rounded-full bg-warmgray-100 border border-warmgray-300 flex items-center justify-center mb-2 group-hover:bg-terracotta-100 group-hover:border-terracotta-300">
                   <Plus className="w-5 h-5 text-warmgray-500 group-hover:text-terracotta-600" />
@@ -351,7 +351,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
             </p>
             <button
               onClick={() => onSelectMode('studio')}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#F5EDE3] border border-warmgray-300 hover:border-forest-400 text-warmgray-700 hover:text-forest-700 rounded-full text-xs font-semibold"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#EBE8DD] border border-warmgray-300 hover:border-forest-400 text-warmgray-700 hover:text-forest-700 rounded-full text-xs font-semibold"
             >
               <Target className="w-3.5 h-3.5" />
               <span>Visit Studio Mode</span>
@@ -362,23 +362,49 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
       </div>
 
       {/* Footer */}
-      <footer className="py-6 bg-[#F5EDE3] border-t border-warmgray-200 mt-8">
-        <div className="max-w-7xl mx-auto px-6 text-center space-y-2">
-          <p className="text-sm text-warmgray-600">
+      <footer className="py-6 bg-[#EBE8DD] border-t border-warmgray-200 mt-8">
+        <div className="max-w-7xl mx-auto px-6 text-center space-y-4">
+          <p className="text-base text-warmgray-700 leading-relaxed">
             Built for the{' '}
             <a
               href="https://www.kaggle.com/competitions/gemma-4-good-hackathon"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-terracotta-600 hover:text-terracotta-700 underline font-semibold"
+              className="text-terracotta-600 hover:text-terracotta-700 underline font-bold"
             >
               Gemma 4 Good Hackathon
             </a>
-            {' '}· Digital Equity Track
+            {' '}· Digital Equity & Inclusivity Track
           </p>
-          <p className="text-xs text-warmgray-500">
-            Powered by Gemma 4 via Ollama · Voice via Web Speech API
-          </p>
+
+          {/* Powered by - with logos */}
+          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-warmgray-600">
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Powered by</span>
+              <a
+                href="https://ai.google.dev/gemma"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-terracotta-600 hover:text-terracotta-700 underline"
+              >
+                Gemma 4
+              </a>
+              <span className="text-warmgray-400">via</span>
+              <a
+                href="https://ollama.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-terracotta-600 hover:text-terracotta-700 underline"
+              >
+                Ollama
+              </a>
+            </div>
+            <span className="text-warmgray-400">·</span>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Voice via</span>
+              <span className="font-semibold text-warmgray-700">Web Speech API</span>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

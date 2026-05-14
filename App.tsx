@@ -432,6 +432,19 @@ function App() {
     );
   }
 
+  // Artisan Studio - full-page takeover with its own design
+  if (mode === 'sell') {
+    return (
+      <SellMode
+        onBack={handleGoHome}
+        ollamaReady={ollamaReady}
+        voiceEnabled={voiceEnabled}
+        preloadedImage={pendingSellImage}
+        onImageProcessed={() => setPendingSellImage(null)}
+      />
+    );
+  }
+
   return (
     <div className="min-h-[100dvh] bg-slate-900 text-slate-200 font-sans selection:bg-brand-500/30 relative overflow-x-hidden">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
@@ -540,17 +553,6 @@ function App() {
           </div>
         </div>
       </header>
-
-      {/* Artisan Studio — Voice-guided product photo coaching */}
-      {mode === 'sell' && (
-        <SellMode
-          onBack={handleGoHome}
-          ollamaReady={ollamaReady}
-          voiceEnabled={voiceEnabled}
-          preloadedImage={pendingSellImage}
-          onImageProcessed={() => setPendingSellImage(null)}
-        />
-      )}
 
       {/* Studio/Vault Mode — standard photo analysis flow */}
       {(mode === 'studio' || mode === 'vault') && (

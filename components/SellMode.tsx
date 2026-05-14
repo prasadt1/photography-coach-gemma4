@@ -15,7 +15,7 @@ import {
   Grid3X3, FileText, Accessibility, Copy, Volume2, ArrowRight,
   ChevronLeft,
 } from 'lucide-react';
-import { analyzeForSellMode } from '../services/analysisOrchestrator';
+import { analyzeForSellMode, detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
 import { parseSellResponse, parseArtisanResponseV3, speak, stopSpeaking, resumeSpeech, hasPausedSpeech, isSpeechCompleted, clearPausedSpeech } from '../services/voiceCoach';
 import { DEMO_RESPONSES, DemoResponse, simulateProcessing, getComparisonSamples, DEMO_COMPARISON_RESULT } from '../src/data/demoResponses';
 import { ComparisonResult } from '../services/ollamaService';
@@ -65,7 +65,7 @@ interface SellResult {
 
 const SellMode: React.FC<SellModeProps> = ({
   onBack,
-  ollamaReady,
+  ollamaReady: _ollamaReady, // Deprecated: now using detectInferenceSource()
   voiceEnabled = false,
   preloadedImage = null,
   onImageProcessed,
@@ -76,9 +76,10 @@ const SellMode: React.FC<SellModeProps> = ({
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [processedPreload, setProcessedPreload] = useState(false);
-  const [isDemoMode, setIsDemoMode] = useState(false);
   const [showCompare, setShowCompare] = useState(false);
   const [demoCompareResult, setDemoCompareResult] = useState<ComparisonResult | null>(null);
+  const [inferenceSource, setInferenceSource] = useState<InferenceSource>('demo');
+  const [sourceDetected, setSourceDetected] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -88,6 +89,15 @@ const SellMode: React.FC<SellModeProps> = ({
       stopSpeaking();
       clearPausedSpeech();
     };
+  }, []);
+
+  // Detect inference source on mount (local Ollama vs cloud vs demo)
+  useEffect(() => {
+    detectInferenceSource().then((source) => {
+      setInferenceSource(source);
+      setSourceDetected(true);
+      console.log('[SellMode] Inference source detected:', source);
+    });
   }, []);
 
   // Handle voice toggle: pause when OFF, resume when ON
@@ -115,7 +125,6 @@ const SellMode: React.FC<SellModeProps> = ({
     setError(null);
     setIsAnalyzing(true);
     setResult(null);
-    setIsDemoMode(true);
 
     // Simulate ~2s "Analyzing locally with Gemma 4 E4B..." delay
     await simulateProcessing();
@@ -437,7 +446,6 @@ const SellMode: React.FC<SellModeProps> = ({
   const handleRetry = () => {
     setResult(null);
     setError(null);
-    setIsDemoMode(false);
     setShowCompare(false);
     setDemoCompareResult(null);
   };
@@ -496,10 +504,31 @@ const SellMode: React.FC<SellModeProps> = ({
           </button>
 
           <div className="flex items-center gap-3">
-            {(ollamaReady === false || isDemoMode) && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800/60 border border-slate-700">
-                <Sparkles className="w-3.5 h-3.5 text-slate-400" />
-                <span className="text-xs font-semibold text-slate-300 tracking-wide">Demo</span>
+            {/* Inference Source Badge */}
+            {sourceDetected && (
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${
+                inferenceSource === 'local'
+                  ? 'bg-emerald-500/10 border-emerald-500/30'
+                  : inferenceSource === 'cloud'
+                    ? 'bg-blue-500/10 border-blue-500/30'
+                    : 'bg-slate-800/60 border-slate-700'
+              }`}>
+                {inferenceSource === 'local' ? (
+                  <>
+                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-xs font-semibold text-emerald-300 tracking-wide">Local · Private</span>
+                  </>
+                ) : inferenceSource === 'cloud' ? (
+                  <>
+                    <div className="w-2 h-2 rounded-full bg-blue-400" />
+                    <span className="text-xs font-semibold text-blue-300 tracking-wide">Cloud · Real Gemma 4</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="text-xs font-semibold text-slate-300 tracking-wide">Demo</span>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -521,19 +550,18 @@ const SellMode: React.FC<SellModeProps> = ({
             </p>
           </div>
 
-          {/* Demo Mode: Sample Selection */}
-          {ollamaReady === false && !result && !isAnalyzing && !showCompare && (
+          {/* Demo Mode: Sample Selection — shows when no real inference available */}
+          {sourceDetected && inferenceSource === 'demo' && !result && !isAnalyzing && !showCompare && (
             <div className="space-y-8">
               {/* Demo Notice - Subtle, integrated */}
               <div className="flex items-start gap-3 p-4 rounded-2xl bg-slate-800/60 border border-slate-700/60">
                 <Sparkles className="w-5 h-5 text-terracotta-400 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-sm text-slate-300 leading-relaxed">
-                    <span className="font-semibold text-white">Demo Mode</span> — Playing back real Gemma 4 E4B responses.{' '}
+                    <span className="font-semibold text-white">Demo Mode</span> — Playing back real Gemma 4 E4B responses. For live analysis,{' '}
                     <a href="https://github.com/prasadt1/photography-coach-gemma4#quick-start" target="_blank" rel="noopener noreferrer" className="text-terracotta-400 hover:text-terracotta-300 underline decoration-terracotta-500/50 underline-offset-2">
-                      Install Ollama
-                    </a>{' '}
-                    for live analysis.
+                      install Ollama locally
+                    </a>.
                   </p>
                 </div>
               </div>
@@ -1007,8 +1035,8 @@ const SellMode: React.FC<SellModeProps> = ({
             </div>
           )}
 
-          {/* Upload Area - When no result and Ollama is online */}
-          {!result && !isAnalyzing && ollamaReady !== false && !showCompare && (
+          {/* Upload Area - When no result and real inference is available (local or cloud) */}
+          {!result && !isAnalyzing && sourceDetected && inferenceSource !== 'demo' && !showCompare && (
             <button
               onClick={handleCapture}
               className="group w-full rounded-[2rem] bg-slate-800/60 p-2 ring-1 ring-slate-700/60 hover:ring-terracotta-500/50 focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:ring-offset-2 focus:ring-offset-slate-900"
@@ -1041,8 +1069,20 @@ const SellMode: React.FC<SellModeProps> = ({
               <div className="rounded-[calc(2rem-0.5rem)] bg-slate-900/80 py-20 flex flex-col items-center justify-center gap-4">
                 <Loader2 className="w-10 h-10 text-terracotta-400 animate-spin" aria-hidden="true" />
                 <div className="text-center">
-                  <p className="text-xl font-bold text-white mb-1">Analyzing on your device</p>
-                  <p className="text-slate-400 text-sm">Gemma 4 E4B · Nothing leaves your phone</p>
+                  <p className="text-xl font-bold text-white mb-1">
+                    {inferenceSource === 'local'
+                      ? 'Analyzing on your device'
+                      : inferenceSource === 'cloud'
+                        ? 'Analyzing via Ollama Cloud'
+                        : 'Preparing demo analysis'}
+                  </p>
+                  <p className="text-slate-400 text-sm">
+                    {inferenceSource === 'local'
+                      ? 'Gemma 4 E4B · Nothing leaves your device'
+                      : inferenceSource === 'cloud'
+                        ? 'Gemma 4 31B · Real AI analysis'
+                        : 'Demo Mode · Sample response'}
+                  </p>
                 </div>
               </div>
             </div>

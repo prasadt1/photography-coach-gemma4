@@ -7,7 +7,8 @@
  * Day 2: full UI integration with AnalysisResults v2 component.
  */
 
-import { analyzePhoto, analyzePhotoCull, checkOllamaHealth, warmUpModel } from './ollamaService';
+import { analyzePhoto, analyzePhotoCull, checkOllamaHealth, warmUpModel, analyzePhotoWithFallback, detectInferenceSource } from './ollamaService';
+import type { InferenceSource } from '../config';
 import { analyzeImageCV } from './cvService';
 import { logAnalysis } from './auditService';
 import { getOperationalMode } from './auditService';
@@ -348,3 +349,38 @@ export async function analyzeForSellMode(
 
   return response;
 }
+
+/**
+ * Analyze photo for Sell Mode with automatic fallback chain.
+ * Priority: (1) Local Ollama → (2) Ollama Cloud → (3) Demo Mode
+ *
+ * Returns both the analysis content and the inference source used.
+ * When source is 'demo', content will be empty — caller handles demo responses.
+ */
+export async function analyzeForSellModeWithFallback(
+  base64Image: string,
+  mimeType: string,
+  accessibilityMode: boolean = false,
+): Promise<{ content: string; source: InferenceSource }> {
+  // Resize for faster inference
+  const resized = await resizeForModel(base64Image, 768);
+
+  const systemPrompt = accessibilityMode
+    ? ARTISAN_ACCESSIBILITY_SYSTEM_PROMPT
+    : SELL_COACH_SYSTEM_PROMPT;
+
+  const userPrompt = accessibilityMode
+    ? ARTISAN_ACCESSIBILITY_USER_PROMPT
+    : SELL_COACH_USER_PROMPT;
+
+  return analyzePhotoWithFallback(
+    resized,
+    mimeType,
+    systemPrompt,
+    userPrompt,
+  );
+}
+
+// Export inference source detection for UI components
+export { detectInferenceSource };
+export type { InferenceSource };

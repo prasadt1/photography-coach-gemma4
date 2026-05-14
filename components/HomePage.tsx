@@ -12,10 +12,11 @@ import React, { useState, useEffect } from 'react';
 import {
   AudioLines, Camera, WifiOff, BadgeCheck,
   ArrowRight, Sparkles, Shield, Info,
-  Volume2, VolumeX, Loader2, Aperture, Eye,
+  Volume2, VolumeX, Loader2, Aperture, Eye, Cloud,
 } from 'lucide-react';
 import { OperationalMode } from '../types.v2';
 import { speak } from '../services/voiceCoach';
+import { detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
 
 interface HomePageProps {
   onSelectMode: (mode: OperationalMode) => void;
@@ -29,9 +30,10 @@ interface HomePageProps {
   onVoiceToggle?: () => void;
 }
 
-const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady, stats, voiceEnabled = false, onVoiceToggle }) => {
+const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaReady, stats, voiceEnabled = false, onVoiceToggle }) => {
   // Connection state animation - show "connecting" for 1.5s then show actual status
   const [connectionState, setConnectionState] = useState<'connecting' | 'ready'>('connecting');
+  const [inferenceSource, setInferenceSource] = useState<InferenceSource | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -39,6 +41,13 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady, stats, v
     }, 1500);
     return () => clearTimeout(timer);
   }, []);
+
+  // Detect inference source (local/cloud/demo) after connection animation
+  useEffect(() => {
+    if (connectionState === 'ready') {
+      detectInferenceSource().then(setInferenceSource);
+    }
+  }, [connectionState]);
 
   // Interactive voice preview handler
   const handleVoicePreview = () => {
@@ -119,17 +128,22 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady, stats, v
           {connectionState === 'connecting' ? (
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800/60 border border-slate-600 text-slate-300 text-sm animate-pulse">
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Connecting to Gemma 4 E4B via Ollama...</span>
+              <span>Detecting AI engine...</span>
             </div>
-          ) : ollamaReady === false ? (
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 text-sm transition-all duration-500">
-              <WifiOff className="w-4 h-4" />
-              <span>Start Ollama to begin</span>
-            </div>
-          ) : ollamaReady === true ? (
+          ) : inferenceSource === 'local' ? (
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border-2 border-emerald-500/50 text-emerald-400 text-sm transition-all duration-500 shadow-lg shadow-emerald-500/10">
               <BadgeCheck className="w-4 h-4" />
               <span>Gemma 4 E4B Ready · 100% Local</span>
+            </div>
+          ) : inferenceSource === 'cloud' ? (
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border-2 border-blue-500/50 text-blue-400 text-sm transition-all duration-500 shadow-lg shadow-blue-500/10">
+              <Cloud className="w-4 h-4" />
+              <span>Ollama Cloud · Real Gemma 4 Analysis</span>
+            </div>
+          ) : inferenceSource === 'demo' ? (
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-500/10 border border-slate-500/30 text-slate-400 text-sm transition-all duration-500">
+              <Sparkles className="w-4 h-4" />
+              <span>Demo Mode · Sample Responses</span>
             </div>
           ) : null}
         </div>

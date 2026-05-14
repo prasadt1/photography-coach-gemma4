@@ -9,7 +9,7 @@
  *   - Bounding boxes: partial reliability → CV fallback used if absent
  */
 
-import { OLLAMA_CONFIG, SCHEMA_VERSION } from '../config';
+import { OLLAMA_CONFIG, SCHEMA_VERSION, OLLAMA_CLOUD_CONFIG, type InferenceSource } from '../config';
 import { PhotoAnalysisV2, CVData, TokenUsage } from '../types.v2';
 import {
   buildSystemPrompt,
@@ -723,6 +723,149 @@ export async function checkOllamaHealth(): Promise<{
   } catch {
     return { running: false, modelAvailable: false };
   }
+}
+
+// ─── Cloud availability check ─────────────────────────────────────────────────
+
+/**
+ * Check if Ollama Cloud is available via the Vercel API route.
+ * Returns true if the route exists and has a valid API key configured.
+ */
+export async function checkCloudAvailability(): Promise<boolean> {
+  if (!OLLAMA_CLOUD_CONFIG.enabled) return false;
+
+  try {
+    // Lightweight check — HEAD request to the API route
+    // The route returns 503 if OLLAMA_API_KEY is not set
+    const res = await fetch(OLLAMA_CLOUD_CONFIG.apiRoute, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ healthCheck: true }),
+      signal: AbortSignal.timeout(5000),
+    });
+
+    // 405 means route exists but wrong method — that's fine for health check
+    // 503 with NO_API_KEY means cloud not configured
+    if (res.status === 503) {
+      const data = await res.json();
+      if (data.code === 'NO_API_KEY') return false;
+    }
+
+    // Route exists and may be functional
+    return res.status !== 404;
+  } catch {
+    return false;
+  }
+}
+
+// ─── Cloud inference via Vercel API route ─────────────────────────────────────
+
+/**
+ * Call the Vercel API route to proxy to Ollama Cloud.
+ * Used when local Ollama is not available.
+ */
+async function analyzePhotoCloud(
+  base64Image: string,
+  systemPrompt: string,
+  userPrompt: string,
+  signal?: AbortSignal,
+): Promise<{ content: string; source: InferenceSource }> {
+  const res = await fetch(OLLAMA_CLOUD_CONFIG.apiRoute, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      base64Image,
+      systemPrompt,
+      userPrompt,
+    }),
+    signal: signal ?? AbortSignal.timeout(120_000),
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new OllamaError(
+      `Cloud analysis failed: ${error.error ?? res.statusText}`,
+      res.status,
+    );
+  }
+
+  const data = await res.json();
+  return {
+    content: data.content,
+    source: 'cloud' as InferenceSource,
+  };
+}
+
+// ─── Unified inference with fallback chain ────────────────────────────────────
+
+/**
+ * Analyze a photo with fallback chain: Local Ollama → Cloud → Demo Mode.
+ * Returns both the analysis content and the source used.
+ */
+export async function analyzePhotoWithFallback(
+  base64Image: string,
+  mimeType: string,
+  systemPrompt: string,
+  userPrompt: string,
+  signal?: AbortSignal,
+): Promise<{ content: string; source: InferenceSource }> {
+  // Step 1: Try local Ollama first (always preferred)
+  try {
+    const health = await checkOllamaHealth();
+    if (health.running && health.modelAvailable) {
+      console.log('[analyzePhotoWithFallback] Using local Ollama');
+      const content = await analyzePhotoRaw(
+        base64Image,
+        mimeType,
+        systemPrompt,
+        userPrompt,
+        signal,
+      );
+      return { content, source: 'local' };
+    }
+  } catch (err) {
+    console.warn('[analyzePhotoWithFallback] Local Ollama failed:', err);
+  }
+
+  // Step 2: Try Ollama Cloud if enabled
+  if (OLLAMA_CLOUD_CONFIG.enabled) {
+    try {
+      console.log('[analyzePhotoWithFallback] Trying Ollama Cloud');
+      return await analyzePhotoCloud(base64Image, systemPrompt, userPrompt, signal);
+    } catch (err) {
+      console.warn('[analyzePhotoWithFallback] Cloud failed:', err);
+    }
+  }
+
+  // Step 3: Fall back to Demo Mode
+  console.log('[analyzePhotoWithFallback] Falling back to Demo Mode');
+  return {
+    content: '', // Empty signals Demo Mode — caller handles canned responses
+    source: 'demo',
+  };
+}
+
+/**
+ * Get the current inference source without performing analysis.
+ * Used by UI components to show appropriate badges.
+ */
+export async function detectInferenceSource(): Promise<InferenceSource> {
+  // Check local Ollama first
+  const health = await checkOllamaHealth();
+  if (health.running && health.modelAvailable) {
+    return 'local';
+  }
+
+  // Check cloud availability
+  if (OLLAMA_CLOUD_CONFIG.enabled) {
+    const cloudAvailable = await checkCloudAvailability();
+    if (cloudAvailable) {
+      return 'cloud';
+    }
+  }
+
+  // Default to demo mode
+  return 'demo';
 }
 
 // ─── Model warm-up ────────────────────────────────────────────────────────────

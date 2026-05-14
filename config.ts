@@ -62,6 +62,33 @@ export const DEMO_MODE_CONFIG = {
   deployedFallbackStrategy: 'ollama-optional' as 'gemini' | 'mock' | 'ollama-optional',
 } as const;
 
+// Ollama Cloud configuration for Vercel deployment fallback
+// Priority: (1) Local Ollama → (2) Ollama Cloud → (3) Demo Mode
+export const OLLAMA_CLOUD_CONFIG = {
+  // Vercel serverless API route that proxies to Ollama Cloud
+  apiRoute: '/api/analyze',
+  // Model identifier on Ollama Cloud
+  model: 'gemma4:31b-cloud',
+  modelId: 'gemma-4-31b-cloud',
+  // Whether cloud fallback is enabled (requires OLLAMA_API_KEY in Vercel)
+  enabled: _isDeployedEnvironment,
+} as const;
+
+// Inference source tracking for UI badges
+export type InferenceSource = 'local' | 'cloud' | 'demo';
+
+// Get current inference source (used for UI badges)
+export const getInferenceSourceLabel = (source: InferenceSource): string => {
+  switch (source) {
+    case 'local':
+      return 'Local Gemma 4 · 100% Private';
+    case 'cloud':
+      return 'Ollama Cloud · Real Gemma 4';
+    case 'demo':
+      return 'Demo Mode · Sample Analysis';
+  }
+};
+
 // Vault Mode: list of hostnames that are unconditionally blocked.
 // The fetch interceptor (auditService.ts) checks against this list.
 export const VAULT_BLOCKED_HOSTS = [

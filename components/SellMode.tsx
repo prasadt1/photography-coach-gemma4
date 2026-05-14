@@ -550,25 +550,69 @@ const SellMode: React.FC<SellModeProps> = ({
             </p>
           </div>
 
-          {/* Demo Mode: Sample Selection — shows when no real inference available */}
-          {sourceDetected && inferenceSource === 'demo' && !result && !isAnalyzing && !showCompare && (
+          {/* Sample Selection + Upload — always shows when no result */}
+          {sourceDetected && !result && !isAnalyzing && !showCompare && (
             <div className="space-y-8">
-              {/* Demo Notice - Subtle, integrated */}
-              <div className="flex items-start gap-3 p-4 rounded-2xl bg-slate-800/60 border border-slate-700/60">
-                <Sparkles className="w-5 h-5 text-terracotta-400 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-sm text-slate-300 leading-relaxed">
-                    <span className="font-semibold text-white">Demo Mode</span> — Playing back real Gemma 4 E4B responses. For live analysis,{' '}
-                    <a href="https://github.com/prasadt1/photography-coach-gemma4#quick-start" target="_blank" rel="noopener noreferrer" className="text-terracotta-400 hover:text-terracotta-300 underline decoration-terracotta-500/50 underline-offset-2">
-                      install Ollama locally
-                    </a>.
-                  </p>
+              {/* Status Notice - Different for each inference source */}
+              {inferenceSource === 'demo' ? (
+                <div className="flex items-start gap-3 p-4 rounded-2xl bg-slate-800/60 border border-slate-700/60">
+                  <Sparkles className="w-5 h-5 text-terracotta-400 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm text-slate-300 leading-relaxed">
+                      <span className="font-semibold text-white">Demo Mode</span> — Playing back real Gemma 4 E4B responses. For live analysis,{' '}
+                      <a href="https://github.com/prasadt1/photography-coach-gemma4#quick-start" target="_blank" rel="noopener noreferrer" className="text-terracotta-400 hover:text-terracotta-300 underline decoration-terracotta-500/50 underline-offset-2">
+                        install Ollama locally
+                      </a>.
+                    </p>
+                  </div>
                 </div>
-              </div>
+              ) : inferenceSource === 'cloud' ? (
+                <div className="flex items-start gap-3 p-4 rounded-2xl bg-blue-500/10 border border-blue-500/30">
+                  <div className="w-2 h-2 rounded-full bg-blue-400 mt-2 shrink-0" />
+                  <div>
+                    <p className="text-sm text-slate-300 leading-relaxed">
+                      <span className="font-semibold text-blue-300">Ollama Cloud Active</span> — Upload your own photo for real Gemma 4 analysis, or try a sample below.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start gap-3 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 mt-2 shrink-0 animate-pulse" />
+                  <div>
+                    <p className="text-sm text-slate-300 leading-relaxed">
+                      <span className="font-semibold text-emerald-300">Local Ollama Connected</span> — 100% private analysis on your device. Upload a photo or try a sample.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Upload Area - Shows when real inference available (local or cloud) */}
+              {inferenceSource !== 'demo' && (
+                <button
+                  onClick={handleCapture}
+                  className="group w-full rounded-[2rem] bg-slate-800/60 p-2 ring-1 ring-slate-700/60 hover:ring-terracotta-500/50 focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+                  style={{ transition: 'all 400ms cubic-bezier(0.32, 0.72, 0, 1)' }}
+                  aria-label="Take or upload a product photo for analysis"
+                >
+                  <div className="rounded-[calc(2rem-0.5rem)] border-2 border-dashed border-slate-600 group-hover:border-terracotta-500/50 bg-slate-900/50 py-12 flex flex-col items-center justify-center gap-4" style={{ transition: 'border-color 300ms cubic-bezier(0.32, 0.72, 0, 1)' }}>
+                    <div className="w-14 h-14 rounded-2xl bg-terracotta-500/20 border border-terracotta-500/30 flex items-center justify-center group-hover:scale-105" style={{ transition: 'transform 300ms cubic-bezier(0.32, 0.72, 0, 1)' }}>
+                      <Camera className="w-7 h-7 text-terracotta-400" />
+                    </div>
+                    <div className="text-center px-4">
+                      <p className="text-lg font-bold text-white mb-1">Take or upload your photo</p>
+                      <p className="text-slate-400 text-sm">
+                        {inferenceSource === 'cloud' ? 'Real Gemma 4 analysis via Ollama Cloud' : 'Analyzed locally — nothing leaves your device'}
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              )}
 
               {/* Sample Grid - Double-bezel architecture */}
               <div>
-                <p className="text-sm font-semibold text-slate-500 uppercase tracking-[0.15em] mb-4">Select a sample</p>
+                <p className="text-sm font-semibold text-slate-500 uppercase tracking-[0.15em] mb-4">
+                  {inferenceSource === 'demo' ? 'Select a sample' : 'Or try a sample'}
+                </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {DEMO_RESPONSES.map((sample) => (
                     <button
@@ -1033,29 +1077,6 @@ const SellMode: React.FC<SellModeProps> = ({
                 </button>
               </div>
             </div>
-          )}
-
-          {/* Upload Area - When no result and real inference is available (local or cloud) */}
-          {!result && !isAnalyzing && sourceDetected && inferenceSource !== 'demo' && !showCompare && (
-            <button
-              onClick={handleCapture}
-              className="group w-full rounded-[2rem] bg-slate-800/60 p-2 ring-1 ring-slate-700/60 hover:ring-terracotta-500/50 focus:outline-none focus:ring-2 focus:ring-terracotta-500 focus:ring-offset-2 focus:ring-offset-slate-900"
-              style={{ transition: 'all 400ms cubic-bezier(0.32, 0.72, 0, 1)' }}
-              aria-label="Take or upload a product photo for analysis"
-            >
-              {/* Inner core */}
-              <div className="rounded-[calc(2rem-0.5rem)] border-2 border-dashed border-slate-600 group-hover:border-terracotta-500/50 bg-slate-900/50 py-20 flex flex-col items-center justify-center gap-4" style={{ transition: 'border-color 300ms cubic-bezier(0.32, 0.72, 0, 1)' }}>
-                <div className="w-16 h-16 rounded-2xl bg-terracotta-500/20 border border-terracotta-500/30 flex items-center justify-center group-hover:scale-105" style={{ transition: 'transform 300ms cubic-bezier(0.32, 0.72, 0, 1)' }}>
-                  <Camera className="w-8 h-8 text-terracotta-400" />
-                </div>
-                <div className="text-center px-4">
-                  <p className="text-xl font-bold text-white mb-2">Take or upload a photo</p>
-                  <p className="text-slate-400 text-sm leading-relaxed max-w-sm">
-                    I'll tell you what's working, what isn't, and exactly how to fix it — all on your device.
-                  </p>
-                </div>
-              </div>
-            </button>
           )}
 
           {/* Analyzing State */}

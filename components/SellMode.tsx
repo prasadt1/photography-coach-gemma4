@@ -15,7 +15,7 @@ import {
   Grid3X3, FileText, Accessibility, Copy, Volume2, ArrowRight,
   ChevronLeft,
 } from 'lucide-react';
-import { analyzeForSellMode, detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
+import { analyzeForSellModeWithFallback, detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
 import { parseSellResponse, parseArtisanResponseV3, speak, stopSpeaking, resumeSpeech, hasPausedSpeech, isSpeechCompleted, clearPausedSpeech } from '../services/voiceCoach';
 import { DEMO_RESPONSES, DemoResponse, simulateProcessing, getComparisonSamples, DEMO_COMPARISON_RESULT } from '../src/data/demoResponses';
 import { ComparisonResult } from '../services/ollamaService';
@@ -181,8 +181,16 @@ const SellMode: React.FC<SellModeProps> = ({
         setResult(null);
 
         try {
-          const response = await analyzeForSellMode(preloadedImage, 'image/jpeg', voiceEnabled);
-          console.log('[Artisan] Auto-analysis from Studio (accessibility mode:', voiceEnabled, '):', response);
+          const { content: response, source } = await analyzeForSellModeWithFallback(preloadedImage, 'image/jpeg', voiceEnabled);
+          console.log('[Artisan] Auto-analysis from Studio (source:', source, ', accessibility mode:', voiceEnabled, '):', response);
+          setInferenceSource(source);
+
+          // If demo mode (empty response), show error
+          if (source === 'demo' || !response) {
+            setError('Cloud analysis unavailable. Please try uploading again or use demo samples.');
+            setIsAnalyzing(false);
+            return;
+          }
 
           // Try v3 JSON parsing first
           const v3Parsed = parseArtisanResponseV3(response);
@@ -347,9 +355,19 @@ const SellMode: React.FC<SellModeProps> = ({
         reader.readAsDataURL(file);
       });
 
-      // Run analysis (use accessibility prompts when voice mode is enabled)
-      const response = await analyzeForSellMode(base64, file.type, voiceEnabled);
-      console.log('[Artisan] Raw AI response (accessibility mode:', voiceEnabled, '):', response);
+      // Run analysis with fallback chain: local Ollama → cloud → demo
+      const { content: response, source } = await analyzeForSellModeWithFallback(base64, file.type, voiceEnabled);
+      console.log('[Artisan] Raw AI response (source:', source, ', accessibility mode:', voiceEnabled, '):', response);
+
+      // Update inference source badge
+      setInferenceSource(source);
+
+      // If demo mode (empty response), show error asking user to use demo samples
+      if (source === 'demo' || !response) {
+        setError('Cloud analysis unavailable. Try the demo samples below to see how it works.');
+        setIsAnalyzing(false);
+        return;
+      }
 
       // Try v3 JSON parsing first (new schema), fall back to legacy parser
       const v3Parsed = parseArtisanResponseV3(response);

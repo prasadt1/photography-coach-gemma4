@@ -13,7 +13,7 @@ import {
   Camera, Loader2, CheckCircle2, AlertTriangle,
   Lightbulb, RotateCcw, Sun, Image as ImageIcon, Sparkles,
   Grid3X3, FileText, Accessibility, Copy, ArrowRight,
-  ChevronLeft, Upload, Cloud,
+  ChevronLeft, Upload, Cloud, Volume2, VolumeX,
 } from 'lucide-react';
 import { analyzeForSellModeWithFallback, detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
 import { parseSellResponse, parseArtisanResponseV3, speak, stopSpeaking, resumeSpeech, hasPausedSpeech, isSpeechCompleted, clearPausedSpeech } from '../services/voiceCoach';
@@ -24,6 +24,7 @@ interface SellModeProps {
   onBack: () => void;
   ollamaReady: boolean | null;
   voiceEnabled?: boolean;
+  onVoiceToggle?: () => void;
   preloadedImage?: string | null;
   onImageProcessed?: () => void;
 }
@@ -62,6 +63,7 @@ const SellMode: React.FC<SellModeProps> = ({
   onBack,
   ollamaReady: _ollamaReady,
   voiceEnabled = false,
+  onVoiceToggle,
   preloadedImage = null,
   onImageProcessed,
 }) => {
@@ -342,40 +344,59 @@ const SellMode: React.FC<SellModeProps> = ({
         <header className="flex items-center justify-between mb-10">
           <button
             onClick={handleBack}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white border-2 border-warmgray-200 text-warmgray-700 hover:border-terracotta-300 hover:text-terracotta-700 focus:outline-none focus:ring-2 focus:ring-terracotta-500"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-sand-50 border-2 border-warmgray-200 text-warmgray-700 hover:border-terracotta-300 hover:text-terracotta-700 focus:outline-none focus:ring-2 focus:ring-terracotta-500"
             aria-label={result || showCompare ? "Go back" : "Return home"}
           >
             <ChevronLeft className="w-4 h-4" />
             <span className="text-sm font-semibold">Back</span>
           </button>
 
-          {/* Status Badge */}
-          {sourceDetected && (
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border-2 ${
-              inferenceSource === 'local'
-                ? 'bg-forest-50 border-forest-200 text-forest-700'
-                : inferenceSource === 'cloud'
-                  ? 'bg-blue-50 border-blue-200 text-blue-700'
-                  : 'bg-warmgray-100 border-warmgray-200 text-warmgray-600'
-            }`}>
-              {inferenceSource === 'local' ? (
-                <>
-                  <div className="w-2 h-2 rounded-full bg-forest-500 animate-pulse" />
-                  <span className="text-xs font-semibold">Local · Private</span>
-                </>
-              ) : inferenceSource === 'cloud' ? (
-                <>
-                  <Cloud className="w-3.5 h-3.5" />
-                  <span className="text-xs font-semibold">Cloud · Gemma 4</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span className="text-xs font-semibold">Demo Mode</span>
-                </>
-              )}
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            {/* Voice Toggle */}
+            {onVoiceToggle && (
+              <button
+                onClick={onVoiceToggle}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold border-2 ${
+                  voiceEnabled
+                    ? 'bg-terracotta-500 border-terracotta-500 text-white shadow-lg'
+                    : 'bg-sand-50 border-warmgray-200 text-warmgray-600 hover:border-terracotta-300 hover:text-terracotta-600'
+                }`}
+                aria-pressed={voiceEnabled}
+                aria-label={voiceEnabled ? 'Voice feedback enabled' : 'Enable voice feedback'}
+              >
+                {voiceEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+                <span className="hidden sm:inline">{voiceEnabled ? 'Voice ON' : 'Voice'}</span>
+              </button>
+            )}
+
+            {/* Status Badge */}
+            {sourceDetected && (
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border-2 ${
+                inferenceSource === 'local'
+                  ? 'bg-forest-50 border-forest-200 text-forest-700'
+                  : inferenceSource === 'cloud'
+                    ? 'bg-blue-50 border-blue-200 text-blue-700'
+                    : 'bg-warmgray-100 border-warmgray-200 text-warmgray-600'
+              }`}>
+                {inferenceSource === 'local' ? (
+                  <>
+                    <div className="w-2 h-2 rounded-full bg-forest-500 animate-pulse" />
+                    <span className="text-xs font-semibold">Local · Private</span>
+                  </>
+                ) : inferenceSource === 'cloud' ? (
+                  <>
+                    <Cloud className="w-3.5 h-3.5" />
+                    <span className="text-xs font-semibold">Cloud · Gemma 4</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span className="text-xs font-semibold">Demo Mode</span>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </header>
 
         <main role="main">
@@ -412,7 +433,7 @@ const SellMode: React.FC<SellModeProps> = ({
                     <button
                       key={sample.id}
                       onClick={() => handleDemoSampleSelect(sample)}
-                      className="group text-left rounded-2xl bg-white border-2 border-warmgray-200 overflow-hidden hover:border-terracotta-300 hover:shadow-xl hover:shadow-terracotta-100/50 focus:outline-none focus:ring-2 focus:ring-terracotta-500 card-transition"
+                      className="group text-left rounded-2xl bg-sand-50 border-2 border-warmgray-200 overflow-hidden hover:border-terracotta-300 hover:shadow-xl hover:shadow-terracotta-100/50 focus:outline-none focus:ring-2 focus:ring-terracotta-500 card-transition"
                       aria-label={`Analyze ${sample.label}`}
                     >
                       <div className="relative h-52 overflow-hidden">
@@ -423,7 +444,7 @@ const SellMode: React.FC<SellModeProps> = ({
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-warmgray-900/60 via-transparent to-transparent" />
                         <div className="absolute bottom-4 left-4 right-4">
-                          <span className="inline-block px-2.5 py-1 rounded-full bg-white/90 text-[10px] font-bold uppercase tracking-wider text-terracotta-700 mb-2">
+                          <span className="inline-block px-2.5 py-1 rounded-full bg-sand-50/90 text-[10px] font-bold uppercase tracking-wider text-terracotta-700 mb-2">
                             {sample.category}
                           </span>
                           <p className="text-white font-semibold text-lg">{sample.label}</p>
@@ -462,7 +483,7 @@ const SellMode: React.FC<SellModeProps> = ({
                   </p>
                   <button
                     onClick={handleCapture}
-                    className="w-full rounded-2xl border-2 border-dashed border-warmgray-300 bg-white hover:border-terracotta-400 hover:bg-terracotta-50/50 p-8 flex flex-col items-center gap-4 focus:outline-none focus:ring-2 focus:ring-terracotta-500 group"
+                    className="w-full rounded-2xl border-2 border-dashed border-warmgray-300 bg-sand-50 hover:border-terracotta-400 hover:bg-terracotta-50/50 p-8 flex flex-col items-center gap-4 focus:outline-none focus:ring-2 focus:ring-terracotta-500 group"
                     aria-label="Upload your own photo"
                   >
                     <div className="w-14 h-14 rounded-2xl bg-warmgray-100 border border-warmgray-200 flex items-center justify-center group-hover:bg-terracotta-100 group-hover:border-terracotta-200">
@@ -497,7 +518,7 @@ const SellMode: React.FC<SellModeProps> = ({
 
           {/* Analyzing State */}
           {isAnalyzing && (
-            <div className="rounded-2xl bg-white border-2 border-warmgray-200 p-12 text-center" role="status" aria-live="polite">
+            <div className="rounded-2xl bg-sand-50 border-2 border-warmgray-200 p-12 text-center" role="status" aria-live="polite">
               <Loader2 className="w-12 h-12 text-terracotta-500 animate-spin mx-auto mb-4" />
               <p className="text-xl font-bold text-warmgray-900 mb-2">
                 {inferenceSource === 'local' ? 'Analyzing locally...' : inferenceSource === 'cloud' ? 'Analyzing via cloud...' : 'Preparing analysis...'}
@@ -523,10 +544,10 @@ const SellMode: React.FC<SellModeProps> = ({
                   const label = idx === 0 ? 'A' : 'B';
                   const isWinner = demoCompareResult.winner === label;
                   return (
-                    <div key={sample.id} className={`rounded-2xl overflow-hidden border-2 ${isWinner ? 'border-forest-400 bg-forest-50' : 'border-warmgray-200 bg-white opacity-80'}`}>
+                    <div key={sample.id} className={`rounded-2xl overflow-hidden border-2 ${isWinner ? 'border-forest-400 bg-forest-50' : 'border-warmgray-200 bg-sand-50 opacity-80'}`}>
                       <div className="relative">
                         <img src={sample.imagePath} alt={sample.label} className="w-full h-48 object-cover" />
-                        <div className="absolute top-3 left-3 px-2.5 py-1 bg-white/90 rounded-full text-xs font-bold">{label}</div>
+                        <div className="absolute top-3 left-3 px-2.5 py-1 bg-sand-50/90 rounded-full text-xs font-bold">{label}</div>
                         {isWinner && (
                           <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 bg-forest-500 text-white rounded-full text-xs font-bold">
                             <CheckCircle2 className="w-3 h-3" /> Winner
@@ -539,7 +560,7 @@ const SellMode: React.FC<SellModeProps> = ({
                 })}
               </div>
 
-              <div className="rounded-2xl bg-white border-2 border-warmgray-200 p-6">
+              <div className="rounded-2xl bg-sand-50 border-2 border-warmgray-200 p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <CheckCircle2 className="w-5 h-5 text-forest-500" />
                   <h3 className="text-lg font-bold text-warmgray-900">Winner: Photo {demoCompareResult.winner}</h3>
@@ -564,7 +585,7 @@ const SellMode: React.FC<SellModeProps> = ({
             <div className="rounded-2xl bg-red-50 border-2 border-red-200 p-8 text-center" role="alert">
               <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
               <p className="text-red-700 font-medium mb-4">{error}</p>
-              <button onClick={handleRetry} className="px-5 py-2.5 bg-white border-2 border-warmgray-200 hover:border-warmgray-300 rounded-full text-sm font-semibold text-warmgray-700">
+              <button onClick={handleRetry} className="px-5 py-2.5 bg-sand-50 border-2 border-warmgray-200 hover:border-warmgray-300 rounded-full text-sm font-semibold text-warmgray-700">
                 Try Again
               </button>
             </div>
@@ -582,7 +603,7 @@ const SellMode: React.FC<SellModeProps> = ({
             <div className="space-y-8">
               {/* Photo + Verdict */}
               <div className="flex flex-col md:flex-row gap-6">
-                <div className="w-full md:w-72 shrink-0 rounded-2xl overflow-hidden border-2 border-warmgray-200 bg-white">
+                <div className="w-full md:w-72 shrink-0 rounded-2xl overflow-hidden border-2 border-warmgray-200 bg-sand-50">
                   <img src={result.imageBase64} alt="Product photo" className="w-full h-64 object-cover" />
                 </div>
 
@@ -615,7 +636,7 @@ const SellMode: React.FC<SellModeProps> = ({
               {(result.framing || result.lighting) && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {result.framing && (
-                    <div className="p-5 rounded-2xl bg-white border-2 border-warmgray-200">
+                    <div className="p-5 rounded-2xl bg-sand-50 border-2 border-warmgray-200">
                       <div className="flex items-center gap-2 mb-3">
                         <Grid3X3 className="w-4 h-4 text-warmgray-500" />
                         <p className="text-xs font-semibold text-warmgray-500 uppercase tracking-wider">Framing</p>
@@ -624,7 +645,7 @@ const SellMode: React.FC<SellModeProps> = ({
                     </div>
                   )}
                   {result.lighting && (
-                    <div className="p-5 rounded-2xl bg-white border-2 border-warmgray-200">
+                    <div className="p-5 rounded-2xl bg-sand-50 border-2 border-warmgray-200">
                       <div className="flex items-center gap-2 mb-3">
                         <Sun className="w-4 h-4 text-warmgray-500" />
                         <p className="text-xs font-semibold text-warmgray-500 uppercase tracking-wider">Lighting</p>
@@ -644,7 +665,7 @@ const SellMode: React.FC<SellModeProps> = ({
 
               {/* Listing Assets */}
               {(result.altText || result.listingCopy) && (
-                <div className="rounded-2xl bg-white border-2 border-warmgray-200 p-6">
+                <div className="rounded-2xl bg-sand-50 border-2 border-warmgray-200 p-6">
                   <div className="flex items-center gap-2 mb-6">
                     <FileText className="w-4 h-4 text-terracotta-500" />
                     <h3 className="text-sm font-bold text-warmgray-900 uppercase tracking-wider">Listing Assets</h3>
@@ -694,7 +715,7 @@ const SellMode: React.FC<SellModeProps> = ({
               <div className="flex justify-center pt-4">
                 <button
                   onClick={handleRetry}
-                  className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-warmgray-200 hover:border-terracotta-300 rounded-full text-sm font-semibold text-warmgray-700"
+                  className="flex items-center gap-2 px-6 py-3 bg-sand-50 border-2 border-warmgray-200 hover:border-terracotta-300 rounded-full text-sm font-semibold text-warmgray-700"
                 >
                   <RotateCcw className="w-4 h-4" />
                   <span>Analyze Another Photo</span>

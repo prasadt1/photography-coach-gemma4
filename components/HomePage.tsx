@@ -52,15 +52,15 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
     <div className="min-h-[100dvh] bg-cream-50 text-warmgray-900 relative">
       {/* Hero Section with Craft Imagery */}
       <div className="relative">
-        {/* Background: Warm craft image */}
+        {/* Background: Real craft image - hands knitting */}
         <div className="absolute inset-0 h-[60vh] overflow-hidden">
           <img
-            src="https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=1920&q=80"
+            src="/demo-samples/sample-1.jpg"
             alt=""
             className="w-full h-full object-cover"
             aria-hidden="true"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-cream-50/40 via-cream-50/70 to-cream-50" />
+          <div className="absolute inset-0 bg-gradient-to-b from-sand-50/60 via-sand-50/85 to-sand-50" />
         </div>
 
         <div className="relative z-10 max-w-4xl mx-auto px-6 pt-8 pb-16">
@@ -87,7 +87,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold border-2 ${
                     voiceEnabled
                       ? 'bg-terracotta-500 border-terracotta-500 text-white shadow-lg'
-                      : 'bg-white border-warmgray-200 text-warmgray-600 hover:border-terracotta-300 hover:text-terracotta-600'
+                      : 'bg-sand-50 border-warmgray-200 text-warmgray-600 hover:border-terracotta-300 hover:text-terracotta-600'
                   }`}
                   aria-pressed={voiceEnabled}
                   aria-label={voiceEnabled ? 'Voice feedback enabled' : 'Enable voice feedback'}
@@ -148,7 +148,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
         {/* Primary CTA: Enter Artisan Studio */}
         <button
           onClick={() => onSelectMode('sell')}
-          className="group w-full text-left rounded-3xl p-8 md:p-10 bg-white border-2 border-warmgray-200 shadow-xl shadow-warmgray-200/50 hover:border-terracotta-300 hover:shadow-2xl hover:shadow-terracotta-200/30 card-transition mb-8"
+          className="group w-full text-left rounded-3xl p-8 md:p-10 bg-sand-50 border-2 border-warmgray-200 shadow-xl shadow-warmgray-200/50 hover:border-terracotta-300 hover:shadow-2xl hover:shadow-terracotta-200/30 card-transition mb-8"
           aria-label="Enter Artisan Studio - Voice-guided product photography"
         >
           <div className="flex flex-col md:flex-row md:items-center gap-6">
@@ -231,7 +231,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
 
         {/* Footer */}
         <footer className="text-center pb-10 space-y-3">
-          <p className="text-xs text-warmgray-500">
+          <p className="text-sm text-warmgray-500">
             Built for the{' '}
             <a
               href="https://www.kaggle.com/competitions/gemma-4-good-hackathon"
@@ -243,7 +243,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
             </a>
             {' '}· Digital Equity & Inclusivity Track
           </p>
-          <p className="text-[10px] text-warmgray-400">
+          <p className="text-xs text-warmgray-400">
             Powered by Gemma 4 via Ollama · Voice via Web Speech API
           </p>
         </footer>

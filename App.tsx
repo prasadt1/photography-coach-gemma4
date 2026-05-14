@@ -439,6 +439,7 @@ function App() {
         onBack={handleGoHome}
         ollamaReady={ollamaReady}
         voiceEnabled={voiceEnabled}
+        onVoiceToggle={() => setVoiceEnabled(!voiceEnabled)}
         preloadedImage={pendingSellImage}
         onImageProcessed={() => setPendingSellImage(null)}
       />

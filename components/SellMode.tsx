@@ -10,7 +10,7 @@
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
-  Camera, Package, Loader2, CheckCircle2, AlertTriangle,
+  Camera, Loader2, CheckCircle2, AlertTriangle,
   Lightbulb, RotateCcw, Sun, Focus, Image as ImageIcon, Sparkles,
   Grid3X3, FileText, Accessibility, Copy, Volume2, ArrowRight,
   ChevronLeft,

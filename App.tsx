@@ -525,10 +525,10 @@ function App() {
               <button
                 type="button"
                 onClick={() => handleModeChange('sell')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 ${mode === 'sell' ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-300'}`}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 text-slate-400 hover:text-slate-300"
                 title="Voice-guided product photography for artisans"
               >
-                💎 Artisan
+                Artisan
               </button>
               {isElectron && (
                 <button

@@ -12,7 +12,7 @@ import {
   Grid3X3, FileText, Accessibility, Copy, Volume2,
 } from 'lucide-react';
 import { analyzeForSellMode } from '../services/analysisOrchestrator';
-import { parseSellResponse, parseArtisanResponseV3, speak } from '../services/voiceCoach';
+import { parseSellResponse, parseArtisanResponseV3, speak, stopSpeaking } from '../services/voiceCoach';
 import { DEMO_RESPONSES, DemoResponse, simulateProcessing, getComparisonSamples } from '../src/data/demoResponses';
 
 interface SellModeProps {
@@ -75,6 +75,18 @@ const SellMode: React.FC<SellModeProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Stop speaking when component unmounts or voice is disabled
+  useEffect(() => {
+    if (!voiceEnabled) {
+      stopSpeaking();
+      setIsSpeaking(false);
+    }
+    // Cleanup: stop speaking when leaving this page
+    return () => {
+      stopSpeaking();
+    };
+  }, [voiceEnabled]);
+
   // Demo Mode: handle sample selection with pre-recorded v3 response
   const handleDemoSampleSelect = useCallback(async (sample: DemoResponse) => {
     setError(null);
@@ -100,19 +112,29 @@ const SellMode: React.FC<SellModeProps> = ({
       rawResponse: JSON.stringify(r),
     });
 
-    // Voice feedback - v3 format: subject → framing → lighting → primary fix → verdict
-    const voiceText = [
-      r.subject,
-      r.critique.framing,
-      r.critique.lighting,
-      r.critique.primary_fix,
-      r.confidence_note || '',
-      r.ready_to_list ? 'This photo is ready to list.' : 'Make this fix, then take another shot.',
-    ].filter(Boolean).join(' ');
+    // Voice feedback - full v3 format with all listing assets
+    if (voiceEnabled) {
+      const voiceText = [
+        // What I see
+        r.subject,
+        // Critique
+        `Framing: ${r.critique.framing}`,
+        `Lighting: ${r.critique.lighting}`,
+        // Primary fix or ready verdict
+        r.ready_to_list
+          ? 'This photo is ready to list.'
+          : `Your next step: ${r.critique.primary_fix}`,
+        // Confidence note if any
+        r.confidence_note || '',
+        // Listing assets
+        r.alt_text ? `Alt text for your listing: ${r.alt_text}` : '',
+        r.listing_copy ? `Product description: ${r.listing_copy}` : '',
+      ].filter(Boolean).join(' ');
 
-    speak(voiceText);
+      speak(voiceText);
+    }
     setIsAnalyzing(false);
-  }, []);
+  }, [voiceEnabled]);
 
   // Auto-analyze preloaded image from Studio mode ("Optimize for Marketplace" flow)
   useEffect(() => {
@@ -150,10 +172,14 @@ const SellMode: React.FC<SellModeProps> = ({
             if (voiceEnabled) {
               const voiceText = [
                 v3Parsed.subject,
-                v3Parsed.critique.framing,
-                v3Parsed.critique.lighting,
-                v3Parsed.critique.primary_fix,
-                v3Parsed.ready_to_list ? 'This photo is ready to list.' : 'Make this fix, then take another shot.',
+                `Framing: ${v3Parsed.critique.framing}`,
+                `Lighting: ${v3Parsed.critique.lighting}`,
+                v3Parsed.ready_to_list
+                  ? 'This photo is ready to list.'
+                  : `Your next step: ${v3Parsed.critique.primary_fix}`,
+                v3Parsed.confidence_note || '',
+                v3Parsed.alt_text ? `Alt text: ${v3Parsed.alt_text}` : '',
+                v3Parsed.listing_copy ? `Product description: ${v3Parsed.listing_copy}` : '',
               ].filter(Boolean).join(' ');
               speak(voiceText);
             }
@@ -311,15 +337,18 @@ const SellMode: React.FC<SellModeProps> = ({
           rawResponse: response,
         });
 
-        // Voice feedback: subject → framing → lighting → primary fix
+        // Voice feedback - full analysis with listing assets
         if (voiceEnabled) {
           const voiceText = [
             v3Parsed.subject,
-            v3Parsed.critique.framing,
-            v3Parsed.critique.lighting,
-            v3Parsed.critique.primary_fix,
+            `Framing: ${v3Parsed.critique.framing}`,
+            `Lighting: ${v3Parsed.critique.lighting}`,
+            v3Parsed.ready_to_list
+              ? 'This photo is ready to list.'
+              : `Your next step: ${v3Parsed.critique.primary_fix}`,
             v3Parsed.confidence_note || '',
-            v3Parsed.ready_to_list ? 'This photo is ready to list.' : 'Make this fix, then take another shot.',
+            v3Parsed.alt_text ? `Alt text: ${v3Parsed.alt_text}` : '',
+            v3Parsed.listing_copy ? `Product description: ${v3Parsed.listing_copy}` : '',
           ].filter(Boolean).join(' ');
           speak(voiceText);
         }

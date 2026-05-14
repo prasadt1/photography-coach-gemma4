@@ -156,6 +156,27 @@ export function getComparisonSamples(): DemoResponse[] {
 }
 
 /**
+ * Canned comparison result for Demo Mode
+ * Compares sample-1 (cropped scarf) vs sample-2 (full scarf)
+ */
+export const DEMO_COMPARISON_RESULT = {
+  winner: 'B' as const,
+  reason: 'Photo B shows the complete scarf with both fringed ends visible, giving buyers a clear view of what they are purchasing. Photo A cuts off both ends, making it impossible to judge the full length or see the fringe detail.',
+  strengths_a: [
+    'Cable knit texture is clearly visible',
+    'Warm, natural lighting',
+    'Clean wooden background provides good contrast',
+  ],
+  strengths_b: [
+    'Full product visible with even margins',
+    'Both fringed ends in frame',
+    'Professional flat-lay composition',
+    'Ready for marketplace listing',
+  ],
+  recommendation: 'Use Photo B for your listing. The full-length view helps buyers understand exactly what they are purchasing. Consider taking an additional close-up shot to showcase the cable knit texture visible in Photo A.',
+};
+
+/**
  * Simulate Gemma 4 E4B processing delay (~2 seconds)
  */
 export function simulateProcessing(): Promise<void> {

@@ -13,7 +13,8 @@ import {
 } from 'lucide-react';
 import { analyzeForSellMode } from '../services/analysisOrchestrator';
 import { parseSellResponse, parseArtisanResponseV3, speak, stopSpeaking } from '../services/voiceCoach';
-import { DEMO_RESPONSES, DemoResponse, simulateProcessing, getComparisonSamples } from '../src/data/demoResponses';
+import { DEMO_RESPONSES, DemoResponse, simulateProcessing, getComparisonSamples, DEMO_COMPARISON_RESULT } from '../src/data/demoResponses';
+import { ComparisonResult } from '../services/ollamaService';
 
 interface SellModeProps {
   onBack: () => void;
@@ -72,6 +73,8 @@ const SellMode: React.FC<SellModeProps> = ({
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [processedPreload, setProcessedPreload] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [showCompare, setShowCompare] = useState(false);
+  const [demoCompareResult, setDemoCompareResult] = useState<ComparisonResult | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -528,18 +531,137 @@ const SellMode: React.FC<SellModeProps> = ({
               </p>
               <button
                 onClick={() => {
-                  // TODO: Wire to Compare panel with demo samples
-                  const comparisonSamples = getComparisonSamples();
-                  if (comparisonSamples.length >= 2) {
-                    console.log('[Demo] Compare samples:', comparisonSamples[0].label, 'vs', comparisonSamples[1].label);
-                    // For now, just analyze the first comparison sample
-                    handleDemoSampleSelect(comparisonSamples[0]);
-                  }
+                  setShowCompare(true);
+                  setDemoCompareResult(DEMO_COMPARISON_RESULT);
                 }}
                 className="flex items-center gap-2 px-4 py-2.5 bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 rounded-xl text-purple-200 font-semibold text-sm transition-all"
               >
                 <ImageIcon className="w-4 h-4" />
                 Compare two photos of the same product
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Demo Compare Panel */}
+        {showCompare && demoCompareResult && (
+          <div className="bg-gradient-to-br from-violet-900/30 to-purple-900/20 border-2 border-violet-500/40 rounded-2xl p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-violet-500/20 border border-violet-500/30">
+                  <ImageIcon className="w-5 h-5 text-violet-400" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">Compare Two Photos</h3>
+                  <p className="text-sm text-violet-200/60">Same product, different shots — which is better?</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowCompare(false);
+                  setDemoCompareResult(null);
+                }}
+                className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+                aria-label="Close compare"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Side by side images */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              {getComparisonSamples().map((sample, idx) => {
+                const label = idx === 0 ? 'A' : 'B';
+                const isWinner = demoCompareResult.winner === label;
+                return (
+                  <div
+                    key={sample.id}
+                    className={`relative rounded-xl overflow-hidden border-2 ${
+                      isWinner ? 'border-emerald-500 shadow-lg shadow-emerald-500/20' : 'border-slate-600 opacity-70'
+                    }`}
+                  >
+                    <img
+                      src={sample.imagePath}
+                      alt={sample.label}
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="absolute top-2 left-2 px-2 py-1 bg-slate-900/80 rounded text-xs font-mono text-white">
+                      {label}
+                    </div>
+                    {isWinner && (
+                      <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 bg-emerald-500 text-white rounded text-xs font-bold">
+                        🏆 Winner
+                      </div>
+                    )}
+                    <div className="px-3 py-2 bg-slate-900/60 text-sm text-slate-300">
+                      {sample.label}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Comparison Result */}
+            <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-emerald-400">🏆</span>
+                <h4 className="text-lg font-bold text-white">
+                  Winner: Photo {demoCompareResult.winner}
+                </h4>
+              </div>
+              <p className="text-slate-300 mb-4">{demoCompareResult.reason}</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div className="p-3 rounded-lg border border-slate-700 bg-slate-900/40">
+                  <p className="text-xs font-semibold uppercase text-slate-500 mb-2">Photo A — strengths</p>
+                  <ul className="space-y-1">
+                    {demoCompareResult.strengths_a.map((s, i) => (
+                      <li key={i} className="text-sm text-slate-300 flex items-start gap-2">
+                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0" />
+                        {s}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5">
+                  <p className="text-xs font-semibold uppercase text-emerald-400 mb-2">Photo B — strengths</p>
+                  <ul className="space-y-1">
+                    {demoCompareResult.strengths_b.map((s, i) => (
+                      <li key={i} className="text-sm text-slate-300 flex items-start gap-2">
+                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                        {s}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {demoCompareResult.recommendation && (
+                <div className="p-3 rounded-lg bg-violet-500/10 border border-violet-500/30">
+                  <p className="text-xs font-semibold uppercase text-violet-400 mb-1">Recommendation</p>
+                  <p className="text-sm text-slate-200">{demoCompareResult.recommendation}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Action: Analyze the winner */}
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={() => {
+                  const winner = getComparisonSamples().find((_, idx) =>
+                    (idx === 0 && demoCompareResult.winner === 'A') ||
+                    (idx === 1 && demoCompareResult.winner === 'B')
+                  );
+                  if (winner) {
+                    setShowCompare(false);
+                    setDemoCompareResult(null);
+                    handleDemoSampleSelect(winner);
+                  }
+                }}
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg"
+              >
+                <Sparkles className="w-4 h-4" />
+                Analyze Winner for Listing
               </button>
             </div>
           </div>

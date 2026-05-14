@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LENS - Photography Coach | Gemma 4 · Local</title>
+    <title>L.E.N.S. — Photography Coach for Artisans</title>
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#3b82f6" />
+    <meta name="theme-color" content="#d97756" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="LENS" />
+    <meta name="apple-mobile-web-app-title" content="L.E.N.S." />
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Source+Serif+4:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         theme: {
@@ -20,35 +20,83 @@
               serif: ['Source Serif 4', 'Georgia', 'serif'],
             },
             colors: {
-              brand: {
-                50: '#f0fdf4',
-                100: '#dcfce7',
-                200: '#bbf7d0',
-                300: '#86efac',
-                400: '#4ade80',
-                500: '#22c55e',
-                600: '#16a34a',
-                700: '#15803d',
-                800: '#166534',
-                900: '#14532d',
+              // Warm craft palette
+              cream: {
+                50: '#FEFDFB',
+                100: '#FDF9F3',
+                200: '#FAF3E8',
+                300: '#F5EBDA',
+                400: '#EFE0C9',
+                500: '#E8D4B5',
+                600: '#D4BA94',
+                700: '#B99B6F',
+                800: '#8F7350',
+                900: '#5C4A35',
+              },
+              sand: {
+                50: '#FAF8F5',
+                100: '#F5F1EB',
+                200: '#EBE4D9',
+                300: '#DED3C2',
+                400: '#CEBFA8',
+                500: '#BBA88A',
+                600: '#A08E6E',
+                700: '#7F7056',
+                800: '#5C5240',
+                900: '#3D362B',
+              },
+              warmgray: {
+                50: '#F9F8F6',
+                100: '#F2F0EC',
+                200: '#E5E2DB',
+                300: '#D4CFC5',
+                400: '#B8B1A4',
+                500: '#9A9285',
+                600: '#7A7267',
+                700: '#5C564C',
+                800: '#3D3934',
+                900: '#252320',
               },
               terracotta: {
-                50: '#fef7f4',
-                100: '#fce8e1',
-                200: '#f9cfc3',
-                300: '#f4ad96',
-                400: '#eb8464',
-                500: '#e06442',
-                600: '#cd4a2d',
-                700: '#ab3b24',
-                800: '#8c3323',
-                900: '#742e22',
-              }
+                50: '#FEF6F3',
+                100: '#FCE8E1',
+                200: '#F9D0C3',
+                300: '#F4AD96',
+                400: '#EB8464',
+                500: '#E06442',
+                600: '#CD4A2D',
+                700: '#AB3B24',
+                800: '#8C3323',
+                900: '#742E22',
+              },
+              amber: {
+                50: '#FFFBEB',
+                100: '#FEF3C7',
+                200: '#FDE68A',
+                300: '#FCD34D',
+                400: '#FBBF24',
+                500: '#F59E0B',
+                600: '#D97706',
+                700: '#B45309',
+                800: '#92400E',
+                900: '#78350F',
+              },
+              forest: {
+                50: '#F3FAF7',
+                100: '#D8F0E3',
+                200: '#B0E0C7',
+                300: '#7BCAA4',
+                400: '#4CAF7D',
+                500: '#2D9262',
+                600: '#21764E',
+                700: '#1C5F40',
+                800: '#1A4C35',
+                900: '#173F2D',
+              },
             },
             animation: {
               'fadeIn': 'fadeIn 0.5s ease-out forwards',
               'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-              'bounce-slow': 'bounce 3s infinite',
             },
             keyframes: {
               fadeIn: {
@@ -61,23 +109,25 @@
       }
     </script>
     <style>
+      /* Warm craft base */
       body {
-        background-color: #0f172a; /* Slate 900 */
-        color: #e2e8f0; /* Slate 200 */
+        background-color: #FAF8F5; /* sand-50 */
+        color: #3D362B; /* sand-900 */
       }
-      /* Custom scrollbar for webkit */
+
+      /* Custom scrollbar - warm tones */
       ::-webkit-scrollbar {
         width: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: #0f172a;
+        background: #F5F1EB;
       }
       ::-webkit-scrollbar-thumb {
-        background: #334155;
+        background: #CEBFA8;
         border-radius: 4px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #475569;
+        background: #BBA88A;
       }
 
       /* Emil Kowalski design engineering: Button tactile feedback */
@@ -110,7 +160,7 @@
           transform: translateY(-2px);
         }
         .hover-glow:hover {
-          box-shadow: 0 0 20px rgba(251, 146, 60, 0.3);
+          box-shadow: 0 0 30px rgba(224, 100, 66, 0.15);
         }
       }
 
@@ -127,6 +177,12 @@
       .card-transition {
         transition: transform 250ms var(--ease-out-expo),
                     box-shadow 250ms var(--ease-out-expo);
+      }
+
+      /* Strong focus states for accessibility */
+      button:focus-visible, a:focus-visible {
+        outline: 3px solid #E06442;
+        outline-offset: 2px;
       }
     </style>
   <script type="importmap">

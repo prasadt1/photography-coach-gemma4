@@ -64,12 +64,13 @@ export const DEMO_MODE_CONFIG = {
 
 // Ollama Cloud configuration for Vercel deployment fallback
 // Priority: (1) Local Ollama → (2) Ollama Cloud → (3) Demo Mode
+// Docs: https://docs.ollama.com/cloud
 export const OLLAMA_CLOUD_CONFIG = {
   // Vercel serverless API route that proxies to Ollama Cloud
   apiRoute: '/api/analyze',
-  // Model identifier on Ollama Cloud
-  model: 'gemma4:31b-cloud',
-  modelId: 'gemma-4-31b-cloud',
+  // Model identifier on Ollama Cloud (gemma4 has vision support)
+  model: 'gemma4',
+  modelId: 'gemma4-cloud',
   // Whether cloud fallback is enabled (requires OLLAMA_API_KEY in Vercel)
   enabled: _isDeployedEnvironment,
 } as const;

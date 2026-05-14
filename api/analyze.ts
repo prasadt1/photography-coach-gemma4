@@ -13,7 +13,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // Ollama Cloud configuration - uses same API format as local Ollama
 const OLLAMA_CLOUD_URL = 'https://ollama.com/api/chat';
-const DEFAULT_MODEL = 'gemma3:27b';  // Gemma 3 27B - good balance of speed and quality
+const DEFAULT_MODEL = 'gemma4';  // Gemma 4 with vision support on Ollama Cloud
 const TIMEOUT_MS = 120_000;  // 2 minutes
 
 interface AnalyzeRequest {

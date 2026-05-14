@@ -6,39 +6,36 @@
  *
  * Environment Variables:
  *   OLLAMA_API_KEY - API key for Ollama Cloud (set in Vercel dashboard)
- *
- * Detection priority (handled by client):
- *   1. Local Ollama (localhost:11434) — always preferred
- *   2. Ollama Cloud via this route — when local unavailable
- *   3. Demo Mode — graceful fallback with canned responses
  */
 
-// Vercel serverless types (compatible with Vercel Node.js runtime)
-interface VercelRequest {
-  method?: string;
-  body: unknown;
-}
-
-interface VercelResponse {
-  status(code: number): VercelResponse;
-  json(data: unknown): void;
-}
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // Ollama Cloud configuration
-const OLLAMA_CLOUD_URL = 'https://api.ollama.com/api/chat';
-const CLOUD_MODEL = 'gemma4:31b-cloud';  // Ollama Cloud model identifier
-const TIMEOUT_MS = 120_000;  // 2 minutes - same as local
+// TODO: Update these to match your Ollama Cloud account
+const OLLAMA_CLOUD_URL = process.env.OLLAMA_CLOUD_URL || 'https://api.ollama.com/v1/chat/completions';
+const CLOUD_MODEL = process.env.OLLAMA_CLOUD_MODEL || 'gemma2:9b';
+const TIMEOUT_MS = 120_000;  // 2 minutes
 
 interface AnalyzeRequest {
   base64Image: string;
   systemPrompt: string;
   userPrompt: string;
+  healthCheck?: boolean;
 }
 
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse,
 ) {
+  // CORS headers for browser requests
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   // Only accept POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -50,12 +47,21 @@ export default async function handler(
     return res.status(503).json({
       error: 'Ollama Cloud not configured',
       code: 'NO_API_KEY',
-      message: 'OLLAMA_API_KEY environment variable not set. Falling back to Demo Mode.',
+      message: 'OLLAMA_API_KEY environment variable not set.',
     });
   }
 
   try {
     const body = req.body as AnalyzeRequest;
+
+    // Health check endpoint
+    if (body.healthCheck) {
+      return res.status(200).json({
+        status: 'ok',
+        cloudConfigured: true,
+        model: CLOUD_MODEL,
+      });
+    }
 
     // Validate request
     if (!body.base64Image || !body.systemPrompt || !body.userPrompt) {
@@ -69,23 +75,28 @@ export default async function handler(
       ? body.base64Image.split('base64,')[1]
       : body.base64Image;
 
-    // Prepare Ollama Cloud request
+    // Prepare Ollama Cloud request (OpenAI-compatible format)
     const ollamaRequest = {
       model: CLOUD_MODEL,
       messages: [
         { role: 'system', content: body.systemPrompt },
-        { role: 'user', content: body.userPrompt, images: [cleanBase64] },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: body.userPrompt },
+            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${cleanBase64}` } },
+          ],
+        },
       ],
-      stream: false,
-      options: {
-        temperature: 0.1,
-        num_predict: 1024,
-      },
+      temperature: 0.1,
+      max_tokens: 1024,
     };
 
     // Call Ollama Cloud
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+    console.log('[/api/analyze] Calling Ollama Cloud:', OLLAMA_CLOUD_URL, 'model:', CLOUD_MODEL);
 
     const response = await fetch(OLLAMA_CLOUD_URL, {
       method: 'POST',
@@ -103,7 +114,6 @@ export default async function handler(
       const errorText = await response.text();
       console.error('[/api/analyze] Ollama Cloud error:', response.status, errorText);
 
-      // Return specific error codes for client to handle fallback
       if (response.status === 401) {
         return res.status(401).json({
           error: 'Invalid API key',
@@ -120,22 +130,21 @@ export default async function handler(
       return res.status(502).json({
         error: 'Ollama Cloud error',
         code: 'CLOUD_ERROR',
-        details: errorText.slice(0, 200),
+        status: response.status,
+        details: errorText.slice(0, 500),
       });
     }
 
     const data = await response.json();
-    const content = data.message?.content ?? '';
+    // OpenAI-compatible response format
+    const content = data.choices?.[0]?.message?.content ?? data.message?.content ?? '';
+
+    console.log('[/api/analyze] Success, response length:', content.length);
 
     return res.status(200).json({
       content,
       source: 'ollama-cloud',
       model: CLOUD_MODEL,
-      tokenUsage: {
-        promptTokens: data.prompt_eval_count,
-        completionTokens: data.eval_count,
-        totalTokens: (data.prompt_eval_count ?? 0) + (data.eval_count ?? 0),
-      },
     });
 
   } catch (err) {

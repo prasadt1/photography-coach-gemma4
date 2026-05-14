@@ -735,8 +735,7 @@ export async function checkCloudAvailability(): Promise<boolean> {
   if (!OLLAMA_CLOUD_CONFIG.enabled) return false;
 
   try {
-    // Lightweight check — HEAD request to the API route
-    // The route returns 503 if OLLAMA_API_KEY is not set
+    // Health check request to the API route
     const res = await fetch(OLLAMA_CLOUD_CONFIG.apiRoute, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -744,16 +743,22 @@ export async function checkCloudAvailability(): Promise<boolean> {
       signal: AbortSignal.timeout(5000),
     });
 
-    // 405 means route exists but wrong method — that's fine for health check
     // 503 with NO_API_KEY means cloud not configured
     if (res.status === 503) {
       const data = await res.json();
       if (data.code === 'NO_API_KEY') return false;
     }
 
-    // Route exists and may be functional
-    return res.status !== 404;
-  } catch {
+    // 200 with cloudConfigured: true means cloud is ready
+    if (res.status === 200) {
+      const data = await res.json();
+      return data.cloudConfigured === true;
+    }
+
+    // Any other status means cloud is not available
+    return false;
+  } catch (err) {
+    console.warn('[checkCloudAvailability] Failed:', err);
     return false;
   }
 }

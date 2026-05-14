@@ -13,7 +13,7 @@ import {
   Camera, Loader2, CheckCircle2, AlertTriangle,
   Lightbulb, RotateCcw, Sun, Image as ImageIcon, Sparkles,
   Grid3X3, FileText, Accessibility, Copy, ArrowRight,
-  ChevronLeft, Upload, Cloud, Volume2, VolumeX, HelpCircle,
+  ChevronLeft, Upload, Cloud, Volume2, VolumeX, HelpCircle, AudioLines,
 } from 'lucide-react';
 import { analyzeForSellModeWithFallback, detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
 import { parseSellResponse, parseArtisanResponseV3, speak, stopSpeaking, resumeSpeech, hasPausedSpeech, isSpeechCompleted, clearPausedSpeech } from '../services/voiceCoach';
@@ -342,7 +342,7 @@ const SellMode: React.FC<SellModeProps> = ({
   };
 
   return (
-    <div className="min-h-[100dvh] bg-[#E7E6DB] text-[#2A2A22]">
+    <div className="min-h-[100dvh] bg-[#ECE3D2] text-[#241F18]">
       <input
         ref={fileInputRef}
         type="file"
@@ -358,7 +358,7 @@ const SellMode: React.FC<SellModeProps> = ({
         <header className="flex items-center justify-between mb-10">
           <button
             onClick={handleBack}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#F1F0E9] border-2 border-[#D5D3C5] text-[#2A2A22] hover:border-[#BC6A45] hover:text-[#BC6A45] focus:outline-none focus:ring-2 focus:ring-[#BC6A45]"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#F4ECDC] border-2 border-[#D8CDB8] text-[#241F18] hover:border-[#C06B45] hover:text-[#C06B45] focus:outline-none focus:ring-2 focus:ring-[#C06B45]"
             aria-label={result || showCompare ? "Go back" : "Return home"}
           >
             <ChevronLeft className="w-4 h-4" />
@@ -372,8 +372,8 @@ const SellMode: React.FC<SellModeProps> = ({
                 onClick={onVoiceToggle}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold border-2 ${
                   voiceEnabled
-                    ? 'bg-[#BC6A45] border-[#BC6A45] text-white shadow-lg'
-                    : 'bg-[#F1F0E9] border-[#D5D3C5] text-[#6B6A5E] hover:border-[#BC6A45] hover:text-[#BC6A45]'
+                    ? 'bg-[#C06B45] border-[#C06B45] text-white shadow-lg'
+                    : 'bg-[#F4ECDC] border-[#D8CDB8] text-[#6B6358] hover:border-[#C06B45] hover:text-[#C06B45]'
                 }`}
                 aria-pressed={voiceEnabled}
                 aria-label={voiceEnabled ? 'Voice feedback enabled' : 'Enable voice feedback'}
@@ -387,14 +387,14 @@ const SellMode: React.FC<SellModeProps> = ({
             {sourceDetected && (
               <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border-2 ${
                 inferenceSource === 'local'
-                  ? 'bg-[#BAC29C] border-[#6E7E50] text-[#2A2A22]'
+                  ? 'bg-[#A9B8BE] border-[#2F4858] text-[#241F18]'
                   : inferenceSource === 'cloud'
                     ? 'bg-blue-50 border-blue-200 text-blue-700'
-                    : 'bg-[#F1F0E9] border-[#D5D3C5] text-[#6B6A5E]'
+                    : 'bg-[#F4ECDC] border-[#D8CDB8] text-[#6B6358]'
               }`}>
                 {inferenceSource === 'local' ? (
                   <>
-                    <div className="w-2 h-2 rounded-full bg-[#6E7E50] animate-pulse" />
+                    <div className="w-2 h-2 rounded-full bg-[#2F4858] animate-pulse" />
                     <span className="text-xs font-semibold">Local · Private</span>
                   </>
                 ) : inferenceSource === 'cloud' ? (
@@ -417,23 +417,43 @@ const SellMode: React.FC<SellModeProps> = ({
           {/* Title Section */}
           {!result && !isAnalyzing && !showCompare && (
             <div className="mb-10">
-              <p className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#BAC29C] text-[#2A2A22] text-xs font-semibold uppercase tracking-wider mb-4">
+              <p className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#A9B8BE] text-[#241F18] text-xs font-semibold uppercase tracking-wider mb-4">
                 <Camera className="w-3.5 h-3.5" />
                 Artisan Studio
               </p>
-              <h1 className="text-3xl md:text-4xl font-bold font-serif text-[#2A2A22] leading-tight mb-3">
+              <h1 className="text-3xl md:text-4xl font-bold font-serif text-[#241F18] leading-tight mb-3">
                 Hear what your photo needs
               </h1>
-              <p className="text-lg text-[#6B6A5E] leading-relaxed max-w-xl mb-4">
-                Select a sample to see real Gemma 4 analysis, or upload your own photo.
+              <p className="text-lg text-[#241F18] leading-relaxed max-w-2xl mb-4">
+                Take a photo of your work and hear exactly what's working and how to improve it — no sighted help needed. <span className="text-[#2F4858] font-semibold">New here? Start with a sample below.</span>
               </p>
+
+              {/* Compact How It Works */}
+              <div className="flex flex-wrap items-center gap-3 mb-4 text-sm">
+                <span className="text-[#6B6358] font-medium">How it works:</span>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F4ECDC] border border-[#D8CDB8]">
+                  <Camera className="w-3 h-3 text-[#2F4858]" />
+                  <span className="text-xs font-semibold text-[#241F18]">Take photo</span>
+                </div>
+                <ArrowRight className="w-3 h-3 text-[#6B6358]" />
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F4ECDC] border border-[#D8CDB8]">
+                  <AudioLines className="w-3 h-3 text-[#2F4858]" />
+                  <span className="text-xs font-semibold text-[#241F18]">Hear feedback</span>
+                </div>
+                <ArrowRight className="w-3 h-3 text-[#6B6358]" />
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F4ECDC] border border-[#D8CDB8]">
+                  <FileText className="w-3 h-3 text-[#2F4858]" />
+                  <span className="text-xs font-semibold text-[#241F18]">Get listing copy</span>
+                </div>
+              </div>
+
               <button
                 onClick={handleTutorial}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#F1F0E9] border-2 border-[#D5D3C5] text-[#2A2A22] hover:border-[#BC6A45] hover:bg-[#BAC29C] focus:outline-none focus:ring-2 focus:ring-[#BC6A45]"
-                aria-label="How to use - Audio tutorial"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#F4ECDC] border-2 border-[#D8CDB8] text-[#241F18] hover:border-[#C06B45] hover:bg-[#A9B8BE] focus:outline-none focus:ring-2 focus:ring-[#C06B45]"
+                aria-label="Play audio guide: how to use this page"
               >
                 <HelpCircle className="w-4 h-4" />
-                <span className="text-sm font-semibold">How to use?</span>
+                <span className="text-sm font-semibold">Play audio guide</span>
               </button>
             </div>
           )}
@@ -445,8 +465,8 @@ const SellMode: React.FC<SellModeProps> = ({
               <div>
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h2 className="text-xl font-bold text-[#2A2A22] mb-1">Try a Sample</h2>
-                    <p className="text-sm text-[#6B6A5E]">Real Gemma 4 E4B responses, generated locally via Ollama</p>
+                    <h2 className="text-xl font-bold text-[#241F18] mb-1">Try a Sample</h2>
+                    <p className="text-sm text-[#6B6358]">Real Gemma 4 E4B responses, generated locally via Ollama</p>
                   </div>
                 </div>
 
@@ -455,7 +475,7 @@ const SellMode: React.FC<SellModeProps> = ({
                     <button
                       key={sample.id}
                       onClick={() => handleDemoSampleSelect(sample)}
-                      className="group text-left rounded-2xl bg-[#F1F0E9] border-2 border-[#D5D3C5] overflow-hidden hover:border-[#BC6A45] hover:shadow-xl hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-[#BC6A45] card-transition"
+                      className="group text-left rounded-2xl bg-[#F4ECDC] border-2 border-[#D8CDB8] overflow-hidden hover:border-[#C06B45] hover:shadow-xl hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-[#C06B45] card-transition"
                       aria-label={`Analyze ${sample.label}`}
                     >
                       <div className="relative h-52 overflow-hidden">
@@ -464,17 +484,17 @@ const SellMode: React.FC<SellModeProps> = ({
                           alt={sample.label}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#2A2A22]/60 via-transparent to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#241F18]/60 via-transparent to-transparent" />
                         <div className="absolute bottom-4 left-4 right-4">
-                          <span className="inline-block px-2.5 py-1 rounded-full bg-[#F1F0E9]/90 text-[10px] font-bold uppercase tracking-wider text-[#2A2A22] mb-2">
+                          <span className="inline-block px-2.5 py-1 rounded-full bg-[#F4ECDC]/90 text-[10px] font-bold uppercase tracking-wider text-[#241F18] mb-2">
                             {sample.category}
                           </span>
                           <p className="text-white font-semibold text-lg">{sample.label}</p>
                         </div>
                       </div>
-                      <div className="p-4 flex items-center justify-between bg-[#F1F0E9]">
-                        <span className="text-sm font-medium text-[#6B6A5E]">See analysis</span>
-                        <ArrowRight className="w-4 h-4 text-[#BC6A45] group-hover:translate-x-1 transition-transform" />
+                      <div className="p-4 flex items-center justify-between bg-[#F4ECDC]">
+                        <span className="text-sm font-medium text-[#6B6358]">See analysis</span>
+                        <ArrowRight className="w-4 h-4 text-[#C06B45] group-hover:translate-x-1 transition-transform" />
                       </div>
                     </button>
                   ))}
@@ -487,10 +507,10 @@ const SellMode: React.FC<SellModeProps> = ({
                   setShowCompare(true);
                   setDemoCompareResult(DEMO_COMPARISON_RESULT);
                 }}
-                className="flex items-center gap-3 text-[#6B6A5E] hover:text-[#BC6A45] group"
+                className="flex items-center gap-3 text-[#6B6358] hover:text-[#C06B45] group"
                 aria-label="Compare two photos"
               >
-                <div className="w-10 h-10 rounded-full bg-[#F1F0E9] border border-[#D5D3C5] flex items-center justify-center group-hover:border-[#BC6A45]">
+                <div className="w-10 h-10 rounded-full bg-[#F4ECDC] border border-[#D8CDB8] flex items-center justify-center group-hover:border-[#C06B45]">
                   <ImageIcon className="w-4 h-4" />
                 </div>
                 <span className="text-sm font-medium">Compare two photos of the same product</span>
@@ -499,8 +519,8 @@ const SellMode: React.FC<SellModeProps> = ({
 
               {/* SECONDARY: Upload Section */}
               {inferenceSource !== 'demo' && (
-                <div className="pt-8 border-t-2 border-[#D5D3C5]">
-                  <p className="text-sm text-[#6B6A5E] mb-4">
+                <div className="pt-8 border-t-2 border-[#D8CDB8]">
+                  <p className="text-sm text-[#6B6358] mb-4">
                     Want to try your own photo? Upload one below for {inferenceSource === 'cloud' ? 'cloud' : 'local'} analysis.
                     {inferenceSource === 'cloud' && (
                       <span className="block mt-2 text-xs italic">
@@ -510,15 +530,15 @@ const SellMode: React.FC<SellModeProps> = ({
                   </p>
                   <button
                     onClick={handleCapture}
-                    className="w-full rounded-2xl border-2 border-dashed border-[#D5D3C5] bg-[#F1F0E9] hover:border-[#BC6A45] hover:bg-[#F1F0E9] p-8 flex flex-col items-center gap-4 focus:outline-none focus:ring-2 focus:ring-[#BC6A45] group"
+                    className="w-full rounded-2xl border-2 border-dashed border-[#D8CDB8] bg-[#F4ECDC] hover:border-[#C06B45] hover:bg-[#F4ECDC] p-8 flex flex-col items-center gap-4 focus:outline-none focus:ring-2 focus:ring-[#C06B45] group"
                     aria-label="Upload your own photo"
                   >
-                    <div className="w-14 h-14 rounded-2xl bg-[#F1F0E9] border border-[#D5D3C5] flex items-center justify-center group-hover:bg-[#BAC29C] group-hover:border-[#6E7E50]">
-                      <Upload className="w-6 h-6 text-[#6B6A5E] group-hover:text-[#BC6A45]" />
+                    <div className="w-14 h-14 rounded-2xl bg-[#F4ECDC] border border-[#D8CDB8] flex items-center justify-center group-hover:bg-[#A9B8BE] group-hover:border-[#2F4858]">
+                      <Upload className="w-6 h-6 text-[#6B6358] group-hover:text-[#C06B45]" />
                     </div>
                     <div className="text-center">
-                      <p className="text-base font-semibold text-[#2A2A22] mb-1">Upload your photo</p>
-                      <p className="text-sm text-[#6B6A5E]">
+                      <p className="text-base font-semibold text-[#241F18] mb-1">Upload your photo</p>
+                      <p className="text-sm text-[#6B6358]">
                         {inferenceSource === 'cloud' ? 'Analyzed via Ollama Cloud' : '100% private, on-device'}
                       </p>
                     </div>
@@ -528,12 +548,12 @@ const SellMode: React.FC<SellModeProps> = ({
 
               {/* Demo mode notice */}
               {inferenceSource === 'demo' && (
-                <div className="flex items-start gap-3 p-5 rounded-2xl bg-[#F1F0E9] border border-[#D5D3C5]">
-                  <Sparkles className="w-5 h-5 text-[#BC6A45] mt-0.5 shrink-0" />
+                <div className="flex items-start gap-3 p-5 rounded-2xl bg-[#F4ECDC] border border-[#D8CDB8]">
+                  <Sparkles className="w-5 h-5 text-[#C06B45] mt-0.5 shrink-0" />
                   <div>
-                    <p className="text-sm text-[#2A2A22]">
-                      <strong className="text-[#2A2A22]">Demo Mode</strong> — These are real Gemma 4 E4B responses captured from local Ollama.
-                      <a href="https://github.com/prasadt1/photography-coach-gemma4#quick-start" target="_blank" rel="noopener noreferrer" className="text-[#BC6A45] hover:text-[#BC6A45] underline ml-1">
+                    <p className="text-sm text-[#241F18]">
+                      <strong className="text-[#241F18]">Demo Mode</strong> — These are real Gemma 4 E4B responses captured from local Ollama.
+                      <a href="https://github.com/prasadt1/photography-coach-gemma4#quick-start" target="_blank" rel="noopener noreferrer" className="text-[#C06B45] hover:text-[#C06B45] underline ml-1">
                         Install Ollama
                       </a> for live analysis.
                     </p>
@@ -545,12 +565,12 @@ const SellMode: React.FC<SellModeProps> = ({
 
           {/* Analyzing State */}
           {isAnalyzing && (
-            <div className="rounded-2xl bg-[#F1F0E9] border-2 border-[#D5D3C5] p-12 text-center" role="status" aria-live="polite">
-              <Loader2 className="w-12 h-12 text-[#BC6A45] animate-spin mx-auto mb-4" />
-              <p className="text-xl font-bold text-[#2A2A22] mb-2">
+            <div className="rounded-2xl bg-[#F4ECDC] border-2 border-[#D8CDB8] p-12 text-center" role="status" aria-live="polite">
+              <Loader2 className="w-12 h-12 text-[#C06B45] animate-spin mx-auto mb-4" />
+              <p className="text-xl font-bold text-[#241F18] mb-2">
                 {inferenceSource === 'local' ? 'Analyzing locally...' : inferenceSource === 'cloud' ? 'Analyzing via cloud...' : 'Preparing analysis...'}
               </p>
-              <p className="text-[#6B6A5E]">
+              <p className="text-[#6B6358]">
                 {inferenceSource === 'local' ? 'Gemma 4 E4B · Nothing leaves your device' : inferenceSource === 'cloud' ? 'Gemma 4 via Ollama Cloud' : 'Demo response'}
               </p>
             </div>
@@ -561,8 +581,8 @@ const SellMode: React.FC<SellModeProps> = ({
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold text-[#2A2A22]">Photo Comparison</h2>
-                  <p className="text-sm text-[#6B6A5E] mt-1">Same product, different shots</p>
+                  <h2 className="text-2xl font-bold text-[#241F18]">Photo Comparison</h2>
+                  <p className="text-sm text-[#6B6358] mt-1">Same product, different shots</p>
                 </div>
               </div>
 
@@ -571,34 +591,34 @@ const SellMode: React.FC<SellModeProps> = ({
                   const label = idx === 0 ? 'A' : 'B';
                   const isWinner = demoCompareResult.winner === label;
                   return (
-                    <div key={sample.id} className={`rounded-2xl overflow-hidden border-2 ${isWinner ? 'border-[#6E7E50] bg-[#BAC29C]' : 'border-[#D5D3C5] bg-[#F1F0E9] opacity-80'}`}>
+                    <div key={sample.id} className={`rounded-2xl overflow-hidden border-2 ${isWinner ? 'border-[#2F4858] bg-[#A9B8BE]' : 'border-[#D8CDB8] bg-[#F4ECDC] opacity-80'}`}>
                       <div className="relative">
                         <img src={sample.imagePath} alt={sample.label} className="w-full h-48 object-cover" />
-                        <div className="absolute top-3 left-3 px-2.5 py-1 bg-[#F1F0E9]/90 rounded-full text-xs font-bold">{label}</div>
+                        <div className="absolute top-3 left-3 px-2.5 py-1 bg-[#F4ECDC]/90 rounded-full text-xs font-bold">{label}</div>
                         {isWinner && (
-                          <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 bg-[#BAC29C]0 text-white rounded-full text-xs font-bold">
+                          <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 bg-[#A9B8BE]0 text-white rounded-full text-xs font-bold">
                             <CheckCircle2 className="w-3 h-3" /> Winner
                           </div>
                         )}
                       </div>
-                      <p className="p-4 text-sm font-medium text-[#2A2A22]">{sample.label}</p>
+                      <p className="p-4 text-sm font-medium text-[#241F18]">{sample.label}</p>
                     </div>
                   );
                 })}
               </div>
 
-              <div className="rounded-2xl bg-[#F1F0E9] border-2 border-[#D5D3C5] p-6">
+              <div className="rounded-2xl bg-[#F4ECDC] border-2 border-[#D8CDB8] p-6">
                 <div className="flex items-center gap-2 mb-4">
-                  <CheckCircle2 className="w-5 h-5 text-[#6E7E50]" />
-                  <h3 className="text-lg font-bold text-[#2A2A22]">Winner: Photo {demoCompareResult.winner}</h3>
+                  <CheckCircle2 className="w-5 h-5 text-[#2F4858]" />
+                  <h3 className="text-lg font-bold text-[#241F18]">Winner: Photo {demoCompareResult.winner}</h3>
                 </div>
-                <p className="text-[#6B6A5E] mb-6">{demoCompareResult.reason}</p>
+                <p className="text-[#6B6358] mb-6">{demoCompareResult.reason}</p>
                 <button
                   onClick={() => {
                     const winner = getComparisonSamples().find((_, idx) => (idx === 0 && demoCompareResult.winner === 'A') || (idx === 1 && demoCompareResult.winner === 'B'));
                     if (winner) { setShowCompare(false); setDemoCompareResult(null); handleDemoSampleSelect(winner); }
                   }}
-                  className="flex items-center gap-2 px-6 py-3 bg-[#BC6A45] hover:bg-[#A4572F] text-white rounded-full text-sm font-semibold"
+                  className="flex items-center gap-2 px-6 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full text-sm font-semibold"
                 >
                   <span>Analyze Winner</span>
                   <ArrowRight className="w-4 h-4" />
@@ -612,7 +632,7 @@ const SellMode: React.FC<SellModeProps> = ({
             <div className="rounded-2xl bg-red-50 border-2 border-red-200 p-8 text-center" role="alert">
               <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-4" />
               <p className="text-red-700 font-medium mb-4">{error}</p>
-              <button onClick={handleRetry} className="px-5 py-2.5 bg-[#F1F0E9] border-2 border-[#D5D3C5] hover:border-[#D5D3C5] rounded-full text-sm font-semibold text-[#2A2A22]">
+              <button onClick={handleRetry} className="px-5 py-2.5 bg-[#F4ECDC] border-2 border-[#D8CDB8] hover:border-[#D8CDB8] rounded-full text-sm font-semibold text-[#241F18]">
                 Try Again
               </button>
             </div>
@@ -630,30 +650,30 @@ const SellMode: React.FC<SellModeProps> = ({
             <div className="space-y-8">
               {/* Photo + Verdict */}
               <div className="flex flex-col md:flex-row gap-6">
-                <div className="w-full md:w-96 shrink-0 rounded-2xl overflow-hidden border-2 border-[#D5D3C5] bg-[#F1F0E9]">
+                <div className="w-full md:w-96 shrink-0 rounded-2xl overflow-hidden border-2 border-[#D8CDB8] bg-[#F4ECDC]">
                   <img src={result.imageBase64} alt="Product photo" className="w-full object-contain" />
                 </div>
 
                 <div className="flex-1 space-y-4">
                   <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${
-                    result.readyToList ? 'bg-[#BAC29C] text-[#2A2A22] border-2 border-[#6E7E50]' : 'bg-amber-100 text-amber-700 border-2 border-amber-200'
+                    result.readyToList ? 'bg-[#A9B8BE] text-[#241F18] border-2 border-[#2F4858]' : 'bg-amber-100 text-amber-700 border-2 border-amber-200'
                   }`}>
                     {result.readyToList ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
                     <span className="text-sm font-bold">{result.readyToList ? 'Ready to List' : 'Needs One Fix'}</span>
                   </div>
 
                   <div>
-                    <p className="text-xs font-semibold text-[#6B6A5E] uppercase tracking-wider mb-2">What I See</p>
-                    <p className="text-xl font-semibold text-[#2A2A22]">{result.subject}</p>
+                    <p className="text-xs font-semibold text-[#6B6358] uppercase tracking-wider mb-2">What I See</p>
+                    <p className="text-xl font-semibold text-[#241F18]">{result.subject}</p>
                   </div>
 
                   {result.primaryFix && !result.readyToList && (
-                    <div className="p-5 rounded-2xl bg-[#BAC29C] border-2 border-[#6E7E50]">
+                    <div className="p-5 rounded-2xl bg-[#A9B8BE] border-2 border-[#2F4858]">
                       <div className="flex items-center gap-2 mb-2">
-                        <Lightbulb className="w-4 h-4 text-[#6E7E50]" />
-                        <p className="text-xs font-bold text-[#2A2A22] uppercase tracking-wider">Your Next Step</p>
+                        <Lightbulb className="w-4 h-4 text-[#2F4858]" />
+                        <p className="text-xs font-bold text-[#241F18] uppercase tracking-wider">Your Next Step</p>
                       </div>
-                      <p className="text-[#2A2A22]">{result.primaryFix}</p>
+                      <p className="text-[#241F18]">{result.primaryFix}</p>
                     </div>
                   )}
                 </div>
@@ -663,75 +683,75 @@ const SellMode: React.FC<SellModeProps> = ({
               {(result.framing || result.lighting) && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {result.framing && (
-                    <div className="p-5 rounded-2xl bg-[#F1F0E9] border-2 border-[#D5D3C5]">
+                    <div className="p-5 rounded-2xl bg-[#F4ECDC] border-2 border-[#D8CDB8]">
                       <div className="flex items-center gap-2 mb-3">
-                        <Grid3X3 className="w-4 h-4 text-[#6B6A5E]" />
-                        <p className="text-xs font-semibold text-[#6B6A5E] uppercase tracking-wider">Framing</p>
+                        <Grid3X3 className="w-4 h-4 text-[#6B6358]" />
+                        <p className="text-xs font-semibold text-[#6B6358] uppercase tracking-wider">Framing</p>
                       </div>
-                      <p className="text-[#2A2A22]">{result.framing}</p>
+                      <p className="text-[#241F18]">{result.framing}</p>
                     </div>
                   )}
                   {result.lighting && (
-                    <div className="p-5 rounded-2xl bg-[#F1F0E9] border-2 border-[#D5D3C5]">
+                    <div className="p-5 rounded-2xl bg-[#F4ECDC] border-2 border-[#D8CDB8]">
                       <div className="flex items-center gap-2 mb-3">
-                        <Sun className="w-4 h-4 text-[#6B6A5E]" />
-                        <p className="text-xs font-semibold text-[#6B6A5E] uppercase tracking-wider">Lighting</p>
+                        <Sun className="w-4 h-4 text-[#6B6358]" />
+                        <p className="text-xs font-semibold text-[#6B6358] uppercase tracking-wider">Lighting</p>
                       </div>
-                      <p className="text-[#2A2A22]">{result.lighting}</p>
+                      <p className="text-[#241F18]">{result.lighting}</p>
                     </div>
                   )}
                 </div>
               )}
 
               {result.confidenceNote && (
-                <div className="flex items-start gap-3 p-4 rounded-xl bg-[#F1F0E9] border border-[#D5D3C5]">
-                  <AlertTriangle className="w-4 h-4 text-[#6B6A5E] mt-0.5 shrink-0" />
-                  <p className="text-sm text-[#6B6A5E]">{result.confidenceNote}</p>
+                <div className="flex items-start gap-3 p-4 rounded-xl bg-[#F4ECDC] border border-[#D8CDB8]">
+                  <AlertTriangle className="w-4 h-4 text-[#6B6358] mt-0.5 shrink-0" />
+                  <p className="text-sm text-[#6B6358]">{result.confidenceNote}</p>
                 </div>
               )}
 
               {/* Listing Assets */}
               {(result.altText || result.listingCopy) && (
-                <div className="rounded-2xl bg-[#F1F0E9] border-2 border-[#D5D3C5] p-6">
+                <div className="rounded-2xl bg-[#F4ECDC] border-2 border-[#D8CDB8] p-6">
                   <div className="flex items-center gap-2 mb-6">
-                    <FileText className="w-4 h-4 text-[#BC6A45]" />
-                    <h3 className="text-sm font-bold text-[#2A2A22] uppercase tracking-wider">Listing Assets</h3>
+                    <FileText className="w-4 h-4 text-[#C06B45]" />
+                    <h3 className="text-sm font-bold text-[#241F18] uppercase tracking-wider">Listing Assets</h3>
                   </div>
 
                   <div className="space-y-5">
                     {result.listingCopy && (
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <p className="text-xs font-semibold text-[#6B6A5E] uppercase tracking-wider">Product Description</p>
+                          <p className="text-xs font-semibold text-[#6B6358] uppercase tracking-wider">Product Description</p>
                           <button
                             onClick={() => copyToClipboard(result.listingCopy, 'description')}
                             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                              copiedField === 'description' ? 'bg-[#BAC29C] text-[#2A2A22]' : 'bg-[#F1F0E9] hover:bg-[#D5D3C5] text-[#6B6A5E]'
+                              copiedField === 'description' ? 'bg-[#A9B8BE] text-[#241F18]' : 'bg-[#F4ECDC] hover:bg-[#D8CDB8] text-[#6B6358]'
                             }`}
                           >
                             {copiedField === 'description' ? <><CheckCircle2 className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
                           </button>
                         </div>
-                        <p className="text-[#2A2A22] bg-[#F1F0E9] rounded-xl p-4 text-sm">{result.listingCopy}</p>
+                        <p className="text-[#241F18] bg-[#F4ECDC] rounded-xl p-4 text-sm">{result.listingCopy}</p>
                       </div>
                     )}
 
                     {result.altText && (
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <p className="text-xs font-semibold text-[#6B6A5E] uppercase tracking-wider flex items-center gap-1.5">
+                          <p className="text-xs font-semibold text-[#6B6358] uppercase tracking-wider flex items-center gap-1.5">
                             <Accessibility className="w-3 h-3" /> Alt-Text
                           </p>
                           <button
                             onClick={() => copyToClipboard(result.altText, 'altText')}
                             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                              copiedField === 'altText' ? 'bg-[#BAC29C] text-[#2A2A22]' : 'bg-[#F1F0E9] hover:bg-[#D5D3C5] text-[#6B6A5E]'
+                              copiedField === 'altText' ? 'bg-[#A9B8BE] text-[#241F18]' : 'bg-[#F4ECDC] hover:bg-[#D8CDB8] text-[#6B6358]'
                             }`}
                           >
                             {copiedField === 'altText' ? <><CheckCircle2 className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
                           </button>
                         </div>
-                        <p className="text-[#2A2A22] bg-[#F1F0E9] rounded-xl p-4 text-sm">{result.altText}</p>
+                        <p className="text-[#241F18] bg-[#F4ECDC] rounded-xl p-4 text-sm">{result.altText}</p>
                       </div>
                     )}
                   </div>
@@ -742,7 +762,7 @@ const SellMode: React.FC<SellModeProps> = ({
               <div className="flex justify-center pt-4">
                 <button
                   onClick={handleRetry}
-                  className="flex items-center gap-2 px-6 py-3 bg-[#F1F0E9] border-2 border-[#D5D3C5] hover:border-[#BC6A45] rounded-full text-sm font-semibold text-[#2A2A22]"
+                  className="flex items-center gap-2 px-6 py-3 bg-[#F4ECDC] border-2 border-[#D8CDB8] hover:border-[#C06B45] rounded-full text-sm font-semibold text-[#241F18]"
                 >
                   <RotateCcw className="w-4 h-4" />
                   <span>Analyze Another Photo</span>

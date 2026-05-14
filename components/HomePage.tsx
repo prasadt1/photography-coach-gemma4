@@ -10,7 +10,7 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Gem, AudioLines, Camera, WifiOff, BadgeCheck,
+  AudioLines, Camera, WifiOff, BadgeCheck,
   ArrowRight, Sparkles, Shield, Info,
   Volume2, VolumeX, Loader2, Aperture, Eye,
 } from 'lucide-react';
@@ -146,13 +146,13 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady, stats, v
         >
           {/* Background watermark */}
           <div className="absolute -bottom-12 -right-12 w-64 h-64 opacity-[0.04] pointer-events-none">
-            <Gem className="w-full h-full text-terracotta-400" strokeWidth={0.6} />
+            <Camera className="w-full h-full text-terracotta-400" strokeWidth={0.6} />
           </div>
 
           <div className="relative">
             <div className="flex items-center gap-3 mb-5">
               <div className="p-3.5 rounded-xl bg-terracotta-500/25 border border-terracotta-500/40">
-                <Gem className="w-7 h-7 text-terracotta-400" />
+                <Camera className="w-7 h-7 text-terracotta-400" />
               </div>
               <div className="flex flex-wrap gap-2">
                 <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-terracotta-500/20 text-terracotta-300 border border-terracotta-500/30">
@@ -195,16 +195,16 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady, stats, v
           </div>
         </button>
 
-        {/* Secondary Link: General Photo Critique */}
+        {/* Secondary Link: General Photo Critique - increased font size */}
         <div className="text-center mb-10">
           <button
             onClick={() => onSelectMode('studio')}
-            className="inline-flex items-center gap-2 text-slate-400 hover:text-emerald-400 text-sm font-medium transition-colors group"
+            className="inline-flex items-center gap-2 text-slate-400 hover:text-emerald-400 text-base font-medium transition-colors group"
             aria-label="Try general photo critique for sighted photographers"
           >
-            <Aperture className="w-4 h-4" />
+            <Aperture className="w-5 h-5" />
             <span>Sighted photographer? Try general photo critique</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
 
@@ -235,7 +235,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady, stats, v
             <span className="font-medium">Free Forever</span>
           </div>
           <div className="flex items-center gap-2 text-terracotta-400">
-            <Gem className="w-5 h-5" />
+            <Sparkles className="w-5 h-5" />
             <span className="font-semibold">Powered by Gemma 4 E4B via Ollama</span>
           </div>
         </div>

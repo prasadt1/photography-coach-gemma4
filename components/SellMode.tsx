@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { analyzeForSellMode } from '../services/analysisOrchestrator';
 import { parseSellResponse, speak } from '../services/voiceCoach';
-import { DEMO_SAMPLES, DemoSample, simulateProcessing } from '../services/demoMode';
+import { DEMO_RESPONSES, DemoResponse, simulateProcessing, getComparisonSamples } from '../src/data/demoResponses';
 
 interface SellModeProps {
   onBack: () => void;
@@ -66,32 +66,57 @@ const SellMode: React.FC<SellModeProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Demo Mode: handle sample selection with pre-recorded response
-  const handleDemoSampleSelect = useCallback(async (sample: DemoSample) => {
+  const handleDemoSampleSelect = useCallback(async (sample: DemoResponse) => {
     setError(null);
     setIsAnalyzing(true);
     setResult(null);
     setIsDemoMode(true);
 
-    // Simulate ~2s processing delay
+    // Simulate ~2s "Analyzing locally with Gemma 4 E4B..." delay
     await simulateProcessing();
 
-    const parsed = parseSellResponse(sample.response);
+    // Map DemoResponse to SellResult
+    const r = sample.response;
     setResult({
-      ...parsed,
-      imageBase64: sample.imageUrl,
-      rawResponse: sample.response,
+      score: r.listingScore,
+      verdict: r.verdict,
+      productType: sample.category,
+      material: '',
+      topIssue: r.topFix,
+      fix: r.topFix,
+      background: r.background,
+      lighting: r.lighting,
+      productFocus: r.productFocus,
+      compositionTip: r.compositionTip || '',
+      lightingTip: r.lightingTip || '',
+      scaleSuggestion: '',
+      stylingIdea: '',
+      descriptionIdea: r.listingCopy || '',
+      altText: r.altText,
+      suggestedTags: r.suggestedTags,
+      imageBase64: sample.imagePath,
+      rawResponse: JSON.stringify(r),
+      // Accessibility fields
+      whatISee: r.whatISee,
+      colorCheck: r.colorCheck,
+      nextAction: r.nextAction,
     });
 
-    // Voice feedback (always enabled in demo mode for accessibility showcase)
-    if (voiceEnabled || true) { // Always speak in demo mode
-      const voiceText = parsed.whatISee
-        ? `${parsed.whatISee} ${parsed.colorCheck || ''} ${parsed.fix || ''} ${parsed.nextAction || ''}`
-        : `Listing score: ${parsed.score} out of 10. ${parsed.verdict}.`;
-      speak(voiceText);
-    }
+    // Voice feedback - always speak in demo mode for accessibility showcase
+    // Extended TTS: read full output (Task 6)
+    const voiceText = [
+      r.whatISee,
+      r.colorCheck,
+      r.framingStatus,
+      `Top fix: ${r.topFix}`,
+      r.nextAction,
+      `Listing score: ${r.listingScore} out of 10. ${r.verdict}.`,
+      r.altText ? `Alt text: ${r.altText}` : '',
+    ].filter(Boolean).join('. ');
 
+    speak(voiceText);
     setIsAnalyzing(false);
-  }, [voiceEnabled]);
+  }, []);
 
   // Auto-analyze preloaded image from Studio mode ("Optimize for Marketplace" flow)
   useEffect(() => {
@@ -353,35 +378,73 @@ const SellMode: React.FC<SellModeProps> = ({
           </div>
         </div>
 
-        {/* Demo Mode: Show sample products when Ollama is offline */}
+        {/* Demo Mode: PRIMARY action when Ollama is offline */}
         {ollamaReady === false && !result && !isAnalyzing && (
-          <div className="bg-purple-900/20 border border-purple-500/30 rounded-2xl p-6 mb-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Sparkles className="w-5 h-5 text-purple-400" />
-              <h2 className="text-lg font-bold text-purple-200">Demo Mode</h2>
+          <div className="bg-gradient-to-br from-purple-900/30 to-indigo-900/20 border-2 border-purple-500/40 rounded-2xl p-6 mb-6">
+            {/* Honest Demo Mode Badge */}
+            <div className="flex items-start gap-3 mb-4 p-3 bg-purple-950/50 rounded-xl border border-purple-500/20">
+              <Sparkles className="w-5 h-5 text-purple-400 mt-0.5 shrink-0" />
+              <div>
+                <h2 className="text-base font-bold text-purple-200 mb-1">Demo Mode</h2>
+                <p className="text-purple-200/60 text-xs leading-relaxed">
+                  Playing back real Gemma 4 E4B responses recorded locally.
+                  <a href="https://github.com/prasadt1/photography-coach-gemma4#quick-start" target="_blank" rel="noopener noreferrer" className="text-purple-400 underline ml-1">
+                    Install Ollama
+                  </a> for live analysis on your own photos.
+                </p>
+              </div>
             </div>
-            <p className="text-purple-200/70 text-sm mb-6">
-              Ollama isn't running, but you can try our pre-recorded demos. Select a sample product photo to hear how L.E.N.S. coaches artisans.
+
+            <h3 className="text-lg font-bold text-white mb-2">Try Demo Mode</h3>
+            <p className="text-purple-100/70 text-sm mb-6">
+              Select a sample product photo to experience how L.E.N.S. coaches artisans with voice feedback.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {DEMO_SAMPLES.map((sample) => (
+
+            {/* Sample Products Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              {DEMO_RESPONSES.map((sample) => (
                 <button
                   key={sample.id}
                   onClick={() => handleDemoSampleSelect(sample)}
                   className="group relative h-48 rounded-xl overflow-hidden border-2 border-purple-500/30 hover:border-purple-400 transition-all hover:scale-[1.02]"
                 >
                   <img
-                    src={sample.thumbnailUrl}
+                    src={sample.imagePath}
                     alt={sample.label}
                     className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/30 to-transparent" />
                   <div className="absolute bottom-3 left-3 right-3">
-                    <span className="text-xs font-bold text-purple-400 uppercase tracking-wider">Sample</span>
+                    <span className="text-xs font-bold text-purple-400 uppercase tracking-wider">{sample.category}</span>
                     <p className="text-white font-semibold">{sample.label}</p>
+                    {sample.isComparisonSample && (
+                      <span className="text-[10px] text-purple-300 mt-1 block">Part of comparison pair</span>
+                    )}
                   </div>
                 </button>
               ))}
+            </div>
+
+            {/* Compare Two Photos - Demo Mode */}
+            <div className="pt-4 border-t border-purple-500/20">
+              <p className="text-sm text-purple-200/60 mb-3">
+                Or try the comparison feature with our pre-built sample pair:
+              </p>
+              <button
+                onClick={() => {
+                  // TODO: Wire to Compare panel with demo samples
+                  const comparisonSamples = getComparisonSamples();
+                  if (comparisonSamples.length >= 2) {
+                    console.log('[Demo] Compare samples:', comparisonSamples[0].label, 'vs', comparisonSamples[1].label);
+                    // For now, just analyze the first comparison sample
+                    handleDemoSampleSelect(comparisonSamples[0]);
+                  }
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 rounded-xl text-purple-200 font-semibold text-sm transition-all"
+              >
+                <ImageIcon className="w-4 h-4" />
+                Compare two photos of the same product
+              </button>
             </div>
           </div>
         )}

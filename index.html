@@ -70,14 +70,63 @@
         width: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: #0f172a; 
+        background: #0f172a;
       }
       ::-webkit-scrollbar-thumb {
-        background: #334155; 
+        background: #334155;
         border-radius: 4px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #475569; 
+        background: #475569;
+      }
+
+      /* Emil Kowalski design engineering: Button tactile feedback */
+      button:not(:disabled):active {
+        transform: scale(0.97);
+      }
+
+      /* Emil: Custom easing for smooth UI animations */
+      :root {
+        --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+        --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+        --spring: cubic-bezier(0.23, 1, 0.32, 1);
+      }
+
+      /* Emil: Respect user motion preferences */
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+        }
+      }
+
+      /* Emil: Gate hover effects for pointer devices only */
+      @media (hover: hover) and (pointer: fine) {
+        .hover-lift:hover {
+          transform: translateY(-2px);
+        }
+        .hover-glow:hover {
+          box-shadow: 0 0 20px rgba(251, 146, 60, 0.3);
+        }
+      }
+
+      /* Emil: Smooth focus transitions */
+      button, a, input {
+        transition: transform 150ms var(--spring),
+                    box-shadow 150ms var(--spring),
+                    background-color 150ms var(--spring),
+                    border-color 150ms var(--spring),
+                    opacity 150ms var(--spring);
+      }
+
+      /* Emil: Cards and containers use slower, smoother transitions */
+      .card-transition {
+        transition: transform 250ms var(--ease-out-expo),
+                    box-shadow 250ms var(--ease-out-expo);
       }
     </style>
   <script type="importmap">

@@ -84,7 +84,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady, stats, v
             {onVoiceToggle && (
               <button
                 onClick={onVoiceToggle}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all border ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border ${
                   voiceEnabled
                     ? 'bg-purple-600/30 border-purple-500/60 text-purple-200 shadow-lg shadow-purple-500/25'
                     : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-600'
@@ -137,7 +137,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady, stats, v
         {/* HERO CARD: Artisan Studio */}
         <button
           onClick={() => onSelectMode('sell')}
-          className="group relative w-full overflow-hidden rounded-3xl p-8 text-left transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl hover:shadow-terracotta-500/20 mb-6"
+          className="group relative w-full overflow-hidden rounded-3xl p-8 text-left card-transition hover:shadow-2xl hover:shadow-terracotta-500/20 hover-glow mb-6"
           style={{
             background: 'linear-gradient(135deg, rgba(224, 100, 66, 0.18) 0%, rgba(235, 132, 100, 0.08) 50%, rgba(15, 15, 19, 0.98) 100%)',
             border: '2px solid rgba(224, 100, 66, 0.35)',
@@ -188,9 +188,9 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady, stats, v
               </li>
             </ul>
 
-            <div className="flex items-center gap-2 text-terracotta-400 font-semibold text-base group-hover:gap-3 transition-all">
+            <div className="flex items-center gap-2 text-terracotta-400 font-semibold text-base">
               <span>Enter Artisan Studio</span>
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-5 h-5 transition-transform duration-150 group-hover:translate-x-1" style={{ transitionTimingFunction: 'var(--spring)' }} />
             </div>
           </div>
         </button>
@@ -199,7 +199,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady, stats, v
         <div className="text-center mb-10">
           <button
             onClick={() => onSelectMode('studio')}
-            className="inline-flex items-center gap-2 text-slate-400 hover:text-emerald-400 text-base font-medium transition-colors group"
+            className="inline-flex items-center gap-2 text-slate-400 hover:text-emerald-400 text-base font-medium group"
             aria-label="Try general photo critique for sighted photographers"
           >
             <Aperture className="w-5 h-5" />
@@ -211,10 +211,10 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady, stats, v
         {/* Voice Accessibility Note - Interactive with TTS preview */}
         <button
           onClick={handleVoicePreview}
-          className="flex items-center justify-center gap-3 mb-8 p-4 rounded-xl bg-purple-500/10 border border-purple-500/25 max-w-xl mx-auto w-full cursor-pointer transition-all duration-200 hover:bg-purple-500/15 hover:border-purple-500/40 hover:shadow-lg hover:shadow-purple-500/10 group"
+          className="flex items-center justify-center gap-3 mb-8 p-4 rounded-xl bg-purple-500/10 border border-purple-500/25 max-w-xl mx-auto w-full cursor-pointer hover:bg-purple-500/15 hover:border-purple-500/40 hover:shadow-lg hover:shadow-purple-500/10 group"
           aria-label="Click to hear a voice preview"
         >
-          <AudioLines className="w-5 h-5 text-purple-400 shrink-0 group-hover:scale-110 transition-transform" />
+          <AudioLines className="w-5 h-5 text-purple-400 shrink-0 group-hover:scale-105 transition-transform duration-150" style={{ transitionTimingFunction: 'var(--spring)' }} />
           <p className="text-sm text-purple-200/80 text-left">
             <strong className="text-purple-300">Voice-first experience:</strong> I describe what I see, then guide you to better shots. <span className="text-purple-400/80 underline decoration-purple-500/30">Click to preview.</span>
           </p>

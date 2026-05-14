@@ -44,7 +44,7 @@ const SessionSavingsBadge: React.FC<{
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-2 px-2 md:px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 transition-all cursor-pointer group relative"
+      className="flex items-center gap-2 px-2 md:px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 cursor-pointer group relative"
       title="Click to view inference stats"
     >
       <Coins className="w-4 h-4" />
@@ -442,10 +442,10 @@ function App() {
       {/* Demo banner for deployed environments - explains Ollama requirement to judges */}
       <DemoBanner />
 
-      <header className="border-b border-slate-800 bg-slate-900/90 backdrop-blur-xl sticky top-0 z-50 transition-all duration-300">
+      <header className="border-b border-slate-800 bg-slate-900/90 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer group" onClick={handleGoHome}>
-            <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl overflow-hidden shadow-lg shadow-brand-500/20 group-hover:shadow-brand-500/40 transition-shadow duration-300">
+            <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl overflow-hidden shadow-lg shadow-brand-500/20 group-hover:shadow-brand-500/40 transition-shadow duration-200" style={{ transitionTimingFunction: 'var(--spring)' }}>
               <img src="/lens-logo.png" alt="L.E.N.S." className="w-full h-full object-cover" />
             </div>
             <div className="flex flex-col justify-center gap-0.5">
@@ -488,7 +488,7 @@ function App() {
             <button
               type="button"
               onClick={() => setVoiceEnabled(!voiceEnabled)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border ${
                 voiceEnabled
                   ? 'bg-purple-600/20 border-purple-500/50 text-purple-300'
                   : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-slate-200'
@@ -504,7 +504,7 @@ function App() {
               <button
                 type="button"
                 onClick={() => handleModeChange('studio')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 transition-colors ${mode === 'studio' ? 'bg-brand-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-300'}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 ${mode === 'studio' ? 'bg-brand-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-300'}`}
                 title="Full photo critique with scores and suggestions"
               >
                 <Zap className="w-3 h-3" /> Studio
@@ -512,7 +512,7 @@ function App() {
               <button
                 type="button"
                 onClick={() => handleModeChange('sell')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 transition-colors ${mode === 'sell' ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-300'}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 ${mode === 'sell' ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-300'}`}
                 title="Voice-guided product photography for artisans"
               >
                 💎 Artisan
@@ -521,7 +521,7 @@ function App() {
                 <button
                   type="button"
                   onClick={() => handleModeChange('vault')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 transition-colors ${mode === 'vault' ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-300'}`}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 ${mode === 'vault' ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-300'}`}
                   title="Client-safe mode with audit trail (desktop only)"
                 >
                   <Shield className="w-3 h-3" /> Vault
@@ -562,7 +562,7 @@ function App() {
                 <button
                   type="button"
                   onClick={() => setUploadTab('single')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${
                     uploadTab === 'single'
                       ? 'bg-brand-600 text-white shadow-lg shadow-brand-900/50'
                       : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
@@ -574,7 +574,7 @@ function App() {
                 <button
                   type="button"
                   onClick={() => setUploadTab('compare')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${
                     uploadTab === 'compare'
                       ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/50'
                       : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
@@ -590,7 +590,7 @@ function App() {
                   <button
                     type="button"
                     onClick={() => setDeepMode(!deepMode)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${
                       deepMode
                         ? 'bg-brand-600/20 border-brand-500/50 text-brand-300'
                         : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-slate-200'
@@ -641,7 +641,7 @@ function App() {
                         <button
                           type="button"
                           onClick={handleClearSamplePreview}
-                          className="absolute top-3 right-3 p-2 bg-slate-900/80 hover:bg-red-600 rounded-full text-slate-300 hover:text-white transition-colors"
+                          className="absolute top-3 right-3 p-2 bg-slate-900/80 hover:bg-red-600 rounded-full text-slate-300 hover:text-white"
                           title="Remove selection"
                         >
                           <X className="w-4 h-4" />
@@ -651,7 +651,7 @@ function App() {
                       <button
                         type="button"
                         onClick={handleAnalyzeSample}
-                        className="w-full flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-brand-600 to-emerald-600 hover:from-brand-500 hover:to-emerald-500 text-white rounded-xl text-lg font-bold transition-all shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50 hover:scale-[1.02]"
+                        className="w-full flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-brand-600 to-emerald-600 hover:from-brand-500 hover:to-emerald-500 text-white rounded-xl text-lg font-bold shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50"
                       >
                         <Zap className="w-5 h-5" />
                         Start Analysis
@@ -673,13 +673,13 @@ function App() {
                     <button
                       type="button"
                       onClick={() => handleSampleSelect('https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&q=80', 'Misty Valley', 'Landscape')}
-                      className={`group relative h-32 md:h-40 rounded-2xl overflow-hidden border shadow-xl transition-all duration-300 hover:scale-[1.02] ${
+                      className={`group relative h-32 md:h-40 rounded-2xl overflow-hidden border shadow-xl card-transition ${
                         samplePreview?.label === 'Misty Valley'
                           ? 'border-brand-500 ring-2 ring-brand-500/30'
                           : 'border-slate-700/50 hover:border-brand-500/50'
                       }`}
                     >
-                      <img src="https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&q=80" alt="" className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                      <img src="https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&q=80" alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-300" style={{ transitionTimingFunction: 'var(--ease-out-expo)' }} />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent" />
                       <div className="absolute bottom-3 left-3 text-left">
                         <span className="text-[10px] font-bold text-brand-400 uppercase tracking-wider block">Landscape</span>
@@ -694,13 +694,13 @@ function App() {
                     <button
                       type="button"
                       onClick={() => handleSampleSelect('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&q=80', 'Urban Light', 'Portrait')}
-                      className={`group relative h-32 md:h-40 rounded-2xl overflow-hidden border shadow-xl transition-all duration-300 hover:scale-[1.02] ${
+                      className={`group relative h-32 md:h-40 rounded-2xl overflow-hidden border shadow-xl card-transition ${
                         samplePreview?.label === 'Urban Light'
                           ? 'border-purple-500 ring-2 ring-purple-500/30'
                           : 'border-slate-700/50 hover:border-purple-500/50'
                       }`}
                     >
-                      <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&q=80" alt="" className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                      <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&q=80" alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-300" style={{ transitionTimingFunction: 'var(--ease-out-expo)' }} />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent" />
                       <div className="absolute bottom-3 left-3 text-left">
                         <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider block">Portrait</span>
@@ -715,13 +715,13 @@ function App() {
                     <button
                       type="button"
                       onClick={() => handleSampleSelect('https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&q=80', 'Night City', 'Urban')}
-                      className={`group relative h-32 md:h-40 rounded-2xl overflow-hidden border shadow-xl transition-all duration-300 hover:scale-[1.02] ${
+                      className={`group relative h-32 md:h-40 rounded-2xl overflow-hidden border shadow-xl card-transition ${
                         samplePreview?.label === 'Night City'
                           ? 'border-blue-500 ring-2 ring-blue-500/30'
                           : 'border-slate-700/50 hover:border-blue-500/50'
                       }`}
                     >
-                      <img src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&q=80" alt="" className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                      <img src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&q=80" alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-300" style={{ transitionTimingFunction: 'var(--ease-out-expo)' }} />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent" />
                       <div className="absolute bottom-3 left-3 text-left">
                         <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider block">Urban</span>
@@ -749,7 +749,7 @@ function App() {
                 {/* 50/50 Split Layout */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                   {/* Photo A */}
-                  <div className={`relative rounded-2xl border-2 border-dashed transition-all min-h-[280px] ${
+                  <div className={`relative rounded-2xl border-2 border-dashed min-h-[280px] card-transition ${
                     compareSlotA
                       ? 'border-brand-500/50 bg-slate-800/50'
                       : 'border-slate-700/50 bg-slate-800/30 hover:border-brand-500/30 hover:bg-slate-800/40'
@@ -763,7 +763,7 @@ function App() {
                         <button
                           type="button"
                           onClick={() => setCompareSlotA(null)}
-                          className="absolute top-3 right-3 p-2 bg-slate-900/80 hover:bg-red-600 rounded-full text-slate-300 hover:text-white transition-colors"
+                          className="absolute top-3 right-3 p-2 bg-slate-900/80 hover:bg-red-600 rounded-full text-slate-300 hover:text-white"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -793,7 +793,7 @@ function App() {
                   </div>
 
                   {/* Photo B */}
-                  <div className={`relative rounded-2xl border-2 border-dashed transition-all min-h-[280px] ${
+                  <div className={`relative rounded-2xl border-2 border-dashed min-h-[280px] card-transition ${
                     compareSlotB
                       ? 'border-emerald-500/50 bg-slate-800/50'
                       : 'border-slate-700/50 bg-slate-800/30 hover:border-emerald-500/30 hover:bg-slate-800/40'
@@ -807,7 +807,7 @@ function App() {
                         <button
                           type="button"
                           onClick={() => setCompareSlotB(null)}
-                          className="absolute top-3 right-3 p-2 bg-slate-900/80 hover:bg-red-600 rounded-full text-slate-300 hover:text-white transition-colors"
+                          className="absolute top-3 right-3 p-2 bg-slate-900/80 hover:bg-red-600 rounded-full text-slate-300 hover:text-white"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -917,7 +917,7 @@ function App() {
                     <div>$ ollama serve</div>
                     <div>$ ollama pull gemma4:latest</div>
                   </div>
-                  <button type="button" onClick={handleReset} className="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors font-medium">
+                  <button type="button" onClick={handleReset} className="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium">
                     Try Again
                   </button>
                 </>
@@ -928,7 +928,7 @@ function App() {
                   </div>
                   <h3 className="text-xl font-bold text-white mb-2">Analysis Failed</h3>
                   <p className="text-slate-400 mb-6 text-sm">{error}</p>
-                  <button type="button" onClick={handleReset} className="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors font-medium">
+                  <button type="button" onClick={handleReset} className="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium">
                     Try Again
                   </button>
                 </>
@@ -953,7 +953,7 @@ function App() {
           <a href="https://www.kaggle.com/competitions/gemma-4-good-hackathon" target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-500">Gemma 4 Good hackathon</a>
         </p>
         <div className="flex flex-wrap gap-4 justify-center">
-          <a href={GITHUB_REPO} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-slate-400 transition-colors">
+          <a href={GITHUB_REPO} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-slate-400">
             <Github className="w-4 h-4" />
             <span>View Source on GitHub</span>
           </a>

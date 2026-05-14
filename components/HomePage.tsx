@@ -54,7 +54,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg overflow-hidden shadow-sm ring-1 ring-terracotta-200 bg-[#FBF6F0]">
-              <img src="/lens-logo.png" alt="L.E.N.S." className="w-full h-full object-cover" />
+              <img src="/lens-logo.svg" alt="L.E.N.S." className="w-full h-full object-contain p-1" />
             </div>
             <div>
               <h1 className="text-base font-bold font-serif text-warmgray-900">L.E.N.S.</h1>

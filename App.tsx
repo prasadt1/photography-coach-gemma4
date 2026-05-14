@@ -460,7 +460,7 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer group" onClick={handleGoHome}>
             <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl overflow-hidden shadow-lg shadow-brand-500/20 group-hover:shadow-brand-500/40 transition-shadow duration-200" style={{ transitionTimingFunction: 'var(--spring)' }}>
-              <img src="/lens-logo.png" alt="L.E.N.S." className="w-full h-full object-cover" />
+              <img src="/lens-logo.svg" alt="L.E.N.S." className="w-full h-full object-contain p-1" />
             </div>
             <div className="flex flex-col justify-center gap-0.5">
               <div className="flex items-center gap-3 flex-wrap">

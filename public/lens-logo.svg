@@ -1,0 +1,40 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Simple camera aperture / iris icon -->
+  <!-- 8 overlapping blades forming circular opening -->
+
+  <!-- Outer circle background -->
+  <circle cx="50" cy="50" r="48" fill="#D97756" opacity="0.1"/>
+
+  <!-- Aperture blades - 8 segments -->
+  <g fill="#D97756">
+    <!-- Top blade -->
+    <path d="M 50 10 L 65 35 L 50 40 L 35 35 Z"/>
+
+    <!-- Top-right blade -->
+    <path d="M 70.7 20.7 L 70 45 L 60 45 L 57 30 Z"/>
+
+    <!-- Right blade -->
+    <path d="M 90 50 L 65 65 L 60 50 L 65 35 Z"/>
+
+    <!-- Bottom-right blade -->
+    <path d="M 70.7 79.3 L 57 70 L 60 55 L 70 55 Z"/>
+
+    <!-- Bottom blade -->
+    <path d="M 50 90 L 35 65 L 50 60 L 65 65 Z"/>
+
+    <!-- Bottom-left blade -->
+    <path d="M 29.3 79.3 L 43 70 L 40 55 L 30 55 Z"/>
+
+    <!-- Left blade -->
+    <path d="M 10 50 L 35 35 L 40 50 L 35 65 Z"/>
+
+    <!-- Top-left blade -->
+    <path d="M 29.3 20.7 L 30 45 L 40 45 L 43 30 Z"/>
+  </g>
+
+  <!-- Central opening -->
+  <circle cx="50" cy="50" r="18" fill="#FBF6F0"/>
+
+  <!-- Inner ring accent -->
+  <circle cx="50" cy="50" r="18" fill="none" stroke="#D97756" stroke-width="2"/>
+</svg>

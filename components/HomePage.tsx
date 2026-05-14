@@ -264,7 +264,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
             <div className="group rounded-lg overflow-hidden border border-warmgray-200 bg-[#EBE8DD] hover:shadow-md transition-shadow">
               <div className="aspect-square overflow-hidden">
                 <img
-                  src="/demo-samples/sample-1.jpg"
+                  src="/images-homepage/Wool.jpg"
                   alt="Textiles"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                 />

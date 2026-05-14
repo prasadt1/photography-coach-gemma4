@@ -13,7 +13,7 @@ import {
   Camera, Loader2, CheckCircle2, AlertTriangle,
   Lightbulb, RotateCcw, Sun, Image as ImageIcon, Sparkles,
   Grid3X3, FileText, Accessibility, Copy, ArrowRight,
-  ChevronLeft, Upload, Cloud, Volume2, VolumeX,
+  ChevronLeft, Upload, Cloud, Volume2, VolumeX, HelpCircle,
 } from 'lucide-react';
 import { analyzeForSellModeWithFallback, detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
 import { parseSellResponse, parseArtisanResponseV3, speak, stopSpeaking, resumeSpeech, hasPausedSpeech, isSpeechCompleted, clearPausedSpeech } from '../services/voiceCoach';
@@ -327,6 +327,20 @@ const SellMode: React.FC<SellModeProps> = ({
     setTimeout(() => setCopiedField(null), 2000);
   };
 
+  const handleTutorial = () => {
+    const tutorialText = `Welcome to the Artisan Studio. Here's how to use this tool.
+    First, you can try one of our sample photos to see how Gemma 4 analyzes your craft photography.
+    Just tap or click on any of the sample images below.
+    The analysis will tell you what's working in your photo, what needs improvement, and exactly how to fix it.
+    You'll hear feedback about framing, lighting, and composition.
+    If the photo is ready for your online shop, we'll let you know and provide alt-text and a product description you can copy.
+    If you want to analyze your own photo, scroll down to find the upload button.
+    Your photo will be analyzed completely on your device - nothing leaves your phone or computer.
+    Everything is private and works offline.
+    That's it! Select a sample to get started, or upload your own craft photo.`;
+    speak(tutorialText);
+  };
+
   return (
     <div className="min-h-[100dvh] bg-[#E7E6DB] text-[#2A2A22]">
       <input
@@ -386,7 +400,7 @@ const SellMode: React.FC<SellModeProps> = ({
                 ) : inferenceSource === 'cloud' ? (
                   <>
                     <Cloud className="w-3.5 h-3.5" />
-                    <span className="text-xs font-semibold">Cloud · Gemma 4</span>
+                    <span className="text-xs font-semibold">Cloud</span>
                   </>
                 ) : (
                   <>
@@ -410,9 +424,17 @@ const SellMode: React.FC<SellModeProps> = ({
               <h1 className="text-3xl md:text-4xl font-bold font-serif text-[#2A2A22] leading-tight mb-3">
                 Hear what your photo needs
               </h1>
-              <p className="text-lg text-[#6B6A5E] leading-relaxed max-w-xl">
+              <p className="text-lg text-[#6B6A5E] leading-relaxed max-w-xl mb-4">
                 Select a sample to see real Gemma 4 analysis, or upload your own photo.
               </p>
+              <button
+                onClick={handleTutorial}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#F1F0E9] border-2 border-[#D5D3C5] text-[#2A2A22] hover:border-[#BC6A45] hover:bg-[#BAC29C] focus:outline-none focus:ring-2 focus:ring-[#BC6A45]"
+                aria-label="How to use - Audio tutorial"
+              >
+                <HelpCircle className="w-4 h-4" />
+                <span className="text-sm font-semibold">How to use?</span>
+              </button>
             </div>
           )}
 
@@ -480,6 +502,11 @@ const SellMode: React.FC<SellModeProps> = ({
                 <div className="pt-8 border-t-2 border-[#D5D3C5]">
                   <p className="text-sm text-[#6B6A5E] mb-4">
                     Want to try your own photo? Upload one below for {inferenceSource === 'cloud' ? 'cloud' : 'local'} analysis.
+                    {inferenceSource === 'cloud' && (
+                      <span className="block mt-2 text-xs italic">
+                        Note: Ollama Cloud is available for demo purposes only — to show how Gemma 4 works without installing Ollama locally. For private, offline analysis, install Ollama on your device.
+                      </span>
+                    )}
                   </p>
                   <button
                     onClick={handleCapture}
@@ -603,8 +630,8 @@ const SellMode: React.FC<SellModeProps> = ({
             <div className="space-y-8">
               {/* Photo + Verdict */}
               <div className="flex flex-col md:flex-row gap-6">
-                <div className="w-full md:w-72 shrink-0 rounded-2xl overflow-hidden border-2 border-[#D5D3C5] bg-[#F1F0E9]">
-                  <img src={result.imageBase64} alt="Product photo" className="w-full h-64 object-cover" />
+                <div className="w-full md:w-96 shrink-0 rounded-2xl overflow-hidden border-2 border-[#D5D3C5] bg-[#F1F0E9]">
+                  <img src={result.imageBase64} alt="Product photo" className="w-full object-contain" />
                 </div>
 
                 <div className="flex-1 space-y-4">

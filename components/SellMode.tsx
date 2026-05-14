@@ -7,12 +7,12 @@
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
-  Camera, Package, Loader2, CheckCircle2, AlertTriangle, XCircle,
+  Camera, Package, Loader2, CheckCircle2, AlertTriangle,
   Lightbulb, RotateCcw, Sun, Focus, Image as ImageIcon, Sparkles,
-  Grid3X3, Ruler, Palette, FileText, Accessibility, Copy, Volume2,
+  Grid3X3, FileText, Accessibility, Copy, Volume2,
 } from 'lucide-react';
 import { analyzeForSellMode } from '../services/analysisOrchestrator';
-import { parseSellResponse, speak } from '../services/voiceCoach';
+import { parseSellResponse, parseArtisanResponseV3, speak } from '../services/voiceCoach';
 import { DEMO_RESPONSES, DemoResponse, simulateProcessing, getComparisonSamples } from '../src/data/demoResponses';
 
 interface SellModeProps {
@@ -24,25 +24,35 @@ interface SellModeProps {
 }
 
 interface SellResult {
-  score: number;
-  verdict: string;
-  productType: string;
-  material: string;
-  topIssue: string;
-  fix: string;
-  background: string;
-  lighting: string;
-  productFocus: string;
-  compositionTip: string;
-  lightingTip: string;
-  scaleSuggestion: string;
-  stylingIdea: string;
-  descriptionIdea: string;
-  altText: string;
-  suggestedTags: string[];
+  // Core v3 fields (Artisan Studio JSON schema)
+  subject: string;              // "I see three ceramic vases"
+  framing: string;              // Primary framing/clutter issue
+  lighting: string;             // Primary lighting/color issue
+  primaryFix: string;           // One actionable physical correction
+  confidenceNote: string;       // What couldn't be judged
+  altText: string;              // 15-25 word alt-text
+  listingCopy: string;          // 2-3 sentence description
+  readyToList: boolean;         // true/false
+
+  // Display helpers
   imageBase64: string;
-  rawResponse?: string; // For debugging
-  // Accessibility mode fields
+  rawResponse?: string;         // For debugging
+
+  // Legacy fields (for backward compat with demo mode / old responses)
+  score?: number;
+  verdict?: string;
+  productType?: string;
+  material?: string;
+  topIssue?: string;
+  fix?: string;
+  background?: string;
+  productFocus?: string;
+  compositionTip?: string;
+  lightingTip?: string;
+  scaleSuggestion?: string;
+  stylingIdea?: string;
+  descriptionIdea?: string;
+  suggestedTags?: string[];
   whatISee?: string;
   colorCheck?: string;
   nextAction?: string;
@@ -65,7 +75,7 @@ const SellMode: React.FC<SellModeProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Demo Mode: handle sample selection with pre-recorded response
+  // Demo Mode: handle sample selection with pre-recorded v3 response
   const handleDemoSampleSelect = useCallback(async (sample: DemoResponse) => {
     setError(null);
     setIsAnalyzing(true);
@@ -75,44 +85,30 @@ const SellMode: React.FC<SellModeProps> = ({
     // Simulate ~2s "Analyzing locally with Gemma 4 E4B..." delay
     await simulateProcessing();
 
-    // Map DemoResponse to SellResult
+    // Map v3 DemoResponse to SellResult
     const r = sample.response;
     setResult({
-      score: r.listingScore,
-      verdict: r.verdict,
-      productType: sample.category,
-      material: '',
-      topIssue: r.topFix,
-      fix: r.topFix,
-      background: r.background,
-      lighting: r.lighting,
-      productFocus: r.productFocus,
-      compositionTip: r.compositionTip || '',
-      lightingTip: r.lightingTip || '',
-      scaleSuggestion: '',
-      stylingIdea: '',
-      descriptionIdea: r.listingCopy || '',
-      altText: r.altText,
-      suggestedTags: r.suggestedTags,
+      subject: r.subject,
+      framing: r.critique.framing,
+      lighting: r.critique.lighting,
+      primaryFix: r.critique.primary_fix,
+      confidenceNote: r.confidence_note,
+      altText: r.alt_text,
+      listingCopy: r.listing_copy,
+      readyToList: r.ready_to_list,
       imageBase64: sample.imagePath,
       rawResponse: JSON.stringify(r),
-      // Accessibility fields
-      whatISee: r.whatISee,
-      colorCheck: r.colorCheck,
-      nextAction: r.nextAction,
     });
 
-    // Voice feedback - always speak in demo mode for accessibility showcase
-    // Extended TTS: read full output (Task 6)
+    // Voice feedback - v3 format: subject → framing → lighting → primary fix → verdict
     const voiceText = [
-      r.whatISee,
-      r.colorCheck,
-      r.framingStatus,
-      `Top fix: ${r.topFix}`,
-      r.nextAction,
-      `Listing score: ${r.listingScore} out of 10. ${r.verdict}.`,
-      r.altText ? `Alt text: ${r.altText}` : '',
-    ].filter(Boolean).join('. ');
+      r.subject,
+      r.critique.framing,
+      r.critique.lighting,
+      r.critique.primary_fix,
+      r.confidence_note || '',
+      r.ready_to_list ? 'This photo is ready to list.' : 'Make this fix, then take another shot.',
+    ].filter(Boolean).join(' ');
 
     speak(voiceText);
     setIsAnalyzing(false);
@@ -134,27 +130,71 @@ const SellMode: React.FC<SellModeProps> = ({
           const response = await analyzeForSellMode(preloadedImage, 'image/jpeg', voiceEnabled);
           console.log('[Artisan] Auto-analysis from Studio (accessibility mode:', voiceEnabled, '):', response);
 
-          const parsed = parseSellResponse(response);
-          setResult({
-            ...parsed,
-            imageBase64: preloadedImage,
-            rawResponse: response,
-          });
+          // Try v3 JSON parsing first
+          const v3Parsed = parseArtisanResponseV3(response);
 
-          // Voice feedback if enabled (use accessibility-specific fields when available)
-          if (voiceEnabled && parsed.verdict) {
-            const voiceText = parsed.whatISee
-              ? // Accessibility mode: descriptive-first
-                `${parsed.whatISee} ` +
-                `${parsed.colorCheck ? parsed.colorCheck + ' ' : ''}` +
-                `${parsed.fix ? parsed.fix + ' ' : ''}` +
-                `${parsed.nextAction || 'Would you like to take another shot?'}`
-              : // Standard mode
-                `Listing score: ${parsed.score} out of 10. ${parsed.verdict}. ` +
-                `${parsed.topIssue ? `Top issue: ${parsed.topIssue}. ` : ''}` +
-                `${parsed.compositionTip ? `Composition tip: ${parsed.compositionTip}. ` : ''}` +
-                `${parsed.lightingTip ? `Lighting tip: ${parsed.lightingTip}. ` : ''}`;
-            speak(voiceText);
+          if (v3Parsed) {
+            setResult({
+              subject: v3Parsed.subject,
+              framing: v3Parsed.critique.framing,
+              lighting: v3Parsed.critique.lighting,
+              primaryFix: v3Parsed.critique.primary_fix,
+              confidenceNote: v3Parsed.confidence_note,
+              altText: v3Parsed.alt_text,
+              listingCopy: v3Parsed.listing_copy,
+              readyToList: v3Parsed.ready_to_list,
+              imageBase64: preloadedImage,
+              rawResponse: response,
+            });
+
+            if (voiceEnabled) {
+              const voiceText = [
+                v3Parsed.subject,
+                v3Parsed.critique.framing,
+                v3Parsed.critique.lighting,
+                v3Parsed.critique.primary_fix,
+                v3Parsed.ready_to_list ? 'This photo is ready to list.' : 'Make this fix, then take another shot.',
+              ].filter(Boolean).join(' ');
+              speak(voiceText);
+            }
+          } else {
+            const parsed = parseSellResponse(response);
+            setResult({
+              subject: parsed.whatISee || parsed.productType || 'Product photo',
+              framing: parsed.productFocus || '',
+              lighting: parsed.lighting || '',
+              primaryFix: parsed.fix || parsed.topIssue || '',
+              confidenceNote: '',
+              altText: parsed.altText,
+              listingCopy: parsed.descriptionIdea,
+              readyToList: parsed.verdict?.toLowerCase().includes('ready') || false,
+              imageBase64: preloadedImage,
+              rawResponse: response,
+              score: parsed.score,
+              verdict: parsed.verdict,
+              productType: parsed.productType,
+              material: parsed.material,
+              topIssue: parsed.topIssue,
+              fix: parsed.fix,
+              background: parsed.background,
+              productFocus: parsed.productFocus,
+              compositionTip: parsed.compositionTip,
+              lightingTip: parsed.lightingTip,
+              scaleSuggestion: parsed.scaleSuggestion,
+              stylingIdea: parsed.stylingIdea,
+              descriptionIdea: parsed.descriptionIdea,
+              suggestedTags: parsed.suggestedTags,
+              whatISee: parsed.whatISee,
+              colorCheck: parsed.colorCheck,
+              nextAction: parsed.nextAction,
+            });
+
+            if (voiceEnabled && parsed.verdict) {
+              const voiceText = parsed.whatISee
+                ? `${parsed.whatISee} ${parsed.colorCheck || ''} ${parsed.fix || ''}`
+                : `Listing score: ${parsed.score} out of 10. ${parsed.verdict}.`;
+              speak(voiceText);
+            }
           }
         } catch (err: any) {
           console.error('[SellMode] Auto-analysis failed:', err);
@@ -253,29 +293,80 @@ const SellMode: React.FC<SellModeProps> = ({
       const response = await analyzeForSellMode(base64, file.type, voiceEnabled);
       console.log('[Artisan] Raw AI response (accessibility mode:', voiceEnabled, '):', response);
 
-      const parsed = parseSellResponse(response);
-      console.log('[Artisan] Parsed result:', parsed);
+      // Try v3 JSON parsing first (new schema), fall back to legacy parser
+      const v3Parsed = parseArtisanResponseV3(response);
 
-      setResult({
-        ...parsed,
-        imageBase64: base64,
-        rawResponse: response, // Store for debugging
-      });
+      if (v3Parsed) {
+        console.log('[Artisan] v3 JSON parsed successfully:', v3Parsed);
+        setResult({
+          subject: v3Parsed.subject,
+          framing: v3Parsed.critique.framing,
+          lighting: v3Parsed.critique.lighting,
+          primaryFix: v3Parsed.critique.primary_fix,
+          confidenceNote: v3Parsed.confidence_note,
+          altText: v3Parsed.alt_text,
+          listingCopy: v3Parsed.listing_copy,
+          readyToList: v3Parsed.ready_to_list,
+          imageBase64: base64,
+          rawResponse: response,
+        });
 
-      // Voice feedback if enabled (use accessibility-specific fields when available)
-      if (voiceEnabled && parsed.verdict) {
-        const voiceText = parsed.whatISee
-          ? // Accessibility mode: descriptive-first
-            `${parsed.whatISee} ` +
-            `${parsed.colorCheck ? parsed.colorCheck + ' ' : ''}` +
-            `${parsed.fix ? parsed.fix + ' ' : ''}` +
-            `${parsed.nextAction || 'Would you like to take another shot?'}`
-          : // Standard mode
-            `Listing score: ${parsed.score} out of 10. ${parsed.verdict}. ` +
-            `${parsed.topIssue ? `Top issue: ${parsed.topIssue}. ` : ''}` +
-            `${parsed.compositionTip ? `Composition tip: ${parsed.compositionTip}. ` : ''}` +
-            `${parsed.lightingTip ? `Lighting tip: ${parsed.lightingTip}. ` : ''}`;
-        speak(voiceText);
+        // Voice feedback: subject → framing → lighting → primary fix
+        if (voiceEnabled) {
+          const voiceText = [
+            v3Parsed.subject,
+            v3Parsed.critique.framing,
+            v3Parsed.critique.lighting,
+            v3Parsed.critique.primary_fix,
+            v3Parsed.confidence_note || '',
+            v3Parsed.ready_to_list ? 'This photo is ready to list.' : 'Make this fix, then take another shot.',
+          ].filter(Boolean).join(' ');
+          speak(voiceText);
+        }
+      } else {
+        // Fall back to legacy parser
+        console.log('[Artisan] v3 parse failed, using legacy parser');
+        const parsed = parseSellResponse(response);
+        console.log('[Artisan] Legacy parsed result:', parsed);
+
+        setResult({
+          subject: parsed.whatISee || parsed.productType || 'Product photo',
+          framing: parsed.productFocus || '',
+          lighting: parsed.lighting || '',
+          primaryFix: parsed.fix || parsed.topIssue || '',
+          confidenceNote: '',
+          altText: parsed.altText,
+          listingCopy: parsed.descriptionIdea,
+          readyToList: parsed.verdict?.toLowerCase().includes('ready') || false,
+          imageBase64: base64,
+          rawResponse: response,
+          // Legacy fields for backward compat
+          score: parsed.score,
+          verdict: parsed.verdict,
+          productType: parsed.productType,
+          material: parsed.material,
+          topIssue: parsed.topIssue,
+          fix: parsed.fix,
+          background: parsed.background,
+          productFocus: parsed.productFocus,
+          compositionTip: parsed.compositionTip,
+          lightingTip: parsed.lightingTip,
+          scaleSuggestion: parsed.scaleSuggestion,
+          stylingIdea: parsed.stylingIdea,
+          descriptionIdea: parsed.descriptionIdea,
+          suggestedTags: parsed.suggestedTags,
+          whatISee: parsed.whatISee,
+          colorCheck: parsed.colorCheck,
+          nextAction: parsed.nextAction,
+        });
+
+        // Voice feedback for legacy mode
+        if (voiceEnabled && parsed.verdict) {
+          const voiceText = parsed.whatISee
+            ? `${parsed.whatISee} ${parsed.colorCheck || ''} ${parsed.fix || ''} ${parsed.nextAction || 'Would you like to take another shot?'}`
+            : `Listing score: ${parsed.score} out of 10. ${parsed.verdict}. ${parsed.topIssue ? `Top issue: ${parsed.topIssue}.` : ''} ${parsed.compositionTip || ''}`;
+          speak(voiceText);
+        }
       }
     } catch (err: any) {
       console.error('[SellMode] Analysis failed:', err);
@@ -297,30 +388,6 @@ const SellMode: React.FC<SellModeProps> = ({
     setIsDemoMode(false);
   };
 
-  // Score color and icon based on value
-  const getScoreStyle = (score: number) => {
-    if (score >= 8) return { color: 'text-emerald-400', bg: 'bg-emerald-500/20', border: 'border-emerald-500/50' };
-    if (score >= 5) return { color: 'text-amber-400', bg: 'bg-amber-500/20', border: 'border-amber-500/50' };
-    return { color: 'text-rose-400', bg: 'bg-rose-500/20', border: 'border-rose-500/50' };
-  };
-
-  const getVerdictStyle = (verdict: string) => {
-    const v = verdict.toLowerCase();
-    if (v.includes('ready')) return { icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/20' };
-    if (v.includes('needs')) return { icon: AlertTriangle, color: 'text-amber-400', bg: 'bg-amber-500/20' };
-    return { icon: XCircle, color: 'text-rose-400', bg: 'bg-rose-500/20' };
-  };
-
-  const getAssessmentStyle = (value: string) => {
-    const v = value.toLowerCase();
-    if (v.includes('good') || v.includes('clean') || v.includes('clear') || v.includes('excellent')) {
-      return 'text-emerald-400';
-    }
-    if (v.includes('ok') || v.includes('acceptable') || v.includes('moderate')) {
-      return 'text-amber-400';
-    }
-    return 'text-rose-400';
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-900 to-orange-950/20 text-slate-200 p-4 md:p-8">
@@ -464,7 +531,7 @@ const SellMode: React.FC<SellModeProps> = ({
         {/* Result display */}
         {result && (
           <div className="space-y-6 mb-6" role="region" aria-label="Analysis results" aria-live="polite">
-            {/* Score + Verdict Row */}
+            {/* Photo + Verdict Row */}
             <div className="flex flex-col md:flex-row gap-6">
               {/* Photo */}
               <div className="w-full md:w-64 h-64 rounded-2xl overflow-hidden border border-slate-700 shrink-0">
@@ -475,216 +542,106 @@ const SellMode: React.FC<SellModeProps> = ({
                 />
               </div>
 
-              {/* Score Card */}
+              {/* Verdict Card - v3 style */}
               <div className="flex-1 space-y-4">
-                {/* Big Score */}
-                <div className={`rounded-2xl p-6 ${getScoreStyle(result.score).bg} border ${getScoreStyle(result.score).border}`}>
-                  <div className="flex items-center justify-between">
+                {/* Ready to List / Not Ready */}
+                <div className={`rounded-2xl p-6 ${result.readyToList ? 'bg-emerald-500/20 border-emerald-500/50' : 'bg-amber-500/20 border-amber-500/50'} border-2`}>
+                  <div className="flex items-center gap-4">
+                    {result.readyToList ? (
+                      <CheckCircle2 className="w-12 h-12 text-emerald-400" />
+                    ) : (
+                      <AlertTriangle className="w-12 h-12 text-amber-400" />
+                    )}
                     <div>
-                      <p className="text-sm text-slate-400 font-semibold uppercase tracking-wider mb-1">
-                        Listing Score
+                      <p className={`text-2xl font-bold ${result.readyToList ? 'text-emerald-300' : 'text-amber-300'}`}>
+                        {result.readyToList ? 'Ready to List' : 'Needs One Fix'}
                       </p>
-                      <div className="flex items-baseline gap-2">
-                        <span className={`text-5xl font-bold ${getScoreStyle(result.score).color}`}>
-                          {result.score}
-                        </span>
-                        <span className="text-2xl text-slate-500">/10</span>
-                      </div>
+                      <p className="text-slate-400 text-sm mt-1">
+                        {result.readyToList
+                          ? 'This photo meets marketplace standards.'
+                          : 'Make the fix below, then take another shot.'}
+                      </p>
                     </div>
-
-                    {/* Verdict Badge */}
-                    <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${getVerdictStyle(result.verdict).bg}`}>
-                      {React.createElement(getVerdictStyle(result.verdict).icon, {
-                        className: `w-6 h-6 ${getVerdictStyle(result.verdict).color}`,
-                      })}
-                      <span className={`font-bold ${getVerdictStyle(result.verdict).color}`}>
-                        {result.verdict}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Score bar */}
-                  <div className="mt-4 h-3 bg-slate-800 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full transition-all duration-500 ${
-                        result.score >= 8 ? 'bg-emerald-500' :
-                        result.score >= 5 ? 'bg-amber-500' : 'bg-rose-500'
-                      }`}
-                      style={{ width: `${result.score * 10}%` }}
-                    />
                   </div>
                 </div>
 
-                {/* Quick assessments */}
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-                    <div className="flex items-center gap-2 mb-2">
-                      <ImageIcon className="w-4 h-4 text-slate-500" />
-                      <span className="text-xs text-slate-500 font-semibold uppercase">Background</span>
-                    </div>
-                    <p className={`font-semibold ${getAssessmentStyle(result.background)}`}>
-                      {result.background}
-                    </p>
+                {/* Subject - what's in frame */}
+                <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Package className="w-4 h-4 text-slate-400" />
+                    <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">What I See</span>
                   </div>
-                  <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Sun className="w-4 h-4 text-slate-500" />
-                      <span className="text-xs text-slate-500 font-semibold uppercase">Lighting</span>
-                    </div>
-                    <p className={`font-semibold ${getAssessmentStyle(result.lighting)}`}>
-                      {result.lighting}
-                    </p>
-                  </div>
-                  <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Focus className="w-4 h-4 text-slate-500" />
-                      <span className="text-xs text-slate-500 font-semibold uppercase">Focus</span>
-                    </div>
-                    <p className={`font-semibold ${getAssessmentStyle(result.productFocus)}`}>
-                      {result.productFocus}
-                    </p>
-                  </div>
+                  <p className="text-white font-medium">{result.subject}</p>
                 </div>
               </div>
             </div>
 
-            {/* Product Info */}
-            {(result.productType || result.material) && (
-              <div className="bg-slate-800/30 rounded-xl border border-slate-700/50 p-4 flex flex-wrap gap-4">
-                {result.productType && (
-                  <div className="flex items-center gap-2">
-                    <Package className="w-4 h-4 text-slate-500" />
-                    <span className="text-sm text-slate-400">Product:</span>
-                    <span className="text-sm text-white font-medium">{result.productType}</span>
+            {/* Critique: Framing + Lighting */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {result.framing && (
+                <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Grid3X3 className="w-5 h-5 text-cyan-400" />
+                    <h3 className="font-semibold text-cyan-300">Framing</h3>
                   </div>
-                )}
-                {result.material && (
-                  <div className="flex items-center gap-2">
-                    <Palette className="w-4 h-4 text-slate-500" />
-                    <span className="text-sm text-slate-400">Material:</span>
-                    <span className="text-sm text-white font-medium">{result.material}</span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Top Issue + Fix */}
-            {(result.topIssue || result.fix) && (
-              <div className="bg-slate-800/50 rounded-2xl border border-slate-700 p-6">
-                {result.topIssue && (
-                  <div className="mb-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <AlertTriangle className="w-5 h-5 text-amber-400" />
-                      <h3 className="font-semibold text-amber-300">Top Issue</h3>
-                    </div>
-                    <p className="text-slate-300">{result.topIssue}</p>
-                  </div>
-                )}
-
-                {result.fix && (
-                  <div className="pt-4 border-t border-slate-700">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Lightbulb className="w-5 h-5 text-emerald-400" />
-                      <h3 className="font-semibold text-emerald-300">How to Fix</h3>
-                    </div>
-                    <p className="text-slate-300">{result.fix}</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Photography Coach Tips */}
-            {(result.compositionTip || result.lightingTip || result.scaleSuggestion || result.stylingIdea) && (
-              <div className="bg-gradient-to-br from-cyan-900/20 to-teal-900/20 rounded-2xl border border-cyan-500/30 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-cyan-300 flex items-center gap-2">
-                    <Camera className="w-5 h-5" />
-                    Photography Coach Tips
-                  </h3>
-
-                  {/* Voice readout button */}
-                  <button
-                    onClick={speakTips}
-                    disabled={isSpeaking}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
-                      isSpeaking
-                        ? 'bg-cyan-500/30 text-cyan-300 cursor-wait'
-                        : 'bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 hover:scale-105'
-                    }`}
-                    title="Read tips aloud (works best in Chrome/Safari)"
-                  >
-                    <Volume2 className={`w-4 h-4 ${isSpeaking ? 'animate-pulse' : ''}`} />
-                    {isSpeaking ? 'Speaking...' : 'Hear Tips'}
-                  </button>
+                  <p className="text-slate-300">{result.framing}</p>
                 </div>
+              )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {result.compositionTip && (
-                    <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Grid3X3 className="w-4 h-4 text-cyan-400" />
-                        <span className="text-xs text-cyan-400 uppercase font-semibold tracking-wider">Composition</span>
-                      </div>
-                      <p className="text-sm text-slate-300">{result.compositionTip}</p>
-                    </div>
-                  )}
-
-                  {result.lightingTip && (
-                    <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Sun className="w-4 h-4 text-yellow-400" />
-                        <span className="text-xs text-yellow-400 uppercase font-semibold tracking-wider">Lighting</span>
-                      </div>
-                      <p className="text-sm text-slate-300">{result.lightingTip}</p>
-                    </div>
-                  )}
-
-                  {result.scaleSuggestion && (
-                    <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Ruler className="w-4 h-4 text-violet-400" />
-                        <span className="text-xs text-violet-400 uppercase font-semibold tracking-wider">Scale Reference</span>
-                      </div>
-                      <p className="text-sm text-slate-300">{result.scaleSuggestion}</p>
-                    </div>
-                  )}
-
-                  {result.stylingIdea && (
-                    <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Sparkles className="w-4 h-4 text-pink-400" />
-                        <span className="text-xs text-pink-400 uppercase font-semibold tracking-wider">Styling Idea</span>
-                      </div>
-                      <p className="text-sm text-slate-300">{result.stylingIdea}</p>
-                    </div>
-                  )}
+              {result.lighting && (
+                <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sun className="w-5 h-5 text-yellow-400" />
+                    <h3 className="font-semibold text-yellow-300">Lighting</h3>
+                  </div>
+                  <p className="text-slate-300">{result.lighting}</p>
                 </div>
+              )}
+            </div>
+
+            {/* Primary Fix - the one action to take */}
+            {result.primaryFix && !result.readyToList && (
+              <div className="bg-gradient-to-br from-emerald-900/30 to-teal-900/20 rounded-2xl border-2 border-emerald-500/40 p-6">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                    <Lightbulb className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <h3 className="text-lg font-bold text-emerald-300">Your Next Step</h3>
+                </div>
+                <p className="text-lg text-white leading-relaxed">{result.primaryFix}</p>
               </div>
             )}
 
-            {/* Marketing Help - Description, Tags & Alt-text */}
-            {(result.descriptionIdea || result.suggestedTags.length > 0 || result.altText) && (
+            {/* Confidence Note - if anything couldn't be judged */}
+            {result.confidenceNote && (
+              <div className="bg-slate-800/30 rounded-xl p-4 border border-slate-600/50 flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-slate-500 mt-0.5 shrink-0" />
+                <p className="text-sm text-slate-400">{result.confidenceNote}</p>
+              </div>
+            )}
+
+            {/* Marketing Assets: Alt-text + Listing Copy */}
+            {(result.altText || result.listingCopy) && (
               <div className="bg-gradient-to-br from-amber-900/20 to-orange-900/20 rounded-2xl border border-amber-500/30 p-6">
                 <h3 className="text-lg font-bold text-amber-300 mb-4 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5" />
-                  Marketing Help
+                  <FileText className="w-5 h-5" />
+                  Listing Assets
                 </h3>
 
-                {result.descriptionIdea && (
+                {result.listingCopy && (
                   <div className="mb-4">
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-xs text-amber-400/70 uppercase font-semibold tracking-wider">
-                        <FileText className="w-3 h-3 inline mr-1" />
-                        Suggested Product Description
+                        Product Description
                       </p>
                       <button
-                        onClick={() => copyToClipboard(result.descriptionIdea, 'description')}
+                        onClick={() => copyToClipboard(result.listingCopy, 'description')}
                         className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold transition-all ${
                           copiedField === 'description'
                             ? 'bg-emerald-500/20 text-emerald-300 scale-110'
                             : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300'
                         }`}
-                        aria-label={copiedField === 'description' ? 'Description copied to clipboard' : 'Copy product description to clipboard'}
+                        aria-label={copiedField === 'description' ? 'Description copied' : 'Copy description'}
                       >
                         {copiedField === 'description' ? (
                           <>
@@ -699,18 +656,18 @@ const SellMode: React.FC<SellModeProps> = ({
                         )}
                       </button>
                     </div>
-                    <p className="text-slate-200 bg-slate-900/50 rounded-lg p-3 text-sm italic">
-                      "{result.descriptionIdea}"
+                    <p className="text-slate-200 bg-slate-900/50 rounded-lg p-3 text-sm">
+                      {result.listingCopy}
                     </p>
                   </div>
                 )}
 
                 {result.altText && (
-                  <div className="mb-4">
+                  <div>
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-xs text-amber-400/70 uppercase font-semibold tracking-wider">
                         <Accessibility className="w-3 h-3 inline mr-1" />
-                        Alt-Text for Accessibility
+                        Alt-Text
                       </p>
                       <button
                         onClick={() => copyToClipboard(result.altText, 'altText')}
@@ -719,7 +676,7 @@ const SellMode: React.FC<SellModeProps> = ({
                             ? 'bg-emerald-500/20 text-emerald-300 scale-110'
                             : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300'
                         }`}
-                        aria-label={copiedField === 'altText' ? 'Alt text copied to clipboard' : 'Copy alt text to clipboard'}
+                        aria-label={copiedField === 'altText' ? 'Alt text copied' : 'Copy alt text'}
                       >
                         {copiedField === 'altText' ? (
                           <>
@@ -739,47 +696,83 @@ const SellMode: React.FC<SellModeProps> = ({
                     </p>
                   </div>
                 )}
+              </div>
+            )}
 
-                {result.suggestedTags.length > 0 && (
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs text-amber-400/70 uppercase font-semibold tracking-wider">
-                        Suggested Tags
-                      </p>
-                      <button
-                        onClick={() => copyToClipboard(result.suggestedTags.map(t => `#${t}`).join(' '), 'tags')}
-                        className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold transition-all ${
-                          copiedField === 'tags'
-                            ? 'bg-emerald-500/20 text-emerald-300 scale-110'
-                            : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300'
-                        }`}
-                        aria-label={copiedField === 'tags' ? 'Tags copied to clipboard' : 'Copy all tags to clipboard'}
-                      >
-                        {copiedField === 'tags' ? (
-                          <>
-                            <CheckCircle2 className="w-3 h-3" />
-                            Copied!
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3 h-3" />
-                            Copy All
-                          </>
-                        )}
-                      </button>
+            {/* Legacy: Photography Coach Tips (only show if legacy fields present) */}
+            {(result.compositionTip || result.lightingTip || result.scaleSuggestion || result.stylingIdea) && (
+              <div className="bg-gradient-to-br from-cyan-900/20 to-teal-900/20 rounded-2xl border border-cyan-500/30 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-cyan-300 flex items-center gap-2">
+                    <Camera className="w-5 h-5" />
+                    Additional Tips
+                  </h3>
+                  <button
+                    onClick={speakTips}
+                    disabled={isSpeaking}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                      isSpeaking
+                        ? 'bg-cyan-500/30 text-cyan-300 cursor-wait'
+                        : 'bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 hover:scale-105'
+                    }`}
+                  >
+                    <Volume2 className={`w-4 h-4 ${isSpeaking ? 'animate-pulse' : ''}`} />
+                    {isSpeaking ? 'Speaking...' : 'Hear Tips'}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {result.compositionTip && (
+                    <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800">
+                      <p className="text-xs text-cyan-400 uppercase font-semibold mb-2">Composition</p>
+                      <p className="text-sm text-slate-300">{result.compositionTip}</p>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {result.suggestedTags.map((tag, i) => (
-                        <span
-                          key={i}
-                          className="px-3 py-1 bg-amber-500/20 border border-amber-500/30 rounded-full text-sm text-amber-300"
-                        >
-                          #{tag}
-                        </span>
-                      ))}
+                  )}
+                  {result.lightingTip && (
+                    <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800">
+                      <p className="text-xs text-yellow-400 uppercase font-semibold mb-2">Lighting</p>
+                      <p className="text-sm text-slate-300">{result.lightingTip}</p>
                     </div>
-                  </div>
-                )}
+                  )}
+                  {result.scaleSuggestion && (
+                    <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800">
+                      <p className="text-xs text-violet-400 uppercase font-semibold mb-2">Scale</p>
+                      <p className="text-sm text-slate-300">{result.scaleSuggestion}</p>
+                    </div>
+                  )}
+                  {result.stylingIdea && (
+                    <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-800">
+                      <p className="text-xs text-pink-400 uppercase font-semibold mb-2">Styling</p>
+                      <p className="text-sm text-slate-300">{result.stylingIdea}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Legacy: Tags (only show if present) */}
+            {result.suggestedTags && result.suggestedTags.length > 0 && (
+              <div className="bg-slate-800/30 rounded-xl p-4 border border-slate-700/50">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs text-slate-400 uppercase font-semibold">Suggested Tags</p>
+                  <button
+                    onClick={() => copyToClipboard(result.suggestedTags!.map(t => `#${t}`).join(' '), 'tags')}
+                    className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold transition-all ${
+                      copiedField === 'tags'
+                        ? 'bg-emerald-500/20 text-emerald-300'
+                        : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+                    }`}
+                  >
+                    {copiedField === 'tags' ? 'Copied!' : 'Copy All'}
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {result.suggestedTags.map((tag, i) => (
+                    <span key={i} className="px-3 py-1 bg-slate-700/50 rounded-full text-sm text-slate-300">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
 

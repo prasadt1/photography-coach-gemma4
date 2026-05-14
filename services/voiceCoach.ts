@@ -342,6 +342,56 @@ export function speakHelp(): void {
 // ─── Utility: Parse Gemma response for Voice Mode ──────────────────────────────
 
 /**
+ * Artisan Studio JSON response (v3 schema)
+ * Matches the JSON output from ARTISAN_ACCESSIBILITY_SYSTEM_PROMPT
+ */
+export interface ArtisanAnalysisV3 {
+  subject: string;
+  critique: {
+    framing: string;
+    lighting: string;
+    primary_fix: string;
+  };
+  confidence_note: string;
+  alt_text: string;
+  listing_copy: string;
+  ready_to_list: boolean;
+}
+
+/**
+ * Parse the v3 Artisan Studio JSON response
+ * Falls back gracefully if JSON parsing fails
+ */
+export function parseArtisanResponseV3(response: string): ArtisanAnalysisV3 | null {
+  try {
+    // Strip any markdown code fences if present
+    let cleaned = response.trim();
+    if (cleaned.startsWith('```json')) {
+      cleaned = cleaned.slice(7);
+    } else if (cleaned.startsWith('```')) {
+      cleaned = cleaned.slice(3);
+    }
+    if (cleaned.endsWith('```')) {
+      cleaned = cleaned.slice(0, -3);
+    }
+    cleaned = cleaned.trim();
+
+    const parsed = JSON.parse(cleaned) as ArtisanAnalysisV3;
+
+    // Validate required fields exist
+    if (!parsed.subject || !parsed.critique || !parsed.alt_text) {
+      console.warn('[parseArtisanResponseV3] Missing required fields');
+      return null;
+    }
+
+    return parsed;
+  } catch (err) {
+    console.warn('[parseArtisanResponseV3] JSON parse failed:', err);
+    return null;
+  }
+}
+
+/**
  * Parse the Voice Coach response and extract key parts
  */
 export function parseVoiceResponse(response: string): { gist: string; details: string } {

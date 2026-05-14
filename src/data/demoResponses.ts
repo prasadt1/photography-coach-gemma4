@@ -9,7 +9,30 @@
  * - 3 sample product photos in public/demo-samples/
  * - Each has a pre-recorded JSON response from Gemma 4 E4B
  * - Samples 1 & 2 form a comparison pair for the Compare feature
+ *
+ * v3 SCHEMA (narrative-driven):
+ * - subject: what's in frame, how many items
+ * - critique.framing: primary framing/clutter issue
+ * - critique.lighting: primary lighting/color issue
+ * - critique.primary_fix: one actionable physical correction
+ * - confidence_note: what couldn't be judged (or empty)
+ * - alt_text: 15-25 word description
+ * - listing_copy: 2-3 sentence marketplace description
+ * - ready_to_list: boolean
  */
+
+export interface DemoResponseV3 {
+  subject: string;
+  critique: {
+    framing: string;
+    lighting: string;
+    primary_fix: string;
+  };
+  confidence_note: string;
+  alt_text: string;
+  listing_copy: string;
+  ready_to_list: boolean;
+}
 
 export interface DemoResponse {
   /** Unique identifier for this sample */
@@ -24,26 +47,8 @@ export interface DemoResponse {
   /** Category for display */
   category: string;
 
-  /** The raw Gemma 4 E4B response (accessibility format) */
-  response: {
-    whatISee: string;
-    colorCheck: string;
-    framingStatus: string;
-    topFix: string;
-    nextAction: string;
-    listingScore: number;
-    verdict: string;
-    background: string;
-    lighting: string;
-    productFocus: string;
-    altText: string;
-    suggestedTags: string[];
-    /** Optional: composition/lighting tips for extended TTS */
-    compositionTip?: string;
-    lightingTip?: string;
-    /** Optional: listing copy for marketplace */
-    listingCopy?: string;
-  };
+  /** The v3 Gemma 4 E4B response (grounded, JSON format) */
+  response: DemoResponseV3;
 
   /** Is this part of the comparison pair? */
   isComparisonSample?: boolean;
@@ -58,6 +63,8 @@ export interface DemoResponse {
  *
  * Samples 1 & 2 are a comparison pair (same product, different angles/lighting).
  * Sample 3 is standalone.
+ *
+ * v3 schema: grounded, factual, no flattery. JSON output.
  */
 export const DEMO_RESPONSES: DemoResponse[] = [
   {
@@ -68,22 +75,16 @@ export const DEMO_RESPONSES: DemoResponse[] = [
     isComparisonSample: true,
     comparePairId: 'sample-2',
     response: {
-      // PLACEHOLDER - Replace with real Gemma 4 E4B response
-      whatISee: 'I see a hand-knit scarf in warm earth tones — browns, creams, and rust — laid flat on a light wooden surface. The texture of the knit is clearly visible with a chunky cable pattern.',
-      colorCheck: 'The colors are reading accurately. The warm brown is similar to cinnamon or milk chocolate, and the cream sections are a true off-white.',
-      framingStatus: 'The scarf fills about 70% of the frame. However, both ends are cut off at the edges.',
-      topFix: 'Move your phone back about 8 inches so both ends of the scarf are fully visible. Buyers want to see the full length.',
-      nextAction: 'Take another shot with the complete scarf in frame.',
-      listingScore: 6,
-      verdict: 'Needs minor fixes',
-      background: 'Clean, good contrast',
-      lighting: 'Even, natural',
-      productFocus: 'Clear texture visible',
-      altText: 'Hand-knit chunky cable scarf in warm brown and cream tones, laid flat on light wood surface',
-      suggestedTags: ['handknit', 'scarf', 'chunky knit', 'cable pattern', 'winter accessories', 'handmade'],
-      compositionTip: 'Try a diagonal placement to add visual interest while keeping the full scarf in frame.',
-      lightingTip: 'The natural light is working well. Maintain this soft, even lighting.',
-      listingCopy: 'Cozy hand-knit cable scarf in warm earth tones. Perfect for chilly days.',
+      subject: 'I see one hand-knit scarf in brown and cream tones, laid flat on a light wooden surface. Cable knit pattern visible.',
+      critique: {
+        framing: 'Both ends of the scarf are cut off by the image border. Buyers cannot see the full length.',
+        lighting: 'Even, natural light from the left. Colors are reading accurately — the brown is close to cinnamon.',
+        primary_fix: 'Move your phone back 8 inches so both ends of the scarf are fully visible in frame.',
+      },
+      confidence_note: '',
+      alt_text: 'Hand-knit chunky cable scarf in warm brown and cream tones, laid flat on light wood surface',
+      listing_copy: 'Cozy hand-knit cable scarf in warm earth tones. Chunky cable pattern throughout. Perfect for chilly days.',
+      ready_to_list: false,
     },
   },
   {
@@ -94,22 +95,16 @@ export const DEMO_RESPONSES: DemoResponse[] = [
     isComparisonSample: true,
     comparePairId: 'sample-1',
     response: {
-      // PLACEHOLDER - Replace with real Gemma 4 E4B response
-      whatISee: 'I see the same hand-knit scarf, now photographed from directly above with the full length visible. Both fringed ends are in frame, and the cable pattern runs the full length.',
-      colorCheck: 'Colors remain accurate — the browns and creams are consistent with the first photo.',
-      framingStatus: 'Excellent framing. The full scarf is visible with even margins on all sides.',
-      topFix: 'This shot is strong. Consider adding a small prop for scale reference, like a coffee mug or book.',
-      nextAction: 'This photo is ready to list. You could take one lifestyle shot showing the scarf worn or draped.',
-      listingScore: 8,
-      verdict: 'Ready to list',
-      background: 'Clean, professional',
-      lighting: 'Even, soft',
-      productFocus: 'Full product visible',
-      altText: 'Full-length hand-knit cable scarf in brown and cream, showing complete pattern and fringed ends',
-      suggestedTags: ['handknit', 'scarf', 'cable pattern', 'winter', 'handmade', 'cozy'],
-      compositionTip: 'The overhead angle works perfectly for flat-lay product photography.',
-      lightingTip: 'Lighting is ideal — soft and even with no harsh shadows.',
-      listingCopy: 'Handcrafted cable-knit scarf with soft fringe detail. Made with love, built to last.',
+      subject: 'I see one hand-knit scarf photographed from above. Full length is visible including both fringed ends. Cable pattern runs the full length.',
+      critique: {
+        framing: 'Full scarf visible with even margins on all sides. No clutter in frame.',
+        lighting: 'Soft, even lighting. No harsh shadows. Colors are consistent — browns and creams reading true.',
+        primary_fix: 'No fix needed. This photo meets marketplace standards.',
+      },
+      confidence_note: '',
+      alt_text: 'Full-length hand-knit cable scarf in brown and cream, showing complete pattern and fringed ends on wood surface',
+      listing_copy: 'Handcrafted cable-knit scarf with soft fringe detail. Warm earth tones complement any winter outfit. Made with care.',
+      ready_to_list: true,
     },
   },
   {
@@ -119,22 +114,16 @@ export const DEMO_RESPONSES: DemoResponse[] = [
     category: 'Ceramics',
     isComparisonSample: false,
     response: {
-      // PLACEHOLDER - Replace with real Gemma 4 E4B response
-      whatISee: 'I see a handmade ceramic bowl with a speckled glaze in soft blue-gray tones. The bowl is photographed from a three-quarter angle showing both the interior and exterior profile.',
-      colorCheck: 'The blue-gray glaze is rendering true — a soft, muted tone like weathered denim. The speckles add visual interest.',
-      framingStatus: 'The bowl is well-centered and fills the frame appropriately. Good angle choice.',
-      topFix: 'The background fabric texture is slightly distracting. A solid backdrop would maximize product focus.',
-      nextAction: 'Try one more shot with a cleaner background, then this is ready to list.',
-      listingScore: 7,
-      verdict: 'Needs minor fixes',
-      background: 'Acceptable, minor distraction',
-      lighting: 'Soft, flattering',
-      productFocus: 'Excellent detail',
-      altText: 'Handmade ceramic bowl with speckled blue-gray glaze, three-quarter angle showing interior and rim',
-      suggestedTags: ['ceramic', 'pottery', 'handmade bowl', 'speckled glaze', 'stoneware', 'artisan'],
-      compositionTip: 'The three-quarter angle is perfect for showing both form and interior.',
-      lightingTip: 'Soft lighting flatters the glaze. Avoid direct light that could create hot spots.',
-      listingCopy: 'Hand-thrown ceramic bowl with unique speckled glaze. Each piece one of a kind.',
+      subject: 'I see one handmade ceramic bowl with speckled blue-gray glaze. Three-quarter angle shows both interior and exterior profile.',
+      critique: {
+        framing: 'Bowl is centered and fills the frame well. Background fabric texture is visible and slightly distracting.',
+        lighting: 'Soft lighting from the left. The blue-gray glaze is rendering accurately — similar to weathered denim.',
+        primary_fix: 'Replace the textured fabric with a solid white or cream backdrop to maximize product focus.',
+      },
+      confidence_note: '',
+      alt_text: 'Handmade ceramic bowl with speckled blue-gray glaze, three-quarter angle showing interior and rim',
+      listing_copy: 'Hand-thrown ceramic bowl with unique speckled glaze. Each piece one of a kind. Food-safe stoneware.',
+      ready_to_list: false,
     },
   },
 ];

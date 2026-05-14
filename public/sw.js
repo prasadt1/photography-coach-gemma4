@@ -5,7 +5,7 @@
  * Sources: docs/specs/10-platform-shells-spec.md §5.2
  */
 
-const CACHE_NAME = 'photography-coach-v2.0.0';
+const CACHE_NAME = 'photography-coach-v2.1.0';
 const ASSETS_TO_PRECACHE = [
   '/',
   '/index.html',
@@ -68,10 +68,12 @@ self.addEventListener('fetch', (event) => {
   //  - Non-GET requests (POSTs to Gemini, Ollama, etc. — caching breaks them)
   //  - Cross-origin requests (Gemini API, fonts, CDN, anything off our origin)
   //  - The /share-target route (handled by the earlier listener)
+  //  - Demo samples (these may change, don't cache them)
   if (
     event.request.method !== 'GET' ||
     url.origin !== self.location.origin ||
-    url.pathname === '/share-target'
+    url.pathname === '/share-target' ||
+    url.pathname.startsWith('/demo-samples/')
   ) {
     return;
   }

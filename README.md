@@ -1,8 +1,8 @@
 # 📷 L.E.N.S. — Voice-Guided Photography for Artisans
 
-> *The lens between the artisan's hands and the sighted marketplace.*
+> *One artisan, one phone, full independence.*
 
-**Helping artisans get the price their work deserves**
+**Helping artisans photograph their work on their own terms**
 
 [![Gemma 4 E4B](https://img.shields.io/badge/Powered%20by-Gemma%204%20E4B-4285F4?style=for-the-badge&logo=google)](https://deepmind.google/technologies/gemma/gemma-4/)
 [![Ollama](https://img.shields.io/badge/Runtime-Ollama-000000?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxMCIgZmlsbD0id2hpdGUiLz48L3N2Zz4=)](https://ollama.com)
@@ -14,20 +14,24 @@
 
 ## 🏆 Built for Gemma 4 Good Hackathon
 
-**L.E.N.S. (Local Edge-Native Studio)** is a voice-guided AI photography coach that helps blind and low-vision artisans capture marketplace-quality product photos — so they can sell what they make at the price their work deserves. **Entirely on-device, with no internet, no subscription, and no cloud.**
+**L.E.N.S. (Local Edge-Native Studio)** helps blind and low-vision artisans photograph their products for online marketplaces — independently. No sighted helper on call. No cloud subscription. No internet required. Voice-guided coaching runs entirely on-device via Gemma 4 E4B + Ollama.
 
 ### Target Tracks
 - 🎯 **Digital Equity & Inclusivity** (Primary)
 - 🎯 **Ollama Special Technology Track** (Primary)
 - 🏅 **Main Track** (Secondary)
 
-### Why This Matters
+### Why Independence Matters
 
-Blindness exists on a clinical spectrum: **only 10–15% of legally blind individuals have no light perception**. The remaining 85–90% retain varying degrees of residual vision — light/dark perception, color discrimination, large-shape recognition, or restricted fields. L.E.N.S. is designed for this dominant population: **low-vision artisans who can interact with a screen using magnification but cannot reliably evaluate the qualities of their own product photographs** that determine whether sighted buyers click and convert.
+Low-vision artisans already make beautiful things — weavers, potters, knitters, woodworkers who know their products by touch. What they lack is not skill but a reliable way to verify that a photo does their work justice before listing it online. Existing assistive apps describe what is in a photo; they do not coach someone to take a better one. Cloud services require reliable internet, monthly fees, or a sighted helper on call. L.E.N.S. removes the intermediary: **voice-guided coaching that runs on the device, verifies the shot, and generates listing copy — without asking anyone for help.**
 
-### Why Gemma 4 E4B
+### Why Gemma 4 E4B via Ollama
 
-We selected **Gemma 4 E4B** specifically because it is one of only two models in the Gemma 4 family with a **native 300M-parameter audio encoder** (alongside E2B). The larger 26B and 31B variants offer superior critique quality but lack native audio input, which would force a separate Whisper or cloud STT pipeline — breaking our offline-first promise and adding latency and deployment weight that disproportionately hurts the users we built this for. E4B's single-model architecture is what makes a voice-guided photography coach for blind and low-vision artisans **feasible on commodity hardware today**.
+Every technical decision traces back to one question: can a low-vision artisan use this tool alone, offline, for free?
+
+- **E4B, not 26B/31B:** E4B is one of only two Gemma 4 models with a native 300M-parameter audio encoder. Larger variants offer better critique quality but lack native audio input — requiring a separate STT pipeline that breaks offline operation.
+- **Ollama, not cloud:** Cloud subscriptions cost $10–20/month. Ollama delivers inference at zero ongoing cost, works identically online or offline, and keeps photos on the device.
+- **Current state:** Today L.E.N.S. uses Web Speech API for TTS output. Photos are analyzed locally via Gemma 4 E4B. Voice input is not yet integrated. The roadmap is bidirectional voice through E4B's native conformer encoder.
 
 ---
 
@@ -607,7 +611,7 @@ These features are architecturally planned and will be implemented post-hackatho
 - Integration with iOS VoiceOver and Android TalkBack gestures
 
 **Why This Matters:**
-Visual commerce shouldn't be limited to those with perfect sight. The same Gemma 4 spatial reasoning that coaches composition can describe scenes, confirm framing, and guide blind creators through professional product photography—opening marketplaces like Etsy and Shopify to a community historically excluded from visual selling.
+Independence in visual commerce. The same Gemma 4 spatial reasoning that coaches composition can describe scenes, confirm framing, and generate listing copy — so low-vision artisans can photograph and list their products without asking anyone for help.
 
 **Technical Foundation:**
 All Phase 2 features build on existing infrastructure (voice service, spatial analysis, PWA APIs) with no architectural changes required. Estimated implementation: 15-20 hours development + user testing with accessibility consultants.
@@ -847,8 +851,8 @@ You are free to use, modify, and distribute this software for commercial or non-
 
 <div align="center">
 
-**Built with ❤️ for photographers, by a photographer**
+**One artisan, one phone, full independence.**
 
-*Powered by Gemma 4 E4B • Running 100% Locally • Zero Cloud Dependencies*
+*Powered by Gemma 4 E4B via Ollama • 100% On-Device • No Internet Required*
 
 </div>

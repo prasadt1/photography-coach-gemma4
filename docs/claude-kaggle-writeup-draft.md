@@ -11,17 +11,13 @@
 
 ---
 
-L.E.N.S. — Local Edge Native Studio — is the lens between the artisan's hands and the sighted marketplace. For 85–90% of legally blind people who retain some residual vision, the gap between making beautiful work and photographing it to sell is the gap L.E.N.S. closes.
+L.E.N.S. — Local Edge Native Studio — is the lens between the artisan's hands and the sighted marketplace. A blind or low-vision artisan can make beautiful work, but selling it online means clearing a barrier they cannot see: photo quality. Buyers judge a listing in under a second, and that judgment is entirely visual. Every existing fix — hiring a photographer, asking a sighted volunteer through a service like Be My Eyes, or using a cloud AI tool — solves the photo problem by introducing a dependence: on a person's time, an internet connection, a subscription, or handing your work to someone else. L.E.N.S. removes the dependence. It runs entirely on the artisan's own device, so the artisan does it themselves — privately, for free, offline, on their own terms.
 
-## The Problem
+---
 
-Blindness exists on a clinical spectrum: only 10–15% of legally blind individuals have No Light Perception (NLP). The remaining 85–90% retain varying degrees of residual vision — light/dark perception, color discrimination, large-shape recognition, or restricted fields (WHO, Iowa Department for the Blind).
+## Blindness Is a Spectrum
 
-L.E.N.S. is designed for this dominant population: **low-vision artisans who can interact with a screen using magnification and high contrast, but who cannot reliably evaluate the qualities of their own product photographs** that determine whether sighted buyers click and convert.
-
-These artisans — weavers, potters, knitters, woodworkers — create beautiful handmade goods. They know their products intimately by touch. But marketplace success depends on photo quality: 90% of Etsy shoppers say photo quality is their top purchase factor. High-quality photos can lift conversion rates by up to 94%.
-
-Existing assistive apps (TapTapSee, Seeing AI, Be My Eyes) *describe* what's in a photo. They don't *coach* someone to take a better one. Cloud-based AI coaching requires reliable internet — a luxury many rural artisans in developing countries don't have. L.E.N.S. fills this gap: **voice-guided product photography coaching that runs entirely offline, on commodity hardware, at zero ongoing cost.**
+Blindness exists on a clinical spectrum: only 10–15% of legally blind individuals have No Light Perception (NLP). The remaining 85–90% retain varying degrees of residual vision (WHO; Iowa Department for the Blind). L.E.N.S. is designed for this dominant population: low-vision artisans who can interact with a screen using magnification and high contrast, but who cannot reliably evaluate the qualities of their own product photographs that determine whether sighted buyers click.
 
 ---
 
@@ -31,9 +27,9 @@ Existing assistive apps (TapTapSee, Seeing AI, Be My Eyes) *describe* what's in 
 
 **How it works:**
 
-1. **Describe first:** The AI starts by confirming what's in frame — "I see a blue hand-knit scarf on a wooden surface with soft lighting from the left."
+1. **Describe first:** The AI starts by confirming what is in frame — "I see a blue hand-knit scarf on a wooden surface with soft lighting from the left."
 
-2. **Confirm colors:** For users who can't verify color accuracy, the AI compares to familiar references — "The blue is reading accurately, similar to a clear sky blue."
+2. **Confirm colors:** For users who cannot verify color accuracy, the AI compares to familiar references — "The blue is reading accurately, similar to a clear sky blue."
 
 3. **Guide spatially:** Coaching uses functional language (inches, left/right) not photography jargon — "Move your phone back 6 inches to capture the full length of the scarf."
 
@@ -41,7 +37,11 @@ Existing assistive apps (TapTapSee, Seeing AI, Be My Eyes) *describe* what's in 
 
 5. **Voice output:** All feedback is spoken aloud via Web Speech API, sentence by sentence for clarity.
 
-The same engine serves sighted photographers through **Photo Studio** — offering 5-axis critique, spatial bounding boxes, and mentor chat — but Artisan Studio is the accessibility-first hero.
+---
+
+## Why Gemma 4 E4B
+
+Gemma 4 E4B is not the right model here because it critiques better than a large cloud model — it does not. It is the right model because it is the only thing that lets the critique happen independently. Running locally means no dependence on connectivity. Open weights mean no dependence on a subscription. On-device inference means the artisan's photos — often of unreleased, original work — never leave their hands. And E4B specifically: it and E2B are the only models in the Gemma 4 family with a native conformer-based audio encoder, which makes a voice-first interface feasible without a separate speech pipeline. Independence is the goal; Gemma 4 E4B running locally via Ollama is the mechanism. They are the same argument.
 
 ---
 
@@ -70,53 +70,31 @@ The same engine serves sighted photographers through **Photo Studio** — offeri
                          │  │   Gemma 4 E4B (Q4_K_M)  │    │
                          │  │   • 300M audio encoder  │    │
                          │  │   • Schema JSON output  │    │
-                         │  │   • Multi-image support │    │
                          │  └─────────────────────────┘    │
                          └─────────────────────────────────┘
 ```
 
-**Key architectural decisions:**
-
-- **Schema-enforced JSON:** Ollama's `format` parameter forces structured output at token level — scores, bounding boxes, and rationale in one reliable pass.
-- **Deterministic CV grounding:** EXIF, histogram, and focus map are extracted client-side and injected into prompts. The model cites this evidence.
-- **Progressive Web App:** Installable on iOS/Android via Safari/Chrome. Web Share Target receives photos from the system share sheet.
+**Key decisions:**
+- **Schema-enforced JSON:** Ollama's `format` parameter forces structured output at token level.
+- **Progressive Web App:** Installable on iOS/Android. Web Share Target receives photos from the system share sheet.
 - **Local-only by design:** No cloud fallback in Artisan Studio. Offline capability is a feature, not an edge case.
 
 ---
 
-## Technical Decisions
+## Honest Roadmap
 
-**Why Gemma 4 E4B (not 26B or 31B)?**
+The current implementation requires a local model runtime (Ollama). This is the proof-of-concept delivery mechanism, not the finished product. The roadmap is zero-setup, phone-native on-device deployment, and Gemma 4 E4B's compact footprint is what makes that roadmap credible rather than aspirational. What the current MVP proves is that the full critique-and-optimize engine runs entirely locally, with no network calls, on commodity hardware.
 
-We selected Gemma 4 E4B specifically because it and E2B are the only models in the Gemma 4 family with a **native 300M-parameter audio encoder**. The larger 26B and 31B variants offer superior critique quality but lack native audio input, which would force a separate Whisper or cloud STT pipeline — breaking our offline-first promise and adding latency and deployment weight that disproportionately hurts the users we built this for. E4B's single-model architecture is what makes a voice-guided photography coach for blind and low-vision artisans feasible on commodity hardware today.
+**What ships today:**
+- Voice-guided critique via Gemma 4 E4B + Ollama (100% local)
+- TTS feedback via Web Speech API
+- Alt-text and listing copy generation
+- Offline PWA installable on iOS and Android
 
-**Why Ollama (not cloud inference)?**
-
-- **Zero cost per photo:** Cloud AI subscriptions ($10–20/month) are prohibitive for artisans in developing economies. Local inference is free forever after model download.
-- **Works offline:** Rural Tamil Nadu has intermittent connectivity at best. L.E.N.S. works the same online or offline.
-- **Privacy inherent:** Photos never leave the device. No consent dialogs, no compliance concerns.
-
-**Current implementation vs. roadmap:**
-
-Current implementation uses the browser's Web Speech API for text-to-speech output, enabling the PWA to deliver voice feedback without additional dependencies. The architectural roadmap is direct audio ingestion via E4B's native conformer encoder, eliminating the browser-API dependency for fully offline bidirectional voice interaction.
-
----
-
-## Demonstration
-
-The 3-minute video demonstrates:
-
-1. **Persona introduction:** Maya, a low-vision artisan in rural India who knits scarves. She knows her work by touch but can't judge her photos.
-
-2. **Core demo:** Upload a product photo. Hear the AI describe what it sees, confirm colors, identify framing issues, and coach spatial adjustments.
-
-3. **Retake flow:** Second photo scores higher. Alt-text and listing copy generated.
-
-4. **Offline proof:** Airplane mode toggled on-camera. Analysis runs identically — no internet required.
-
-5. **Technical walkthrough:** Why E4B, why Ollama, why schema enforcement matters.
-
-The video prioritizes emotional clarity (hands, craft, transformation) over feature exhaustiveness.
+**What comes next:**
+- Bidirectional voice via E4B native audio encoder
+- Direct marketplace upload (Etsy, Shopify) with pre-generated metadata
+- Haptic feedback for composition alignment
 
 ---
 
@@ -124,35 +102,34 @@ The video prioritizes emotional clarity (hands, craft, transformation) over feat
 
 **Digital Equity & Inclusivity Track:**
 
-L.E.N.S. addresses a genuine market exclusion. Only 1% of Indian handloom weavers and craftspeople currently sell online (IDR, 2024). Only 20% have received any digital selling training. Many have low vision — cataracts are endemic in rural South Asia.
-
-We didn't guess at this use case. Real organizations support blind artisans professionally:
+We did not guess at this use case. Real people and organizations support blind artisans professionally:
 
 - **The Blind Woodsman** — professional woodworker who is legally blind
 - **John Bramblitt** — tactile painter with extensive press coverage
-- **Oaknna Foundation "Art by Blind"** — trains blind artisans for market-ready work
+- **Sydney Mufuka ("The Blind Artisan")** — pottery artist creating market-ready work
+- **Royal National Institute of Blind People (RNIB)** — supports artisan employment programs
+- **Oaknna Foundation ("Art by Blind")** — trains blind artisans for market-ready work
 - **Gifted Back** — non-profit selling handmade goods by blind/low-vision creators
-- **RNIB** — Royal National Institute of Blind People supports artisan employment
 
-L.E.N.S. doesn't require these artisans to use cloud services, pay subscriptions, or have reliable internet. The product works where they live.
-
-**Sighted photographers** also benefit — the same engine provides 5-axis critique, spatial annotations, and mentor chat — but the accessibility use case is what distinguishes L.E.N.S. from generic "AI photo critique" tools.
+L.E.N.S. does not require these artisans to use cloud services, pay subscriptions, or have reliable internet. The product works where they live.
 
 ---
 
-## Roadmap
+## Demonstration
 
-**Phase 2: Native Audio Ingestion**
-- Integrate E4B's conformer encoder for bidirectional voice without Web Speech API
-- Eliminate browser dependency for fully offline voice interaction
+The 3-minute video demonstrates:
 
-**Phase 3: Marketplace Integration**
-- Direct upload to Etsy/eBay/Shopify via API with pre-generated alt-text and tags
-- Photo-to-listing pipeline in one voice-guided session
+1. **Persona introduction:** Maya, a low-vision artisan in rural India who knits scarves. She knows her work by touch and wants to verify her photos independently before listing.
 
-**Phase 4: Haptic Feedback**
-- Phone vibration when composition is optimal
-- Enables "feeling" the perfect shot for users who can't see the screen
+2. **Core demo:** Upload a product photo. Hear L.E.N.S. describe what it sees, confirm colors, identify framing issues, and coach spatial adjustments.
+
+3. **Retake flow:** Second photo improves. Alt-text and listing copy generated, ready to paste.
+
+4. **Offline proof:** Airplane mode toggled on-camera. Analysis runs identically — no internet required.
+
+5. **Technical walkthrough:** Why E4B, why Ollama, why schema enforcement matters.
+
+The video shows the workflow, not a pity narrative. Hands, craft, transformation.
 
 ---
 
@@ -162,4 +139,4 @@ Thanks to the Gemma 4 team at Google DeepMind for releasing E4B with a native au
 
 ---
 
-*Word count: ~1,380 (under 1,500 limit)*
+*Word count: ~1,107 (under 1,500 limit)*

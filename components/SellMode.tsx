@@ -452,6 +452,14 @@ const SellMode: React.FC<SellModeProps> = ({
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-900 to-orange-950/20 text-slate-200 p-4 md:p-8">
+      {/* Skip to main content link for screen readers */}
+      <a
+        href="#artisan-main"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-amber-600 focus:text-white focus:rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
+      >
+        Skip to main content
+      </a>
+
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -464,10 +472,10 @@ const SellMode: React.FC<SellModeProps> = ({
       />
 
       {/* Header */}
-      <header className="flex items-center justify-between mb-6 max-w-4xl mx-auto">
+      <header className="flex items-center justify-between mb-6 max-w-4xl mx-auto" role="banner">
         <button
           onClick={handleBack}
-          className="px-4 py-2 rounded-xl text-sm font-semibold bg-slate-800 hover:bg-slate-700 transition-all"
+          className="px-4 py-2 rounded-xl text-sm font-semibold bg-slate-800 hover:bg-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-slate-900"
           aria-label={result || showCompare ? "Go back to sample selection" : "Go back to home page"}
         >
           ← Back
@@ -487,7 +495,7 @@ const SellMode: React.FC<SellModeProps> = ({
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto">
+      <main id="artisan-main" className="max-w-4xl mx-auto" role="main">
         {/* Info Card */}
         <div className="bg-slate-800/60 backdrop-blur-sm rounded-3xl border border-slate-700/50 p-6 md:p-8 mb-6">
           <div className="flex items-start gap-4">
@@ -534,7 +542,8 @@ const SellMode: React.FC<SellModeProps> = ({
                 <button
                   key={sample.id}
                   onClick={() => handleDemoSampleSelect(sample)}
-                  className="group relative h-48 rounded-xl overflow-hidden border-2 border-purple-500/30 hover:border-purple-400 transition-all hover:scale-[1.02]"
+                  className="group relative h-48 rounded-xl overflow-hidden border-2 border-purple-500/30 hover:border-purple-400 transition-all hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+                  aria-label={`Analyze ${sample.label} - ${sample.category}`}
                 >
                   <img
                     src={sample.imagePath}
@@ -563,7 +572,8 @@ const SellMode: React.FC<SellModeProps> = ({
                   setShowCompare(true);
                   setDemoCompareResult(DEMO_COMPARISON_RESULT);
                 }}
-                className="flex items-center gap-2 px-4 py-2.5 bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 rounded-xl text-purple-200 font-semibold text-sm transition-all"
+                className="flex items-center gap-2 px-4 py-2.5 bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 rounded-xl text-purple-200 font-semibold text-sm transition-all focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+                aria-label="Compare two photos of the same product"
               >
                 <ImageIcon className="w-4 h-4" />
                 Compare two photos of the same product
@@ -590,10 +600,10 @@ const SellMode: React.FC<SellModeProps> = ({
                   setShowCompare(false);
                   setDemoCompareResult(null);
                 }}
-                className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
-                aria-label="Close compare"
+                className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-violet-400"
+                aria-label="Close comparison view"
               >
-                ✕
+                <span aria-hidden="true">✕</span>
               </button>
             </div>
 
@@ -687,9 +697,10 @@ const SellMode: React.FC<SellModeProps> = ({
                     handleDemoSampleSelect(winner);
                   }
                 }}
-                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg"
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-sm font-bold transition-all shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+                aria-label="Analyze the winning photo for listing"
               >
-                <Sparkles className="w-4 h-4" />
+                <Sparkles className="w-4 h-4" aria-hidden="true" />
                 Analyze Winner for Listing
               </button>
             </div>
@@ -701,16 +712,29 @@ const SellMode: React.FC<SellModeProps> = ({
             <p className="text-red-300">{error}</p>
             <button
               onClick={handleRetry}
-              className="mt-4 px-6 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-semibold transition-colors"
+              className="mt-4 px-6 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+              aria-label="Try again"
             >
               Try Again
             </button>
           </div>
         )}
 
+        {/* ARIA-live region for screen reader announcements */}
+        <div
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          className="sr-only"
+        >
+          {isAnalyzing && 'Analyzing your photo with Gemma 4 E4B. Please wait.'}
+          {result && !result.readyToList && `Analysis complete. ${result.subject}. Your next step: ${result.primaryFix}`}
+          {result && result.readyToList && `Analysis complete. ${result.subject}. This photo is ready to list.`}
+        </div>
+
         {/* Result display */}
         {result && (
-          <div className="space-y-6 mb-6" role="region" aria-label="Analysis results" aria-live="polite">
+          <div className="space-y-6 mb-6" role="region" aria-label="Analysis results">
             {/* Photo + Verdict Row */}
             <div className="flex flex-col md:flex-row gap-6">
               {/* Photo */}
@@ -957,12 +981,13 @@ const SellMode: React.FC<SellModeProps> = ({
             )}
 
             {/* Action buttons */}
-            <div className="flex gap-4">
+            <div className="flex gap-4" role="group" aria-label="Photo actions">
               <button
                 onClick={handleRetry}
-                className="flex items-center gap-2 px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-sm font-semibold transition-colors"
+                className="flex items-center gap-2 px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+                aria-label="Try another photo"
               >
-                <RotateCcw className="w-4 h-4" />
+                <RotateCcw className="w-4 h-4" aria-hidden="true" />
                 Try Another Photo
               </button>
             </div>
@@ -977,16 +1002,17 @@ const SellMode: React.FC<SellModeProps> = ({
             className="w-full h-64 md:h-80 rounded-3xl border-2 border-dashed border-slate-600 hover:border-orange-500/50
               bg-slate-800/30 hover:bg-slate-800/50 transition-all duration-300
               flex flex-col items-center justify-center gap-4 group
-              disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-slate-600"
+              disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-slate-600
+              focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-slate-900 focus:border-orange-500"
             aria-label="Take or upload a product photo for analysis"
           >
             <div className="w-20 h-20 rounded-2xl bg-orange-500/20 border border-orange-500/30
               flex items-center justify-center group-hover:scale-110 transition-transform">
               <Camera className="w-10 h-10 text-orange-400" />
             </div>
-            <div className="text-center">
-              <p className="text-xl font-bold text-white mb-1">Upload Product Photo</p>
-              <p className="text-slate-400">Get instant feedback on your listing photo</p>
+            <div className="text-center px-4">
+              <p className="text-xl font-bold text-white mb-2">Take or upload a photo of your product</p>
+              <p className="text-slate-400 text-sm leading-relaxed max-w-md">L.E.N.S. will tell you what's working, what isn't, and exactly how to fix it — privately, on your device.</p>
             </div>
           </button>
         )}
@@ -1002,8 +1028,8 @@ const SellMode: React.FC<SellModeProps> = ({
           >
             <Loader2 className="w-12 h-12 text-orange-400 animate-spin" aria-hidden="true" />
             <div className="text-center">
-              <p className="text-xl font-bold text-white mb-1">Analyzing Product Photo...</p>
-              <p className="text-slate-400">Checking background, lighting, and focus</p>
+              <p className="text-xl font-bold text-white mb-1">Analyzing on your device with Gemma 4 E4B</p>
+              <p className="text-slate-400">Nothing leaves your phone.</p>
             </div>
           </div>
         )}

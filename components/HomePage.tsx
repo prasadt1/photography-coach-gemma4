@@ -112,7 +112,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady, stats, v
             <span className="bg-gradient-to-r from-terracotta-400 via-amber-400 to-terracotta-500 bg-clip-text text-transparent"> price their work deserves</span>
           </h2>
           <p className="text-lg text-slate-400 max-w-2xl mx-auto mb-6 leading-relaxed">
-            L.E.N.S. helps blind and low-vision artisans capture marketplace-quality photos of their handmade work — fully on-device, no internet, no subscription.
+            L.E.N.S. helps blind and low-vision artisans capture marketplace-quality photos — on their own terms. Fully on-device. No internet, no subscription, no one else in the loop.
           </p>
 
           {/* Status Badge with connection animation */}

@@ -61,8 +61,8 @@ export interface DemoResponse {
 }
 
 /**
- * The 3 demo samples.
- * USER TO POPULATE: Replace placeholder responses with real Gemma 4 E4B output.
+ * The 3 demo samples with REAL Gemma 4 E4B responses.
+ * Captured 2026-05-14 using scripts/capture-demo-responses.mjs
  *
  * Samples 1 & 2 are a comparison pair (same product, different angles/lighting).
  * Sample 3 is standalone.
@@ -77,16 +77,17 @@ export const DEMO_RESPONSES: DemoResponse[] = [
     category: 'Textiles',
     isComparisonSample: true,
     comparePairId: 'sample-2',
+    // REAL Gemma 4 E4B response captured 2026-05-14 (v2 with color analogies)
     response: {
-      subject: 'I see one hand-knit scarf in brown and cream tones, laid flat on a light wooden surface. Cable knit pattern visible.',
+      subject: 'I see one knitted item, appearing to be a narrow fabric swatch, with a primary color of light brown, similar to dried autumn leaves.',
       critique: {
-        framing: 'Both ends of the scarf are cut off by the image border. Buyers cannot see the full length.',
-        lighting: 'Even, natural light from the left. Colors are reading accurately — the brown is close to cinnamon.',
-        primary_fix: 'Move your phone back 8 inches so both ends of the scarf are fully visible in frame.',
+        framing: 'The object is placed centrally across the wood surface, but there is excessive unused space above and below it.',
+        lighting: 'The lighting is uneven, causing a strong shadow immediately below the knitted item and slightly darkening the color. This makes the color read as darker than necessary.',
+        primary_fix: 'Place the knitted item on a clean, flat surface and move the camera directly over the object, ensuring the light source is directly above or slightly to the side to eliminate the noticeable shadow underneath the fabric.',
       },
       confidence_note: '',
-      alt_text: 'Hand-knit chunky cable scarf in warm brown and cream tones, laid flat on light wood surface',
-      listing_copy: 'Cozy hand-knit cable scarf in warm earth tones. Chunky cable pattern throughout. Perfect for chilly days.',
+      alt_text: 'Close-up, horizontal view of a woven, knitted swatch in a light brown, natural yarn, displayed against a wooden surface.',
+      listing_copy: 'Showcase the texture and pattern of this hand-knitted swatch. The yarn is a natural, light brown color, perfect for complementing earthy tones. This piece emphasizes the craftsmanship of the stitch work.',
       ready_to_list: false,
     },
   },
@@ -97,17 +98,18 @@ export const DEMO_RESPONSES: DemoResponse[] = [
     category: 'Textiles',
     isComparisonSample: true,
     comparePairId: 'sample-1',
+    // REAL Gemma 4 E4B response captured 2026-05-14 (v2 with color analogies)
     response: {
-      subject: 'I see one hand-knit scarf photographed from above. Full length is visible including both fringed ends. Cable pattern runs the full length.',
+      subject: 'I see one rectangular woven textile piece in shades of beige and brown — the overall color is similar to unbleached coffee grounds.',
       critique: {
-        framing: 'Full scarf visible with even margins on all sides. No clutter in frame.',
-        lighting: 'Soft, even lighting. No harsh shadows. Colors are consistent — browns and creams reading true.',
-        primary_fix: 'No fix needed. This photo meets marketplace standards.',
+        framing: 'The product is centered and fully visible, but the surrounding background wood is unevenly lit and distracts from the item.',
+        lighting: 'The lighting is generally even but lacks direction, which makes the texture readable but the colors flat and dull.',
+        primary_fix: 'Place the textile on a clean, flat background surface that has consistent color and minimal grain or texture, such as a solid piece of pale gray poster board.',
       },
       confidence_note: '',
-      alt_text: 'Full-length hand-knit cable scarf in brown and cream, showing complete pattern and fringed ends on wood surface',
-      listing_copy: 'Handcrafted cable-knit scarf with soft fringe detail. Warm earth tones complement any winter outfit. Made with care.',
-      ready_to_list: true,
+      alt_text: 'Woven textile piece featuring horizontal cable knit pattern, suitable for home decor or seasonal accent.',
+      listing_copy: 'This hand-woven textile features a detailed, structured cable knit pattern. Crafted from durable, natural fibers, it adds rustic warmth and texture to any seasonal display or accent piece. Ideal for holiday decorating or rustic staging.',
+      ready_to_list: false,
     },
   },
   {
@@ -116,16 +118,17 @@ export const DEMO_RESPONSES: DemoResponse[] = [
     imagePath: `/demo-samples/sample-3.jpg?${IMG_VERSION}`,
     category: 'Ceramics',
     isComparisonSample: false,
+    // REAL Gemma 4 E4B response captured 2026-05-14 (v2 with color analogies)
     response: {
-      subject: 'I see one handmade ceramic bowl with speckled blue-gray glaze. Three-quarter angle shows both interior and exterior profile.',
+      subject: 'I see one ceramic bowl with a primary color that is a mottled blue-gray, similar to wet concrete.',
       critique: {
-        framing: 'Bowl is centered and fills the frame well. Background fabric texture is visible and slightly distracting.',
-        lighting: 'Soft lighting from the left. The blue-gray glaze is rendering accurately — similar to weathered denim.',
-        primary_fix: 'Replace the textured fabric with a solid white or cream backdrop to maximize product focus.',
+        framing: 'The bowl is centered and fully visible; no parts are cut off by the edge.',
+        lighting: 'The lighting is generally even, but there is a strong, slightly distracting glare on the inside curve of the bowl, and the colors appear accurate.',
+        primary_fix: 'Move the camera up and slightly to the left, and change the angle so the light hits the bowl at a flatter, more overhead angle to reduce the interior glare.',
       },
       confidence_note: '',
-      alt_text: 'Handmade ceramic bowl with speckled blue-gray glaze, three-quarter angle showing interior and rim',
-      listing_copy: 'Hand-thrown ceramic bowl with unique speckled glaze. Each piece one of a kind. Food-safe stoneware.',
+      alt_text: 'A single, speckled blue-gray ceramic bowl resting on coarse tan burlap fabric.',
+      listing_copy: 'This handcrafted ceramic bowl features a speckled blue-gray glaze reminiscent of wet concrete. The piece is durable and unique, making it perfect for serving or display.',
       ready_to_list: false,
     },
   },
@@ -162,21 +165,22 @@ export function getComparisonSamples(): DemoResponse[] {
  * Canned comparison result for Demo Mode
  * Compares sample-1 (cropped scarf) vs sample-2 (full scarf)
  */
+// Comparison based on Gemma 4 E4B analysis of both photos (captured 2026-05-14)
 export const DEMO_COMPARISON_RESULT = {
   winner: 'B' as const,
-  reason: 'Photo B shows the complete scarf with both fringed ends visible, giving buyers a clear view of what they are purchasing. Photo A cuts off both ends, making it impossible to judge the full length or see the fringe detail.',
+  reason: 'Photo B shows the product centered and fully visible with even lighting that makes the texture readable. Photo A has excessive unused space and uneven lighting that darkens the color.',
   strengths_a: [
-    'Cable knit texture is clearly visible',
-    'Warm, natural lighting',
-    'Clean wooden background provides good contrast',
+    'Light brown color similar to dried autumn leaves is visible',
+    'Product is centered across the frame',
+    'Cable knit texture is clear',
   ],
   strengths_b: [
-    'Full product visible with even margins',
-    'Both fringed ends in frame',
-    'Professional flat-lay composition',
-    'Ready for marketplace listing',
+    'Product is centered and fully visible',
+    'Beige and brown tones read accurately',
+    'Cable knit pattern detail is readable',
+    'Better overall framing',
   ],
-  recommendation: 'Use Photo B for your listing. The full-length view helps buyers understand exactly what they are purchasing. Consider taking an additional close-up shot to showcase the cable knit texture visible in Photo A.',
+  recommendation: 'Use Photo B as your primary listing image. To improve it further, place the textile on a clean, flat background with consistent color — such as pale gray poster board — to reduce distraction from the wood grain.',
 };
 
 /**

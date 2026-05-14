@@ -84,7 +84,7 @@ iPhone can access via: `http://192.168.1.100:5173` (replace with your IP)
 ### Option B: Deployed Web App (Recommended)
 
 Deploy to Vercel/Netlify (see main README), then:
-- iPhone accesses `https://photography-coach.vercel.app`
+- iPhone accesses `https://lens-app-gemma4.vercel.app`
 - Ollama runs on Mac/PC at `http://192.168.1.100:11434`
 - App auto-detects Ollama on local network
 

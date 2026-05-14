@@ -1,19 +1,19 @@
 /**
  * Vercel Serverless API Route: /api/analyze
  *
- * Proxies image analysis requests to Ollama Cloud when local Ollama isn't available.
- * This enables the live Vercel demo to perform REAL Gemma 4 analysis.
+ * Proxies image analysis requests to Ollama Cloud.
+ * API docs: https://docs.ollama.com/cloud
  *
- * Environment Variables:
- *   OLLAMA_API_KEY - API key for Ollama Cloud (set in Vercel dashboard)
+ * Environment Variables (set in Vercel dashboard):
+ *   OLLAMA_API_KEY - Required: Your Ollama Cloud API key from ollama.com/settings/keys
+ *   OLLAMA_CLOUD_MODEL - Optional: Model to use (default: gemma3:27b)
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Ollama Cloud configuration
-// TODO: Update these to match your Ollama Cloud account
-const OLLAMA_CLOUD_URL = process.env.OLLAMA_CLOUD_URL || 'https://api.ollama.com/v1/chat/completions';
-const CLOUD_MODEL = process.env.OLLAMA_CLOUD_MODEL || 'gemma2:9b';
+// Ollama Cloud configuration - uses same API format as local Ollama
+const OLLAMA_CLOUD_URL = 'https://ollama.com/api/chat';
+const DEFAULT_MODEL = 'gemma3:27b';  // Gemma 3 27B - good balance of speed and quality
 const TIMEOUT_MS = 120_000;  // 2 minutes
 
 interface AnalyzeRequest {
@@ -51,6 +51,8 @@ export default async function handler(
     });
   }
 
+  const model = process.env.OLLAMA_CLOUD_MODEL || DEFAULT_MODEL;
+
   try {
     const body = req.body as AnalyzeRequest;
 
@@ -59,7 +61,8 @@ export default async function handler(
       return res.status(200).json({
         status: 'ok',
         cloudConfigured: true,
-        model: CLOUD_MODEL,
+        model: model,
+        endpoint: OLLAMA_CLOUD_URL,
       });
     }
 
@@ -75,28 +78,25 @@ export default async function handler(
       ? body.base64Image.split('base64,')[1]
       : body.base64Image;
 
-    // Prepare Ollama Cloud request (OpenAI-compatible format)
+    // Prepare Ollama Cloud request - same format as local Ollama
     const ollamaRequest = {
-      model: CLOUD_MODEL,
+      model: model,
       messages: [
         { role: 'system', content: body.systemPrompt },
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: body.userPrompt },
-            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${cleanBase64}` } },
-          ],
-        },
+        { role: 'user', content: body.userPrompt, images: [cleanBase64] },
       ],
-      temperature: 0.1,
-      max_tokens: 1024,
+      stream: false,
+      options: {
+        temperature: 0.1,
+        num_predict: 1024,
+      },
     };
 
     // Call Ollama Cloud
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-    console.log('[/api/analyze] Calling Ollama Cloud:', OLLAMA_CLOUD_URL, 'model:', CLOUD_MODEL);
+    console.log('[/api/analyze] Calling Ollama Cloud:', OLLAMA_CLOUD_URL, 'model:', model);
 
     const response = await fetch(OLLAMA_CLOUD_URL, {
       method: 'POST',
@@ -118,12 +118,20 @@ export default async function handler(
         return res.status(401).json({
           error: 'Invalid API key',
           code: 'INVALID_API_KEY',
+          details: 'Check your OLLAMA_API_KEY in Vercel environment variables',
         });
       }
       if (response.status === 429) {
         return res.status(429).json({
           error: 'Rate limited',
           code: 'RATE_LIMITED',
+        });
+      }
+      if (response.status === 404) {
+        return res.status(404).json({
+          error: 'Model not found',
+          code: 'MODEL_NOT_FOUND',
+          details: `Model "${model}" not available. Try: gemma3:27b, gemma2:27b, llama3.2-vision`,
         });
       }
 
@@ -136,15 +144,14 @@ export default async function handler(
     }
 
     const data = await response.json();
-    // OpenAI-compatible response format
-    const content = data.choices?.[0]?.message?.content ?? data.message?.content ?? '';
+    const content = data.message?.content ?? '';
 
     console.log('[/api/analyze] Success, response length:', content.length);
 
     return res.status(200).json({
       content,
       source: 'ollama-cloud',
-      model: CLOUD_MODEL,
+      model: model,
     });
 
   } catch (err) {

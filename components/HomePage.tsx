@@ -9,7 +9,7 @@ import React, { useState, useEffect } from 'react';
 import {
   AudioLines, Camera, WifiOff, BadgeCheck,
   ArrowRight, Sparkles, Shield,
-  Volume2, VolumeX, Loader2, Cloud, Heart,
+  Volume2, VolumeX, Loader2, Cloud, Heart, Target,
 } from 'lucide-react';
 import { OperationalMode } from '../types.v2';
 import { speak } from '../services/voiceCoach';
@@ -201,6 +201,38 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
           </div>
         </button>
 
+        {/* Secondary CTA: Studio Mode for Sighted Photographers */}
+        <button
+          onClick={() => onSelectMode('studio')}
+          className="group w-full text-left rounded-2xl p-6 md:p-8 bg-sand-50 border-2 border-warmgray-200 hover:border-forest-300 hover:shadow-lg hover:shadow-forest-100/30 card-transition mb-8"
+          aria-label="Enter Studio Mode - Full photo critique with spatial analysis"
+        >
+          <div className="flex flex-col md:flex-row md:items-center gap-4">
+            <div className="w-14 h-14 rounded-xl bg-forest-100 border border-forest-200 flex items-center justify-center shrink-0">
+              <Target className="w-7 h-7 text-forest-600" />
+            </div>
+
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-forest-100 text-forest-700 border border-forest-200">
+                  Full Critique
+                </span>
+              </div>
+              <h3 className="text-xl md:text-2xl font-bold font-serif text-warmgray-900 mb-1">
+                Studio Mode
+              </h3>
+              <p className="text-warmgray-600 text-base leading-relaxed">
+                In-depth analysis with scores, spatial heatmaps, and technical breakdowns. For photographers who want detailed critique.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 text-forest-600 font-semibold">
+              <span className="hidden md:inline text-sm">Enter</span>
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+        </button>
+
         {/* Voice Preview Button */}
         <button
           onClick={handleVoicePreview}
@@ -230,20 +262,20 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
         </div>
 
         {/* Footer */}
-        <footer className="text-center pb-10 space-y-3">
-          <p className="text-sm text-warmgray-500">
+        <footer className="text-center pb-10 space-y-4">
+          <p className="text-base text-warmgray-600 leading-relaxed">
             Built for the{' '}
             <a
               href="https://www.kaggle.com/competitions/gemma-4-good-hackathon"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-terracotta-600 hover:text-terracotta-700 underline"
+              className="text-terracotta-600 hover:text-terracotta-700 underline font-semibold"
             >
               Gemma 4 Good Hackathon
             </a>
             {' '}· Digital Equity & Inclusivity Track
           </p>
-          <p className="text-xs text-warmgray-400">
+          <p className="text-sm text-warmgray-500">
             Powered by Gemma 4 via Ollama · Voice via Web Speech API
           </p>
         </footer>

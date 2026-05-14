@@ -56,6 +56,9 @@ let pausedSentences: string[] = [];
 let pausedIndex = 0;
 let speechCompleted = false;
 
+// Lock to prevent multiple simultaneous speech sessions
+let isCurrentlySpeaking = false;
+
 /**
  * Speak text using Web Speech API
  *
@@ -65,13 +68,20 @@ let speechCompleted = false;
 export function speak(text: string, rate = 0.95, onEnd?: () => void): void {
   console.log('[voiceCoach] speak() called with:', text.slice(0, 50) + '...');
 
-  // Reset cancellation flag when starting new speech
-  isCancelled = false;
-  speechCompleted = false;
+  // Cancel any existing speech first to prevent overlapping
+  if (isCurrentlySpeaking) {
+    console.log('[voiceCoach] Cancelling existing speech before starting new');
+    speechSynthesis.cancel();
+  }
   if (pendingTimeout) {
     clearTimeout(pendingTimeout);
     pendingTimeout = null;
   }
+
+  // Reset state for new speech
+  isCancelled = false;
+  speechCompleted = false;
+  isCurrentlySpeaking = true;
 
   lastSpokenText = text;
 
@@ -127,12 +137,14 @@ function speakFromIndex(
     if (isCancelled) {
       console.log('[voiceCoach] Speech paused at sentence', currentIndex + 1);
       pausedIndex = currentIndex; // Save position for resume
+      isCurrentlySpeaking = false;
       return;
     }
 
     if (currentIndex >= sentences.length) {
       console.log('[voiceCoach] All sentences spoken');
       speechCompleted = true;
+      isCurrentlySpeaking = false;
       pausedSentences = [];
       pausedIndex = 0;
       if (onEnd) onEnd();
@@ -190,9 +202,16 @@ export function resumeSpeech(rate = 0.95): boolean {
     return false;
   }
 
+  // Prevent double-resume
+  if (isCurrentlySpeaking) {
+    console.log('[voiceCoach] Already speaking, ignoring resume');
+    return false;
+  }
+
   console.log('[voiceCoach] Resuming from sentence', pausedIndex + 1, 'of', pausedSentences.length);
 
   isCancelled = false;
+  isCurrentlySpeaking = true;
   if (pendingTimeout) {
     clearTimeout(pendingTimeout);
     pendingTimeout = null;
@@ -314,6 +333,7 @@ export function speakMore(): void {
 export function stopSpeaking(): void {
   console.log('[voiceCoach] stopSpeaking() called');
   isCancelled = true;
+  isCurrentlySpeaking = false;
   if (pendingTimeout) {
     clearTimeout(pendingTimeout);
     pendingTimeout = null;

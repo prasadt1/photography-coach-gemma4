@@ -701,6 +701,11 @@ export async function checkOllamaHealth(): Promise<{
   modelAvailable: boolean;
   modelInfo?: { name: string; quantization: string; size: string };
 }> {
+  // Skip local Ollama check on deployed sites (would cause Mixed Content error)
+  if (OLLAMA_CLOUD_CONFIG.enabled) {
+    return { running: false, modelAvailable: false };
+  }
+
   try {
     const res = await fetch(`${OLLAMA_CONFIG.baseUrl}/api/tags`, {
       signal: AbortSignal.timeout(3000),
@@ -814,22 +819,25 @@ export async function analyzePhotoWithFallback(
   userPrompt: string,
   signal?: AbortSignal,
 ): Promise<{ content: string; source: InferenceSource }> {
-  // Step 1: Try local Ollama first (always preferred)
-  try {
-    const health = await checkOllamaHealth();
-    if (health.running && health.modelAvailable) {
-      console.log('[analyzePhotoWithFallback] Using local Ollama');
-      const content = await analyzePhotoRaw(
-        base64Image,
-        mimeType,
-        systemPrompt,
-        userPrompt,
-        signal,
-      );
-      return { content, source: 'local' };
+  // On deployed sites, skip local Ollama entirely (would cause Mixed Content error)
+  if (!OLLAMA_CLOUD_CONFIG.enabled) {
+    // Step 1: Try local Ollama first (only on localhost)
+    try {
+      const health = await checkOllamaHealth();
+      if (health.running && health.modelAvailable) {
+        console.log('[analyzePhotoWithFallback] Using local Ollama');
+        const content = await analyzePhotoRaw(
+          base64Image,
+          mimeType,
+          systemPrompt,
+          userPrompt,
+          signal,
+        );
+        return { content, source: 'local' };
+      }
+    } catch (err) {
+      console.warn('[analyzePhotoWithFallback] Local Ollama failed:', err);
     }
-  } catch (err) {
-    console.warn('[analyzePhotoWithFallback] Local Ollama failed:', err);
   }
 
   // Step 2: Try Ollama Cloud if enabled

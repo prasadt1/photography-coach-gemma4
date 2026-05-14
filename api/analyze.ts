@@ -56,8 +56,8 @@ export default async function handler(
   try {
     const body = req.body as AnalyzeRequest;
 
-    // Health check endpoint
-    if (body.healthCheck) {
+    // Health check endpoint - check FIRST before validating other fields
+    if (body && body.healthCheck) {
       return res.status(200).json({
         status: 'ok',
         cloudConfigured: true,
@@ -67,7 +67,7 @@ export default async function handler(
     }
 
     // Validate request
-    if (!body.base64Image || !body.systemPrompt || !body.userPrompt) {
+    if (!body || !body.base64Image || !body.systemPrompt || !body.userPrompt) {
       return res.status(400).json({
         error: 'Missing required fields: base64Image, systemPrompt, userPrompt',
       });

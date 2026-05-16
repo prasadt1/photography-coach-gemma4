@@ -933,17 +933,36 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
       });
 
       return (
-        <div className="max-w-2xl mx-auto px-6 py-12 text-center">
-          <p className="text-red-600 mb-4">Error: No analysis data available</p>
-          <p className="text-sm text-[#524A3D] mb-4">
-            Debug: {attempts.length} attempts, index: {strongerAttemptIndex ?? 'none'}
-          </p>
-          <button
-            onClick={() => setPhase('firstCapture')}
-            className="px-6 py-3 bg-[#C06B45] text-white rounded-full"
-          >
-            Start Over
-          </button>
+        <div className="max-w-2xl mx-auto px-6 py-12">
+          <div className="rounded-2xl bg-red-50 border-2 border-red-200 p-8">
+            <h2 className="text-xl font-bold text-red-600 mb-4">Debug Info - Listing Error</h2>
+            <div className="space-y-2 text-sm text-left">
+              <p><strong>Attempts:</strong> {attempts.length}</p>
+              <p><strong>Stronger Index:</strong> {strongerAttemptIndex ?? 'null'}</p>
+              <p><strong>Final Attempt:</strong> {finalAttempt ? 'exists' : 'NULL - THIS IS THE PROBLEM'}</p>
+              {finalAttempt && (
+                <>
+                  <p><strong>Has image:</strong> {finalAttempt.image ? 'yes' : 'NO'}</p>
+                  <p><strong>Has analysisJSON:</strong> {finalAttempt.analysisJSON ? 'yes' : 'NO - THIS IS THE PROBLEM'}</p>
+                  {finalAttempt.analysisJSON && (
+                    <>
+                      <p><strong>Subject:</strong> {finalAttempt.analysisJSON.subject || 'missing'}</p>
+                      <p><strong>Listing Copy:</strong> {finalAttempt.analysisJSON.listingCopy ? 'exists' : 'missing'}</p>
+                    </>
+                  )}
+                </>
+              )}
+              <p className="pt-4 text-xs text-gray-600">
+                All attempts: {JSON.stringify(attempts.map(a => ({ hasImage: !!a.image, hasAnalysis: !!a.analysisJSON })))}
+              </p>
+            </div>
+            <button
+              onClick={() => setPhase('firstCapture')}
+              className="mt-6 px-6 py-3 bg-[#C06B45] text-white rounded-full"
+            >
+              Start Over
+            </button>
+          </div>
         </div>
       );
     }

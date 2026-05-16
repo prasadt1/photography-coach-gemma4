@@ -1,858 +1,273 @@
-# 📷 L.E.N.S. — Voice-Guided Photography for Artisans
+# 📷 L.E.N.S. — Local Edge Native Studio
 
-> *One artisan, one phone, full independence.*
+> *The one step between a finished piece and a sale shouldn't depend on someone else's eyes.*
 
-**Helping artisans photograph their work on their own terms**
+**A private, on-device, voice-guided photography coach for blind and low-vision artisans.**
 
-[![Gemma 4 E4B](https://img.shields.io/badge/Powered%20by-Gemma%204%20E4B-4285F4?style=for-the-badge&logo=google)](https://deepmind.google/technologies/gemma/gemma-4/)
-[![Ollama](https://img.shields.io/badge/Runtime-Ollama-000000?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxMCIgZmlsbD0id2hpdGUiLz48L3N2Zz4=)](https://ollama.com)
-[![React](https://img.shields.io/badge/React-18%2B-61DAFB?style=flat-square&logo=react)](https://react.dev)
+[![Gemma 4 E4B](https://img.shields.io/badge/Powered%20by-Gemma%204%20E4B-4285F4?style=flat-square&logo=google)](https://ollama.com/library)
+[![Ollama](https://img.shields.io/badge/Runtime-Ollama-000000?style=flat-square)](https://ollama.com)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5%2B-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green?style=flat-square)](LICENSE)
 
----
+🔗 **[Live demo](https://lens-app-gemma4.vercel.app)** · **Demo video:** _add link before submission_ · Built for the **Gemma 4 Good Hackathon**
 
-## 🏆 Built for Gemma 4 Good Hackathon
-
-**L.E.N.S. (Local Edge-Native Studio)** helps blind and low-vision artisans photograph their products for online marketplaces — independently. No sighted helper on call. No cloud subscription. No internet required. Voice-guided coaching runs entirely on-device via Gemma 4 E4B + Ollama.
-
-### Target Tracks
-- 🎯 **Digital Equity & Inclusivity** (Primary)
-- 🎯 **Ollama Special Technology Track** (Primary)
-- 🏅 **Main Track** (Secondary)
-
-### Why Independence Matters
-
-Low-vision artisans already make beautiful things — weavers, potters, knitters, woodworkers who know their products by touch. What they lack is not skill but a reliable way to verify that a photo does their work justice before listing it online. Existing assistive apps describe what is in a photo; they do not coach someone to take a better one. Cloud services require reliable internet, monthly fees, or a sighted helper on call. L.E.N.S. removes the intermediary: **voice-guided coaching that runs on the device, verifies the shot, and generates listing copy — without asking anyone for help.**
-
-### Why Gemma 4 E4B via Ollama
-
-Every technical decision traces back to one question: can a low-vision artisan use this tool alone, offline, for free?
-
-- **E4B, not 26B/31B:** E4B is one of only two Gemma 4 models with a native 300M-parameter audio encoder. Larger variants offer better critique quality but lack native audio input — requiring a separate STT pipeline that breaks offline operation.
-- **Ollama, not cloud:** Cloud subscriptions cost $10–20/month. Ollama delivers inference at zero ongoing cost, works identically online or offline, and keeps photos on the device.
-- **Current state:** Today L.E.N.S. uses Web Speech API for TTS output. Photos are analyzed locally via Gemma 4 E4B. Voice input is not yet integrated. The roadmap is bidirectional voice through E4B's native conformer encoder.
+**Tracks:** Digital Equity & Inclusivity · Ollama
 
 ---
 
-## ✨ What Makes This Different
+## What L.E.N.S. is
 
-### 🎙️ Artisan Studio (Hero Feature)
+Mohan has low vision. He hand-knits sweaters and can finish a flawless cable pattern by touch. He can shape, price, and list a piece on his own — until the one step he cannot finish alone: photographing it well enough to sell online.
 
-**Voice-guided photography coaching for marketplace sellers:**
+**L.E.N.S. closes that gap.** It is a voice-guided photography coach that helps blind and low-vision artisans *verify and improve their product photos before listing their work*. It runs Gemma 4 on the maker's own device through Ollama, describes the photo in plain language, names the single most useful thing to fix, and returns alt-text and listing copy ready to paste.
 
-- **Descriptive-first feedback:** "I see a blue hand-knit scarf on a wooden surface..." before any critique
-- **Spatial guidance:** "Move your phone back 6 inches to capture the full length" — not percentages
-- **Color confirmation:** "The blue is reading accurately — similar to a clear sky blue" — for users who can't verify colors
-- **Accessibility-optimized prompts:** No jargon (bokeh, rule of thirds) — functional language only
-- **Alt-text generation:** SEO-optimized accessibility descriptions for marketplace listings
-- **Listing copy:** Compelling product descriptions ready to paste
-
-**100% Local Execution (Gemma 4 E4B via Ollama):**
-- No internet required — works in rural/low-connectivity regions
-- No subscription — zero per-photo cost after model download
-- No cloud uploads — photos never leave the device
-- Works offline forever once Ollama is installed
-
-### 📸 Photo Studio (Secondary)
-
-**General photography critique for sighted photographers:**
-- 5-axis scoring (composition, lighting, technique, creativity, subject impact)
-- Spatial bounding boxes pinpointing issues
-- Deterministic CV grounding (EXIF, histogram, focus map)
-- Mentor chat for follow-up questions
-- Compare Two Photos side-by-side analysis
-
-### 🎯 Professional Features
-
-**5-Axis Critique System:**
-- Composition (rule of thirds, leading lines, symmetry)
-- Lighting (exposure, dynamic range, color temperature)
-- Technical Execution (sharpness, focus, depth of field)
-- Creative Impact (originality, artistic merit)
-- Subject Impact (story, emotion, engagement)
-
-**Spatial Annotations:**
-- Pinpointed issues with bounding boxes
-- Severity levels (critical/moderate/minor)
-- Color-coded overlays (red/yellow/green)
-- Hover to highlight, click to inspect
-
-**Deterministic CV Grounding:**
-- EXIF extraction (focal length, aperture, ISO, shutter speed)
-- Histogram analysis (tonal distribution, clipping detection)
-- Focus map computation (Laplacian variance on grid)
-- Gemma 4 sees BOTH image AND technical data
-
-**Mentor Chat:**
-- Follow-up questions with full context
-- "How can I improve the lighting?"
-- "What focal length would work better?"
-- Gemma 4 provides specific, actionable advice
-
-### 🚀 Production-Grade Stack
-
-**Inference Runtime:**
-- **Ollama** (primary) – Gemma 4 E4B (Q4_K_M, 9.6GB)
-- Structured JSON output via schema enforcement
-- Token streaming with progress tracking
-- Model warm-up for sub-20s latency
-
-**Integrations:**
-- **Lightroom Classic** – XMP sidecar export (ratings, labels, keywords)
-- **Electron** – Desktop app with OS-level network controls
-- **Progressive Web App** – iOS-installable, camera access
-- **Evaluation harness** – Automated golden-set testing
+The point isn't a sharper critique than a sighted friend would give — it's that Mohan no longer has to ask. The villain here is **dependence**, not blindness. Today a low-vision maker hires a photographer, waits for a sighted relative, or sends the image to a remote describer. L.E.N.S. removes the intermediary.
 
 ---
 
-## 🚀 Quick Start
+## Who it's for
 
-### Prerequisites
+Blindness is a spectrum — only an estimated 10–15% of blind and low-vision people have no light perception; the majority retain usable residual vision. Mohan is in that majority: he can frame a shot roughly and operate a phone, but cannot *verify* whether the light is even, the texture sharp, the colour true.
 
-- **Node.js 18+** and npm
-- **Ollama** ([ollama.com](https://ollama.com)) for local inference
-- (Optional) **Gemini API key** for cloud enhancement mode
+L.E.N.S. is built for that maker first. By the curb-cut effect it then generalizes outward — the same coaching helps any maker who lacks a photographer or a reliable connection — but the design target is always the hardest case: a blind maker, alone, offline.
 
-### Installation
+---
+
+## What it does
+
+### 🎙️ Artisan Studio — the core experience
+
+L.E.N.S. is built **voice-first**, not a visual interface with audio bolted on. The maker photographs a piece, and L.E.N.S. responds like a patient studio mentor — out loud, one priority at a time. For each photo it returns five things:
+
+- **Plain-language scene description** — subject, framing, background, lighting.
+- **Colour confirmation** — names the colours it sees, anchored to familiar references, so the maker can check the photo against the real object.
+- **One spatial fix** — the single highest-impact change, never an overwhelming checklist.
+- **Alt-text** — ready to paste, for the maker's own screen-reader customers.
+- **Listing copy** — a short, accurate title and description grounded only in what the photo shows.
+
+Three design choices make this work for a maker who works largely by ear:
+
+- **One fix at a time.** A list of ten corrections is not actionable. The maker hears one change, re-shoots, and L.E.N.S. **compares** the new photo against the first to confirm the fix landed — a closing loop, not an open-ended critique.
+- **Glass-box reasoning.** L.E.N.S. says *why* it flagged something, so the maker learns to photograph rather than just gets graded.
+- **Anti-hallucination.** It states what it cannot see rather than inventing detail — which matters most precisely because the user cannot visually check the claims.
+
+### 📸 Photo Studio — secondary
+
+A general critique surface for sighted photographers: 5-axis scoring (composition, lighting, technique, creativity, subject impact), spatial bounding-box annotations, deterministic CV grounding (EXIF, histogram, focus map), a mentor chat, and Lightroom XMP sidecar export. An optional AI image-enhancement panel uses the Gemini API with the user's *own* key — clearly separate from the on-device coaching path.
+
+---
+
+## How it runs — three honest modes
+
+L.E.N.S. runs Gemma 4 through **Ollama**, and is honest about where inference happens:
+
+| Mode | What it is | Network |
+|------|-----------|---------|
+| **Local — Gemma 4 E4B via Ollama** | The actual product. Runs on the maker's own machine; the image never leaves the device. | Fully offline |
+| **Ollama Cloud** | Powers the hosted web app and iPhone PWA so anyone — including judges — can try L.E.N.S. without a local install. Real Gemma 4 inference, hosted. | Requires a connection |
+| **Demo Mode** | Offline playback of real, previously recorded E4B responses — a no-setup walkthrough. | None |
+
+**On-device is the product; the hosted path is how you try it quickly.** The deployed demo is a convenience layer, labelled as such — it does not run on-device. Every mode produces the **same strict JSON contract**, validated on the client so a malformed response fails loudly instead of degrading silently.
+
+> **Why E4B?** Gemma 4's E4B variant is small enough to run on a maker's own laptop through Ollama — and that on-device capability is the whole point: private, offline, free coaching. Larger Gemma 4 variants give sharper critique but cannot run locally on modest hardware.
+
+---
+
+## 🚀 Quick start
+
+**Prerequisites:** Node.js 18+ and npm · [Ollama](https://ollama.com) for local inference.
 
 ```bash
-# 1. Clone repository
+# 1. Clone
 git clone https://github.com/prasadt1/photography-coach-gemma4.git
 cd photography-coach-gemma4
 
 # 2. Install dependencies
 npm install
 
-# 3. Install Gemma 4 E4B model (9.6GB download)
+# 3. Pull the Gemma 4 model
 ollama pull gemma4:e4b
 
-# 4. Start Ollama server
+# 4. Start Ollama
 ollama serve
 
-# 5. Launch web app
-npm run dev
+# 5. Run the app
+npm start
 ```
 
-Open [http://localhost:5173](http://localhost:5173) → Upload a photo → Get critique! 🎉
+Open **http://localhost:5173**, capture or upload a photo, and L.E.N.S. coaches you through it.
+
+> Prefer to skip setup? Open the **[live demo](https://lens-app-gemma4.vercel.app)** — it runs on Ollama Cloud, no install required.
 
 ---
 
-## 📦 Platform-Specific Setup
+## 📱 Try it on a phone
 
-### 🌐 Web App (Vite + React)
+The hosted app is an installable PWA:
 
-**Development:**
-```bash
-npm run dev                    # Start dev server
-npm run build                  # Production build
-npm run preview                # Preview production build
-```
+1. On iPhone, open **https://lens-app-gemma4.vercel.app** in Safari.
+2. Share → **Add to Home Screen**, then launch it full-screen.
+3. Grant camera permission once. L.E.N.S. uses a live `getUserMedia` preview, so capture is voice-driven — say *"take photo"* and it grabs the frame; a labelled capture button is always available as an equal alternative.
 
-**Deployment:**
-```bash
-# Deploy to Vercel/Netlify
-npm run build
-# Upload dist/ folder
-```
-
-**Environment Variables** (optional):
-```env
-# .env.local
-VITE_GEMINI_API_KEY=your_key_here  # For cloud enhancement mode (Studio only)
-OLLAMA_BASE_URL=http://localhost:11434  # Default Ollama endpoint
-```
-
-### 🖥️ Desktop App (Electron + Vault Mode)
-
-**Build Desktop App:**
-```bash
-# Install Electron dependencies
-npm install --save-dev electron electron-builder
-
-# Build for current platform
-npm run build:electron          # macOS (DMG/app)
-# OR
-npm run build:electron:win      # Windows (exe/portable)
-# OR
-npm run build:electron:linux    # Linux (AppImage/deb)
-```
-
-**Vault Mode Features:**
-- Network isolation via OS-level controls
-- Audit log with cryptographic hashing
-- No cloud fallback (Ollama only)
-- Egress guard intercepts all fetch() calls
-
-**Run in development:**
-```bash
-npm run electron:dev
-```
-
-### 📱 iOS PWA (Progressive Web App)
-
-**Setup Ollama for network access:**
-```bash
-# On Mac/PC, allow Ollama to accept connections from local network
-export OLLAMA_HOST=0.0.0.0:11434
-export OLLAMA_ORIGINS="*"
-ollama serve
-```
-
-**Find your machine's IP:**
-```bash
-# macOS/Linux
-ifconfig | grep "inet " | grep -v 127.0.0.1
-
-# Windows
-ipconfig
-```
-
-**On iPhone:**
-1. Connect to **same WiFi** as Mac/PC
-2. Safari → `http://YOUR_COMPUTER_IP:5173`
-3. Tap Share (⬆️) → "Add to Home Screen"
-4. Open app from home screen (runs full-screen)
-5. Upload photo → Get critique
-
-**Detailed guide:** See `docs/ios-pwa-setup.md`
-
----
-
-## 🎨 Features Overview
-
-### Multi-Dimensional Analysis
-
-**5-Axis Scoring** (0-10 per axis):
-```
-Composition:   8.5/10  ✨
-Lighting:      7.0/10  💡
-Technique:     9.0/10  🎯
-Creativity:    6.5/10  🎨
-Subject:       8.0/10  👁️
-```
-
-**Detailed Critique:**
-- Composition: "Strong use of leading lines draws the eye to the focal point. Rule of thirds placement is effective."
-- Lighting: "Golden hour light creates warm tones, though slight overexposure in sky could benefit from graduated ND filter."
-- Technique: "Excellent sharpness on subject with pleasing bokeh in background. f/2.8 aperture choice is appropriate."
-
-**Spatial Issues** (Bounding Boxes):
-- 🔴 **Critical:** Overexposed highlights in top-right (clipped whites)
-- 🟡 **Moderate:** Subject slightly off-center, consider cropping
-- 🟢 **Minor:** Foreground distraction in bottom-left corner
-
-### Deterministic CV Grounding
-
-**Before Gemma 4 sees your photo, we extract:**
-
-**EXIF Metadata:**
-```json
-{
-  "focalLength": "50mm",
-  "aperture": "f/2.8",
-  "shutterSpeed": "1/250s",
-  "iso": "ISO 400",
-  "camera": "Canon EOS R5",
-  "lens": "RF 50mm f/1.8"
-}
-```
-
-**Histogram Analysis:**
-```json
-{
-  "shadowsClipped": 2.3,
-  "highlightsClipped": 8.1,
-  "midtonesAvg": 128,
-  "contrastRatio": 4.2
-}
-```
-
-**Focus Map:**
-```json
-{
-  "sharpnessScore": 0.82,
-  "focusRegion": {"x": 45, "y": 38, "width": 25, "height": 30},
-  "grid": [[0.2, 0.8, 0.9], ...]
-}
-```
-
-Gemma 4 receives **image + technical context** → More accurate, grounded critique.
-
-### Lightroom Integration
-
-**Export XMP sidecars with:**
-- ⭐ **Star ratings** (1-5 stars based on average score)
-- 🏷️ **Color labels** (Red/Yellow/Green based on severity)
-- 🔖 **IPTC keywords** (Top 5 observations from critique)
-- 📝 **Description** (Overall critique summary)
-
-**Workflow:**
-1. Analyze 50 photos in Photography Coach
-2. Export XMP sidecars for each
-3. Import folder into Lightroom Classic
-4. Filter by "4 stars and up" → See best shots
-5. Filter by "Red label" → See critical issues to fix
-
-**Guide:** See `docs/integrations/lightroom-xmp.md`
+Phone inference runs on **Ollama Cloud** (on-device phone inference is on the roadmap — see below). To deploy your own copy, set `OLLAMA_API_KEY` in your Vercel project's environment variables; the `/api/analyze` serverless function reads it server-side.
 
 ---
 
 ## 📐 Architecture
 
-### Three-Layer Design
-
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  LAYER 1: Deterministic CV (Client-Side)                   │
-│  ├─ EXIF extraction (exif-js)                              │
-│  ├─ Histogram analysis (Canvas API)                        │
-│  ├─ Focus map computation (Laplacian variance)             │
-│  └─ Face/eye detection (future: TensorFlow.js)             │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────┐
-│  LAYER 2: Gemma 4 E4B Inference (Local or Cloud)          │
-│  ├─ Primary: Ollama (localhost, zero-cost)                 │
-│  ├─ Input: base64 image + CV grounding data                │
-│  ├─ Output: v2 schema JSON (structured, validated)         │
-│  └─ Fallback: Gemini API (Studio Mode only, optional)      │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────┐
-│  LAYER 3: Validation & Audit (Trustworthy AI)             │
-│  ├─ Zod schema validation (type safety)                    │
-│  ├─ AJV JSON Schema validation (structure)                 │
-│  ├─ Implicit refusal detection (safety)                    │
-│  └─ Hash-chained audit log (Vault Mode only)               │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  CLIENT — React + TypeScript + Vite                          │
+│  PWA (installable, getUserMedia camera) · Electron desktop   │
+└───────────────────────────────┬──────────────────────────────┘
+                                ▼
+┌──────────────────────────────────────────────────────────────┐
+│  INFERENCE — Gemma 4 via Ollama                              │
+│  Local E4B (on-device)  ·  Ollama Cloud  ·  Demo Mode        │
+│  Priority chain: local → cloud → demo                        │
+└───────────────────────────────┬──────────────────────────────┘
+                                ▼
+┌──────────────────────────────────────────────────────────────┐
+│  CONTRACT & VALIDATION                                       │
+│  One strict JSON schema · Zod + JSON-Schema validation       │
+│  Refusal detection · (Electron) hash-chained audit log       │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-### Directory Structure
+- **Strict JSON contract.** One structured object drives all five outputs; the client validates every response.
+- **Principles-led prompt.** Gemma is driven by a system prompt that asks for explicit observations, reasoning, and a single prioritized fix.
+- **Deterministic CV grounding** (Photo Studio): EXIF, histogram, and focus-map data are extracted client-side and passed alongside the image.
+- **Desktop Vault Mode** (Electron): OS-level network isolation and an audit log, for makers who want a guaranteed-offline build.
+
+---
+
+## ♿ Accessibility
+
+Because the users are blind and low-vision, accessibility is part of the build, not bolted on:
+
+- **Voice-first by design.** Every voice action has an equal, clearly labelled tap — the app never depends on either input alone.
+- **Screen-reader support.** Semantic landmarks, ARIA live regions for results and status, managed focus, and labelled controls; the app's own voice coaching sits *alongside* a screen reader, not in place of it.
+- **Operable without a mouse.** Full keyboard operation with visible focus indicators.
+- **Respects user preferences.** Honours `prefers-reduced-motion`; pinch-zoom is never disabled.
+- **Contrast.** Targets WCAG 2.2 AA for text.
+- **Multilingual.** UI and coaching available in several languages.
+
+> Accessibility is a moving target — verify with an automated scan (axe / Lighthouse) and a real screen-reader pass before each release.
+
+---
+
+## 📦 Platform setup
+
+**Web (Vite + React)**
+```bash
+npm start       # dev server (http://localhost:5173)
+npm run build   # production build → dist/
+npm run preview # preview the production build
+```
+
+**Desktop (Electron + Vault Mode)** — a guaranteed-offline build with OS-level network isolation:
+```bash
+npm run electron:dev          # run in development
+npm run electron:build:mac    # → .dmg
+npm run electron:build:win    # → .exe
+npm run electron:build:linux  # → .AppImage
+```
+
+**iOS PWA** — install the [hosted app](https://lens-app-gemma4.vercel.app) from Safari's Share menu (see *Try it on a phone* above). Inference runs on Ollama Cloud.
+
+---
+
+## 🗺️ Roadmap
+
+L.E.N.S. is built for the hardest case today; the honest next steps are:
+
+- **Phone-native Gemma** — running the model on the device most makers already carry, once mobile edge runtimes for Gemma 4 mature, so the phone experience becomes as local as the desktop one.
+- **Direct publishing** — pushing the finished listing straight to Etsy and Shopify, so the maker never has to leave L.E.N.S.
+- **Haptic framing feedback** — vibration cues for alignment, for capture without any audio at all.
+- **Wider grounding** — more craft categories in the prompt's grounding examples and a broader screen-reader test matrix.
+
+Nothing above is implied as present: the local desktop path works today; the phone-native path is named as future work.
+
+---
+
+## 🗂️ Project structure
 
 ```
 photography-coach-gemma4/
-├── components/              # React UI components
-│   ├── AnalysisResults.tsx  # Main results display (5-axis, spatial, mentor)
-│   ├── PhotoUploader.tsx    # Drag-and-drop uploader
-│   ├── SpatialOverlay.tsx   # Bounding box annotations
-│   ├── VaultModeBanner.tsx  # Security indicators
-│   └── ...
-├── services/                # Core business logic
-│   ├── ollamaService.ts     # Gemma 4 inference via Ollama
-│   ├── cvService.ts         # Deterministic CV grounding
-│   ├── validationService.ts # Schema validation (Zod + AJV)
-│   ├── auditService.ts      # Hash-chained audit log
-│   ├── promptService.ts     # Photography principles system prompt
-│   ├── xmpService.ts        # Lightroom XMP export
-│   └── analysisOrchestrator.ts  # Pipeline coordinator
-├── electron/                # Desktop app (Vault Mode)
-│   ├── main.ts              # Electron main process
-│   ├── preload.ts           # IPC bridge
-│   └── vault-policy.ts      # Network isolation enforcement
-├── docs/                    # Documentation
-│   ├── specs/               # 14 comprehensive spec documents
-│   ├── spikes/              # Spike results (Ollama, Cactus, LiteRT)
-│   ├── integrations/        # Lightroom XMP guide
-│   └── ios-pwa-setup.md     # iOS PWA installation guide
-├── tests/                   # Test suites
-│   ├── unit/                # 49 unit tests (services)
-│   └── integration/         # 5 integration tests (pipeline)
-├── public/                  # Static assets
-│   ├── manifest.json        # PWA manifest
-│   └── sw.js                # Service worker
-├── types.v2.ts              # TypeScript types (v2 schema)
-├── config.ts                # App configuration
-└── vitest.config.ts         # Test runner config
+├── App.tsx                    # Root app + view routing
+├── components/                # UI — AnalysisResults, LiveCameraCapture,
+│                              #      ArtisanJourney, SellMode, Header, …
+├── services/
+│   ├── ollamaService.ts       # Gemma 4 inference (local + Ollama Cloud)
+│   ├── analysisOrchestrator.ts# Local → cloud → demo pipeline
+│   ├── promptService.ts       # Principles-led system prompt
+│   ├── validationService.ts   # JSON contract validation
+│   ├── voiceService.ts        # Web Speech API (TTS + voice input)
+│   └── demoMode.ts            # Recorded-response playback
+├── api/analyze.ts             # Vercel serverless fn → Ollama Cloud
+├── electron/                  # Desktop shell + Vault Mode
+├── public/                    # PWA manifest + service worker
+├── types.v2.ts                # JSON schema types
+└── docs/                      # Specs, spikes, integration guides
 ```
-
----
-
-## 🏗️ Technical Architecture
-
-### Progressive Web App (PWA) Architecture
-
-L.E.N.S. is built as a Progressive Web App providing native-like experiences across platforms:
-
-**Service Worker (`public/sw.js`):**
-- **Cache-first strategy** for static assets (app shell, HTML, CSS, JS)
-- **Network-first** for API calls (Ollama, Gemini)
-- **Offline-capable** — app loads even without internet
-- **Web Share Target API** — receive photos from iOS/Android share sheet
-
-**iOS Integration (`public/manifest.json`):**
-```json
-{
-  "display": "standalone",
-  "orientation": "portrait-primary",
-  "share_target": {
-    "action": "/share-target",
-    "method": "POST",
-    "enctype": "multipart/form-data"
-  }
-}
-```
-
-**Installation:**
-- iOS: Safari → Share → "Add to Home Screen"
-- Android: Chrome → Menu → "Install app"
-- Desktop: Chrome → Install icon in address bar
-
-### Intelligent Cloud-Edge Routing 🎯 *Cactus Track*
-
-L.E.N.S. implements **adaptive runtime selection** based on connectivity and user preference:
-
-```
-┌─────────────────────────────────────────────────┐
-│         Photo Analysis Request                  │
-└─────────────────────┬───────────────────────────┘
-                      │
-                      ▼
-        ┌─────────────────────────┐
-        │   analysisOrchestrator   │
-        │   (services/analysis)    │
-        └──────────┬────────────────┘
-                   │
-        ┌──────────▼───────────┐
-        │  Is Ollama running?  │
-        │  Vault Mode active?  │
-        └──┬──────────────┬────┘
-           │              │
-    [YES]  │              │ [NO]
-           ▼              ▼
-  ┌────────────┐   ┌──────────────┐
-  │   LOCAL    │   │    CLOUD     │
-  │   Ollama   │   │   Gemini     │
-  │ gemma4:e4b │   │ 2.5-flash    │
-  │ localhost  │   │   API key    │
-  └────────────┘   └──────────────┘
-```
-
-**Routing Logic (`config.ts`):**
-```typescript
-const runtime = (() => {
-  if (mode === 'vault') return 'ollama-only';
-  if (ollamaReady) return 'ollama-preferred';
-  if (geminiApiKey) return 'gemini-fallback';
-  return 'demo-mode';
-})();
-```
-
-**Why This Matters for Hackathon Tracks:**
-- **Cactus Track**: Demonstrates intelligent task routing between local edge (Ollama) and cloud (Gemini)
-- **Use Case 1**: Artisan in workshop → routes to Mac's Ollama over LAN
-- **Use Case 2**: Artisan at market → routes to Gemini API (optional, user's key)
-- **Vault Mode**: Forces local-only routing for NDA/confidential work
-
-### LiteRT & On-Device ML Roadmap 🚀 *LiteRT Track*
-
-**Current Implementation (v2.0):**
-- **Tier 1 Runtime**: Ollama serving Gemma 4 E4B via local server
-- **Tier 2 Prototype**: WebLLM/MLC running Gemma 2B in-browser (behind `?tier2` flag)
-- **WebGPU Support**: In-browser inference with GPU acceleration
-
-**Phase 2 Roadmap (LiteRT Native):**
-
-The current architecture is **designed for eventual LiteRT deployment**:
-
-```
-iOS/Android Native Path
-┌─────────────────────────────────────────────┐
-│   React Native Shell                        │
-│   ├─ TypeScript UI (shared with web)       │
-│   ├─ Camera API integration                 │
-│   └─ LiteRT binding layer                   │
-└───────────────┬─────────────────────────────┘
-                │
-                ▼
-┌─────────────────────────────────────────────┐
-│   Google AI Edge Runtime                    │
-│   ├─ Gemma 4 E4B quantized (INT4/INT8)     │
-│   ├─ MediaPipe Tasks for CV grounding      │
-│   └─ On-device inference (no network)      │
-└─────────────────────────────────────────────┘
-```
-
-**Technical Approach:**
-1. **Quantize Gemma 4** using AI Edge Torch (INT4/INT8)
-2. **Ship model with app** (40-60MB quantized weights)
-3. **MediaPipe integration** for deterministic CV (EXIF, histogram, focus map)
-4. **Keep schema v2.0 intact** — same JSON output format
-
-**Why Not Now?**
-- LiteRT for **Gemma 4** quantized weights requires AI Edge compilation (in progress as of May 2026)
-- Current Tier 2 (WebLLM) proves the concept with Gemma 2B
-- Production deployment waits for official Gemma 4 LiteRT artifacts
-
-**Documentation:**
-- `docs/spikes/litert-evaluation.md` — Spike results for MediaPipe, WebLLM, Transformers.js
-- `services/browserLLM.ts` — Tier 2 in-browser inference prototype
-
-### Ollama Integration Deep Dive
-
-**Why Ollama?** (`services/ollamaService.ts`)
-
-Ollama provides production-grade local inference with features critical for L.E.N.S.:
-
-1. **Schema-Enforced JSON** (`format` parameter):
-   ```typescript
-   const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
-     method: 'POST',
-     body: JSON.stringify({
-       model: 'gemma4:e4b',
-       prompt: systemPrompt + userPrompt,
-       images: [base64Image],
-       format: PhotoAnalysisV2Schema,  // Zod schema → JSON Schema
-       stream: true
-     })
-   });
-   ```
-
-2. **Multi-Image Prompting** (Compare Two Photos):
-   ```typescript
-   const payload = {
-     model: 'gemma4:e4b',
-     prompt: 'Which photo is better and why?',
-     images: [photo1Base64, photo2Base64],
-     format: ComparisonSchema
-   };
-   ```
-
-3. **Token Streaming** with progress tracking:
-   ```typescript
-   for await (const chunk of streamResponse) {
-     const { response, done, eval_count, eval_duration } = JSON.parse(chunk);
-     onProgress?.(eval_count / estimated_tokens);
-   }
-   ```
-
-4. **Model Warm-Up** on app launch:
-   ```typescript
-   // Avoids 40s cold-start penalty on first photo
-   await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
-     body: JSON.stringify({
-       model: 'gemma4:e4b',
-       prompt: 'warmup',
-       keep_alive: 600  // 10min keep-alive
-     })
-   });
-   ```
-
-**Performance Benchmarks:**
-- Cold start (model load): ~40s (M4 16GB)
-- Warm inference: 18-25s per photo (M4 16GB)
-- Token generation: ~27 tok/s (Q4_K_M quantization)
-- Prefill: ~2,300 tok/s
-
-### Deployment Architecture
-
-**Production Deployment Options:**
-
-1. **Static Hosting (Vercel/Netlify):**
-   - Deploy `dist/` folder from `npm run build`
-   - Origin-based Demo Mode: if `origin !== localhost`, default to Gemini API or mock responses
-   - QR code on landing page for mobile install
-
-2. **Self-Hosted (Docker):**
-   ```dockerfile
-   FROM node:20-alpine
-   WORKDIR /app
-   COPY package*.json ./
-   RUN npm ci --production
-   COPY dist/ ./dist/
-   CMD ["npx", "serve", "-s", "dist", "-p", "5173"]
-   ```
-
-3. **Desktop (Electron):**
-   - Bundles web app + Node.js runtime
-   - OS-level network controls for Vault Mode
-   - Auto-updater for security patches
-
----
-
-## ♿ Accessibility & Inclusion
-
-### Current Features (v2.0)
-
-**Voice-First Workflow:**
-- Toggle voice feedback on any photo analysis
-- Descriptive-first coaching: "I see a ceramic bowl on a wooden table..." then spatial guidance
-- Clock-face directions (12:00 = top, 3:00 = right, etc.) for framing
-- Sentence-by-sentence speech to avoid Chrome truncation
-- Works with screen readers and voice control
-
-**Multilingual Support:**
-- 8 languages in UI (English, Spanish, Portuguese, Hindi, French, German, Japanese, Chinese)
-- Gemma 4 supports 140+ languages natively
-- All critique output can be in user's preferred language
-
-### Phase 2 Roadmap: Blind & Low-Vision Creators
-
-These features are architecturally planned and will be implemented post-hackathon:
-
-**1. Enhanced Scene Description Mode**
-- Dedicated "Describe Scene" button for full environmental context
-- Example: *"A busy workshop table with tools scattered around. Your ceramic bowl is in the center but covered by a shadow from the left."*
-- Helps users understand their environment before attempting to photograph
-
-**2. Haptic Feedback Guidance**
-- Phone vibration when composition is "perfect" (using `navigator.vibrate()` API)
-- Double heartbeat pattern: `[100ms, 50ms, 100ms]` on center alignment
-- Allows users to "feel" the perfect shot without seeing the screen
-
-**3. Voice-First Product Photography**
-- Complete Sell Mode workflow navigable by voice commands
-- Audio confirmation: "Product centered ✓ Lighting good ✓ Ready to capture"
-- Enables blind artisans to photograph handmade goods for Etsy/eBay independently
-
-**4. Assistive Hardware Integration**
-- Bluetooth shutter button support for hands-free capture
-- External audio feedback (speaker/headphones) for noisy environments
-- Integration with iOS VoiceOver and Android TalkBack gestures
-
-**Why This Matters:**
-Independence in visual commerce. The same Gemma 4 spatial reasoning that coaches composition can describe scenes, confirm framing, and generate listing copy — so low-vision artisans can photograph and list their products without asking anyone for help.
-
-**Technical Foundation:**
-All Phase 2 features build on existing infrastructure (voice service, spatial analysis, PWA APIs) with no architectural changes required. Estimated implementation: 15-20 hours development + user testing with accessibility consultants.
 
 ---
 
 ## 🧪 Testing
 
-### Unit Tests (49 tests)
-
 ```bash
-npm test                     # Run all tests
-npm test -- cvService        # Test CV grounding
-npm test -- xmpService       # Test XMP export
-npm test -- validation       # Test schema validation
+npm test                 # unit tests
+npm run test:integration # pipeline integration tests
+npm run test:all         # everything
 ```
-
-### Integration Tests (5 tests)
-
-```bash
-npm test -- integration      # Full pipeline tests
-```
-
-### Manual Testing
-
-**iOS PWA + Lightroom XMP:**
-```bash
-# See comprehensive testing guide
-cat docs/TESTING_GUIDE.md
-
-# Quick checklist
-cat docs/QUICK_TEST_CHECKLIST.md
-```
-
-### Evaluation Harness
-
-```bash
-# Run golden-set comparison (Gemini vs Gemma)
-npm run eval
-```
-
----
-
-## 📚 Documentation
-
-### Specifications (14 documents in `docs/specs/`)
-
-- **00-baseline-audit.md** – Project baseline and goals
-- **01-product-spec.md** – Feature requirements and user stories
-- **02-output-schema.md** – v2 JSON schema definition
-- **03-runtime-decisions-and-spikes.md** – Technology evaluation
-- **04-prompt-and-rationale-spec.md** – Photography principles prompt
-- **05-deterministic-cv-spec.md** – CV grounding implementation
-- **06-architecture-spec.md** – System design and data flow
-- **07-stack-and-runtime-mapping.md** – Platform matrix
-- **08-vault-mode-spec.md** – Network isolation specification
-- **09-validation-and-error-handling-spec.md** – Safety guarantees
-- **10-platform-shells-spec.md** – Web/Desktop/iOS implementation
-- **11-ui-adaptation-spec.md** – Responsive design patterns
-- **12-testing-strategy-spec.md** – Test coverage plan
-- **13-implementation-roadmap-spec.md** – 5-day sprint timeline
-
-### Spike Results (3 documents in `docs/spikes/`)
-
-- **spike-1-results.md** – Gemma 4 E4B via Ollama (PASS)
-- **spike-2-results.md** – Cactus evaluation (FAIL/DROP)
-- **spike-3-litert-ios.md** – LiteRT iOS investigation (BLOCKED, PWA fallback)
-
-### Integration Guides
-
-- **docs/integrations/lightroom-xmp.md** – Lightroom Classic workflow
-- **docs/ios-pwa-setup.md** – iOS PWA installation and troubleshooting
-- **docs/TESTING_GUIDE.md** – Comprehensive testing instructions
 
 ---
 
 ## 🔧 Troubleshooting
 
-### "Ollama not found" Error
-
+**"Ollama not found"**
 ```bash
-# 1. Verify Ollama is installed
-ollama --version
-
-# 2. Check if Ollama is running
-curl http://localhost:11434/api/tags
-
-# 3. Verify model is installed
-ollama list | grep gemma4
-
-# 4. Pull model if missing
-ollama pull gemma4:e4b
-
-# 5. Restart Ollama
-ollama serve
+ollama --version                      # is it installed?
+curl http://localhost:11434/api/tags  # is it running?
+ollama list | grep gemma              # is the model pulled?
+ollama pull gemma4:e4b                # pull it if missing
 ```
 
-### Slow Analysis (>60 seconds)
-
-**First request is slow (model loading):**
+**Slow first analysis** — the first request loads the model (cold start). Warm it up:
 ```bash
-# Warm up model before using app
-ollama run gemma4:e4b "Ready"
+ollama run gemma4:e4b "ready"
 ```
 
-**Subsequent requests should be ~20-30 seconds.**
-
-### iOS PWA Can't Connect to Ollama
-
-```bash
-# 1. Start Ollama with network access
-export OLLAMA_HOST=0.0.0.0:11434
-export OLLAMA_ORIGINS="*"
-ollama serve
-
-# 2. Check firewall allows port 11434
-# macOS: System Settings → Network → Firewall
-# Linux: sudo ufw allow 11434/tcp
-# Windows: Defender Firewall → Inbound Rules → New Rule (port 11434)
-
-# 3. Verify iPhone on same WiFi as Mac/PC
-```
-
-**Full troubleshooting:** See `TROUBLESHOOTING.md`
+**Hosted demo returns no analysis** — confirm `OLLAMA_API_KEY` is set in your Vercel project's environment variables (not just a local `.env`), then redeploy. See `TROUBLESHOOTING.md` for more.
 
 ---
 
-## 🚢 Deployment
+## 🛠️ Built with
 
-### Web App (Vercel/Netlify)
-
-```bash
-# 1. Build production bundle
-npm run build
-
-# 2. Deploy to Vercel
-vercel deploy
-
-# 3. Set environment variable (optional)
-# VITE_GEMINI_API_KEY=your_key (for cloud enhancement)
-```
-
-### Desktop App (Electron)
-
-```bash
-# macOS
-npm run build:electron
-# Output: dist-electron/Photography Coach.dmg
-
-# Windows
-npm run build:electron:win
-# Output: dist-electron/Photography Coach Setup.exe
-
-# Linux
-npm run build:electron:linux
-# Output: dist-electron/Photography Coach.AppImage
-```
-
----
-
-## 📊 Performance
-
-### Gemma 4 E4B Benchmarks (MacBook M1 Max, 64GB)
-
-| Metric | Cold Start | Warm (After Model Load) |
-|--------|-----------|-------------------------|
-| **Time to First Token** | ~40s | ~0.5s |
-| **Generation Speed** | 27 tokens/sec | 27 tokens/sec |
-| **Full Critique** | ~60-80s | ~20-30s |
-| **Memory Usage** | 9.6GB (model) | 9.6GB (model) |
-| **CPU Usage** | 300-400% | 300-400% |
-
-**Optimization tips:**
-- Run `ollama run gemma4:e4b "test"` to warm up model
-- Use Q4_K_M quantization (balance quality/speed)
-- Close memory-intensive apps during batch processing
-
----
-
-## 🤝 Contributing
-
-This is a hackathon submission for **Gemma 4 Good** (May 19, 2026 deadline).
-
-**After the hackathon:**
-- Issues and PRs welcome
-- Focus areas: Android app, batch XMP export, LiteRT iOS native
-- See `docs/specs/13-implementation-roadmap-spec.md` for Phase 2 plans
+Gemma 4 (Google) · Ollama · React 19 · TypeScript · Vite · Electron · Tailwind CSS
 
 ---
 
 ## 📄 License
 
-**Apache License 2.0** – See [LICENSE](LICENSE) file for details.
-
-You are free to use, modify, and distribute this software for commercial or non-commercial purposes, with attribution.
-
----
-
-## 🙏 Acknowledgments
-
-**Built with:**
-- **Google Gemma 4** – Multimodal vision model ([deepmind.google/gemma-4](https://deepmind.google/technologies/gemma/gemma-4/))
-- **Ollama** – Local LLM runtime ([ollama.com](https://ollama.com))
-- **React** + **TypeScript** – UI framework ([react.dev](https://react.dev))
-- **Vite** – Build tool ([vitejs.dev](https://vitejs.dev))
-- **Electron** – Desktop app framework ([electronjs.org](https://electronjs.org))
-- **Recharts** – Data visualization ([recharts.org](https://recharts.org))
-
-**Inspired by:**
-- **DeepMind Vibe Code** winner (Gemini 3 Pro version, 2025)
-- Professional photography workflows (Lightroom, Capture One)
-- Privacy-first AI principles
-
-**Special thanks:**
-- Google DeepMind for Gemma 4 E4B
-- Ollama team for production-ready local inference
-- Photography community for feedback and testing
+Apache License 2.0 — see [LICENSE](LICENSE).
 
 ---
 
 ## 🔗 Links
 
-- **Hackathon:** [Gemma 4 Good on Kaggle](https://www.kaggle.com/competitions/gemma-4-good-2026)
-- **Model:** [Gemma 4 on Hugging Face](https://huggingface.co/google/gemma-4-E4B-it)
-- **Previous Version:** [Photography Coach AI (Gemini 3 Pro)](https://github.com/prasadt1/photography-coach-ai-gemini3)
-- **Live Demo:** (URL to be added after deployment)
-- **Video Demo:** (URL to be added after recording)
-
----
-
-**Questions? Feedback?**
-- 📧 Email: [your-email] (add before submission)
-- 🐛 Issues: [GitHub Issues](https://github.com/prasadt1/photography-coach-gemma4/issues)
-- 📚 Docs: See `docs/` directory for comprehensive guides
+- **Live demo:** https://lens-app-gemma4.vercel.app
+- **Demo video:** _add before submission_
+- **Repository:** https://github.com/prasadt1/photography-coach-gemma4
+- **Hackathon:** Gemma 4 Good
 
 ---
 
 <div align="center">
 
-**One artisan, one phone, full independence.**
+**The competence the maker already brings to the craft — extended to the one step that used to require another pair of eyes.**
 
-*Powered by Gemma 4 E4B via Ollama • 100% On-Device • No Internet Required*
+*L.E.N.S. — Local Edge Native Studio · Gemma 4 via Ollama*
 
 </div>

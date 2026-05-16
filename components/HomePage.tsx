@@ -56,7 +56,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
         onVoiceToggle={onVoiceToggle}
       />
 
-      <div className="max-w-7xl mx-auto px-6">
+      <main id="main-content" className="max-w-7xl mx-auto px-6">
         {/* ========== HERO ========== */}
         <section className="py-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           <div>
@@ -334,7 +334,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
             </button>
           </div>
         </section>
-      </div>
+      </main>
 
       <Footer />
     </div>

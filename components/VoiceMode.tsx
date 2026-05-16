@@ -419,7 +419,7 @@ const VoiceMode: React.FC<VoiceModeProps> = ({ onBack, ollamaReady }) => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center gap-6">
+      <div className="flex-1 flex flex-col items-center justify-center gap-6" role="region" aria-label="Voice coach">
         {/* Status */}
         <div className="text-center mb-4">
           <h1 className={`text-2xl md:text-4xl font-bold mb-2 ${highContrast ? 'text-white' : 'text-white'}`}>
@@ -646,7 +646,7 @@ const VoiceMode: React.FC<VoiceModeProps> = ({ onBack, ollamaReady }) => {
             <p>Keyboard: <kbd className="px-2 py-1 bg-slate-800 rounded text-xs">SPACE</kbd> capture · <kbd className="px-2 py-1 bg-slate-800 rounded text-xs">R</kbd> repeat · <kbd className="px-2 py-1 bg-slate-800 rounded text-xs">M</kbd> more · <kbd className="px-2 py-1 bg-slate-800 rounded text-xs">ESC</kbd> stop</p>
           </div>
         )}
-      </main>
+      </div>
 
       {/* Footer */}
       <footer className={`text-center mt-6 text-sm ${highContrast ? 'text-gray-400' : 'text-slate-500'}`}>

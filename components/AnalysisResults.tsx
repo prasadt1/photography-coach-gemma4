@@ -37,6 +37,16 @@ export interface MentorChatStateV2 {
   error?: string;
 }
 
+// ─── Accessible image description from analysis ───────────────────────────────
+
+function buildAnalyzedImageAlt(analysis: PhotoAnalysisV2): string {
+  const observation = analysis.rationale?.observations?.[0]?.trim();
+  if (observation) return observation;
+  const overall = analysis.critique?.overall?.split(/[.!?]/)[0]?.trim();
+  if (overall) return overall;
+  return 'Photograph analyzed by L.E.N.S.';
+}
+
 // ─── Props ─────────────────────────────────────────────────────────────────────
 
 interface AnalysisResultsProps {
@@ -530,7 +540,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               <div className="relative inline-block w-auto h-auto max-w-full m-2 md:m-4">
                 <img
                   src={imageSrc}
-                  alt="Analyzed"
+                  alt={buildAnalyzedImageAlt(analysis)}
                   className="block w-auto h-auto max-w-full max-h-[50vh] md:max-h-[60vh] rounded-lg shadow-lg"
                 />
                 <SpatialOverlay

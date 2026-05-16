@@ -158,7 +158,146 @@ User clicks demo thumbnail
 
 ---
 
+## 🚨 CRITICAL BUG - BLANK PAGE IN ARTISAN JOURNEY (May 16, 2026)
+
+### Issue Summary
+**After clicking "Generate Listing" button in Artisan Journey, page goes completely blank** (no header, no content, nothing). This blocks the entire guided journey flow in Artisan Studio.
+
+### What Works
+- ✅ Voice prompts and speech recognition
+- ✅ Camera capture (both first and second photos)
+- ✅ Gemma 4 analysis via Ollama Cloud (`gemma4:31b-cloud`)
+- ✅ Comparison phase renders correctly
+- ✅ "Generate Listing" button is clickable and visible
+
+### What Fails
+- ❌ **After clicking button, page goes completely blank**
+- ❌ No error messages visible
+- ❌ Debug screens never display (suggests early crash or component unmount)
+- ❌ Cannot access Safari console on iPhone (Developer tools on Mac don't see PWA)
+
+### Component Architecture
+- **File:** `components/ArtisanJourney.tsx` (main component with bug)
+- **Parent:** `components/SellMode.tsx` (lines 377-383, conditionally renders ArtisanJourney)
+
+```typescript
+// SellMode.tsx parent rendering
+{showGuidedJourney && (
+  <ArtisanJourney
+    voiceEnabled={voiceEnabled}
+    inferenceSource={inferenceSource}
+    onExit={() => setShowGuidedJourney(false)}
+  />
+)}
+```
+
+### State Machine
+Phase flow: 'voicePrompt' → 'entry' → 'firstCapture' → 'firstAnalysis' → 'retryChoice' → 'secondCapture' → 'comparison' → **'listing'** ← BLANK HERE
+
+Button onClick in comparison phase:
+```typescript
+const handleSkipToListing = () => {
+  console.log('[ArtisanJourney] Skipping to listing phase');
+  setPhase('listing');
+};
+```
+
+### What We've Tried (All Failed - ~140K tokens spent)
+1. **Service worker cache** - Bumped to v4.0.0-listing-fix, user deleted PWA & reinstalled
+2. **On-screen debug info** - Added red/yellow/green debug screens, none showed
+3. **Try-catch boundaries** - Wrapped renders to catch errors, nothing caught
+4. **Simplified test** - Replaced listing phase with simple green div "LISTING PHASE WORKS!", **still blank**
+5. **Console logging** - Added extensive logs but no console access on iPhone
+6. **Fixed TypeScript errors** - Removed unused imports/vars, deployment succeeds
+7. **Debug fallback screen** - Added yellow screen at end of render function, never displays
+
+### Current Deployed Test Code (Line ~920)
+```typescript
+// Phase 7: Listing - SIMPLIFIED TEST VERSION
+if (phase === 'listing') {
+  return (
+    <div className="max-w-2xl mx-auto px-6 py-12">
+      <div className="rounded-2xl bg-green-100 border-4 border-green-500 p-8">
+        <h1 className="text-3xl font-bold text-green-800 mb-4">✅ LISTING PHASE WORKS!</h1>
+        <div className="space-y-2 text-sm">
+          <p>Phase: {phase}</p>
+          <p>Attempts: {attempts.length}</p>
+          <p>Stronger Index: {strongerAttemptIndex ?? 'null'}</p>
+        </div>
+        <button onClick={() => setPhase('firstCapture')} className="mt-6 px-6 py-3 bg-green-600 text-white rounded-full">
+          Start Over
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+**Even this minimal test produces blank page.**
+
+### Hypotheses (Untested)
+1. **Parent unmounting** - `showGuidedJourney` in SellMode gets set to false when listing phase starts
+2. **Parent crash** - SellMode crashes when ArtisanJourney enters listing phase
+3. **React state issue** - State update doesn't trigger re-render
+4. **Navigation** - Something redirects or clears DOM
+5. **Service worker** - SW intercepting incorrectly (though cache cleared)
+
+### Debug Strategy for Next Session
+
+#### Quick Wins (Try First)
+1. **Add alert() in button onClick** - Verify click registers and setPhase is called:
+   ```typescript
+   const handleSkipToListing = () => {
+     alert('Button clicked! Phase: ' + phase);
+     console.log('[ArtisanJourney] Skipping to listing phase');
+     alert('About to call setPhase');
+     setPhase('listing');
+     alert('setPhase called');
+   };
+   ```
+
+2. **Check parent state** - Add logging in SellMode.tsx useEffect watching showGuidedJourney:
+   ```typescript
+   useEffect(() => {
+     console.log('[SellMode] showGuidedJourney changed:', showGuidedJourney);
+   }, [showGuidedJourney]);
+   ```
+
+3. **Bypass state machine** - Render listing JSX inline in comparison phase without state change
+
+#### Deep Investigation
+1. **React DevTools** - Try connecting iPhone to Mac with React DevTools browser extension
+2. **Error boundary** - Wrap ArtisanJourney in SellMode with proper error boundary
+3. **Test outside PWA** - Try in regular Safari browser (not Add to Home Screen)
+4. **Navigation guards** - Check if window.location changes when button clicked
+5. **Instrument every render** - Add console.log at top of ArtisanJourney component function
+
+### Files to Review
+- `components/ArtisanJourney.tsx` (line ~920 listing phase, line ~495 render logging)
+- `components/SellMode.tsx` (lines 377-383 conditional render)
+- `public/sw.js` (service worker - cache version v4.0.0-listing-fix)
+
+### Recent Changes (Last Session)
+- Removed disabled listing code causing TypeScript errors
+- Removed unused imports: Copy, Accessibility
+- Renamed unused state: `_copiedField`, `_showAllTags`
+- Simplified listing to green test screen
+- All deployed successfully to Vercel (Status: Ready)
+
+### Service Worker Info
+- **Cache version:** `photography-coach-v4.0.0-listing-fix` (line 8 in sw.js)
+- **Precached:** /, /index.html, /manifest.json
+- **Strategy:** Cache-first for same-origin GET requests
+- **Share target:** POST /share-target for Android image sharing
+
+---
+
 ## Next Steps
+
+### CRITICAL (Fix Blank Page):
+1. Add alert() in handleSkipToListing to verify execution path
+2. Add useEffect in SellMode to log showGuidedJourney changes
+3. Try rendering listing content inline without state change
+4. If none work, consider removing guided journey entirely (revert to demo samples only)
 
 ### Immediate (Verify Cloud):
 1. Check Vercel deployment succeeded

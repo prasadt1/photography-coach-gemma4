@@ -56,7 +56,7 @@ const VAULT_FEATURES = [
 const ModeSelector: React.FC<ModeSelectorProps> = ({ mode, onChange }) => {
   return (
     <div className="w-full max-w-2xl mx-auto">
-      <p className="text-center text-xs font-semibold text-[#524A3D] uppercase tracking-widest mb-4">
+      <p className="text-center text-xs font-semibold text-[#3D362B] uppercase tracking-widest mb-4">
         Choose your workflow
       </p>
       <div className="grid grid-cols-2 gap-4">
@@ -98,7 +98,7 @@ const ModeSelector: React.FC<ModeSelectorProps> = ({ mode, onChange }) => {
           }`}
         >
           <div className="flex items-center gap-2">
-            <div className={`p-1.5 rounded-lg ${mode === 'vault' ? 'bg-amber-500/20 text-amber-600' : 'bg-[#D8CDB8]/50 text-[#524A3D]'}`}>
+            <div className={`p-1.5 rounded-lg ${mode === 'vault' ? 'bg-amber-500/20 text-amber-800' : 'bg-[#D8CDB8]/50 text-[#3D362B]'}`}>
               <Shield className="w-4 h-4" />
             </div>
             <span className="font-bold text-[#241F18] text-sm flex items-center gap-1.5">
@@ -112,7 +112,7 @@ const ModeSelector: React.FC<ModeSelectorProps> = ({ mode, onChange }) => {
           <ul className="space-y-1.5">
             {VAULT_FEATURES.map((f, i) => (
               <li key={f} className={`flex items-start gap-2 text-xs ${i === 0 ? 'text-amber-700 font-semibold' : 'text-[#524A3D]'}`}>
-                <Check className="w-3 h-3 text-amber-600 mt-0.5 shrink-0" />
+                <Check className="w-3 h-3 text-amber-800 mt-0.5 shrink-0" />
                 {f}
               </li>
             ))}

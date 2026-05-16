@@ -208,7 +208,7 @@ const QuestMode: React.FC<QuestModeProps> = ({ onBack, ollamaReady, voiceEnabled
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto" role="region" aria-label="Quest challenges">
         {/* Challenge Card */}
         <div className="relative bg-slate-800/60 backdrop-blur-sm rounded-3xl border border-slate-700/50 p-6 md:p-8 mb-6 overflow-hidden">
           {/* Background decoration */}
@@ -484,7 +484,7 @@ const QuestMode: React.FC<QuestModeProps> = ({ onBack, ollamaReady, voiceEnabled
             }
           }
         `}</style>
-      </main>
+      </div>
 
       {/* Footer */}
       <footer className="text-center mt-12 text-sm text-slate-600 max-w-4xl mx-auto">

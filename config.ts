@@ -30,7 +30,7 @@ const _isDeployedEnvironment = (() => {
 export const OLLAMA_CONFIG = {
   // Local Ollama configuration (not used when cloud is enabled)
   baseUrl: `http://${_ollamaHost}:11434`,
-  model: 'gemma4:latest',
+  model: 'gemma4:e4b',
   modelId: 'gemma-4-e4b',           // Canonical ID written to v2 schema
   quantization: 'Q4_K_M',
   options: {

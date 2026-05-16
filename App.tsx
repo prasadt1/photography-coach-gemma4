@@ -440,11 +440,11 @@ function App() {
 
       {/* Studio/Vault Mode — standard photo analysis flow */}
       {(mode === 'studio' || mode === 'vault') && (
-      <main className="max-w-7xl mx-auto px-4 py-6 md:py-12 relative z-10">
+      <main id="main-content" className="max-w-7xl mx-auto px-4 py-6 md:py-12 relative z-10">
         {appState === AppState.IDLE && (
           <div className="flex flex-col items-center animate-fadeIn pt-4 pb-16">
             <div className="w-full max-w-4xl flex flex-col items-center gap-6 mb-8">
-              <div className="flex flex-wrap items-center justify-center gap-2 p-1.5 rounded-full bg-[#F4ECDC] border-2 border-[#D8CDB8]">
+              <nav aria-label="Studio upload mode" className="flex flex-wrap items-center justify-center gap-2 p-1.5 rounded-full bg-[#F4ECDC] border-2 border-[#D8CDB8]">
                 <button
                   type="button"
                   onClick={() => setUploadTab('single')}
@@ -469,7 +469,7 @@ function App() {
                   <Scale className="w-4 h-4" />
                   Compare
                 </button>
-              </div>
+              </nav>
 
               {uploadTab === 'single' && (
                 <div className="flex items-center justify-center gap-3 flex-wrap">

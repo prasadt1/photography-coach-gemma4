@@ -1,14 +1,7 @@
 /**
  * ArtisanJourney.tsx — Guided listing flow for blind/low-vision artisans
  *
- * 7-Phase Journey:
- * 1. Entry - "Start Guided Listing" button
- * 2. First Photo - Camera capture with voice prompt
- * 3. First Analysis - Real Gemma output, spoken aloud
- * 4. Retry Loop - "Retake" or "Continue" choice
- * 5. Second Photo - Apply fix, capture again
- * 6. Comparison - Side-by-side, pick stronger photo
- * 7. Listing - Generate title, description, tags
+ * Journey: voice welcome → enable voice → camera → analysis → retake → compare → listing
  *
  * Accessibility-first: semantic HTML, aria-live, focus management, keyboard operable
  */
@@ -16,7 +9,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Camera, Loader2, CheckCircle2, ArrowRight,
-  Lightbulb, Grid3X3, Sun,
+  Lightbulb, Grid3X3, Sun, Copy, FileText, Accessibility,
   AudioLines, Sparkles,
 } from 'lucide-react';
 import { analyzeForSellModeWithFallback, type InferenceSource } from '../services/analysisOrchestrator';
@@ -32,8 +25,7 @@ import {
 import LiveCameraCapture from './LiveCameraCapture';
 
 type JourneyPhase =
-  | 'voicePrompt'   // NEW: Ask to enable voice commands
-  | 'entry'
+  | 'voicePrompt'
   | 'firstCapture'
   | 'firstAnalysis'
   | 'retryChoice'
@@ -93,8 +85,8 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [_copiedField, setCopiedField] = useState<string | null>(null);
-  const [_showAllTags, setShowAllTags] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [showAllTags, setShowAllTags] = useState(false);
   const [currentInferenceSource, setCurrentInferenceSource] = useState<InferenceSource>('demo');
   const [showLiveCamera, setShowLiveCamera] = useState(false);
 
@@ -114,110 +106,6 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
       stopListening();
     };
   }, []);
-
-  // Voice command handler
-  const handleVoiceCommand = useCallback((transcript: string) => {
-    const command = parseVoiceCommand(transcript);
-    console.log('[ArtisanJourney] Voice command:', command, 'from:', transcript);
-
-    if (!command) {
-      // Don't respond to unrecognized commands - reduces noise
-      console.log('[ArtisanJourney] Ignoring unrecognized command');
-      return;
-    }
-
-    // Stop any current speech before responding
-    stopSpeaking();
-
-    // Route commands based on current phase
-    switch (phase) {
-      case 'voicePrompt':
-        if (command === 'yes') {
-          setVoiceCommandsEnabled(true);
-          setPhase('firstCapture'); // Skip entry, go straight to camera
-          speak('Voice commands enabled. Say "take photo" to begin.');
-        } else if (command === 'no') {
-          setPhase('firstCapture'); // Skip entry either way
-          speak('You can use buttons instead.');
-        }
-        break;
-
-      case 'entry':
-      case 'firstCapture':
-      case 'secondCapture':
-        if (command === 'take-photo') {
-          // Call global capture function if camera is already open
-          if ((window as any).__artisanCameraCapture) {
-            (window as any).__artisanCameraCapture();
-            speak('Got it. Analyzing now.');
-          } else {
-            // Open camera if not already open
-            setShowLiveCamera(true);
-            speak('Opening camera.');
-          }
-        }
-        break;
-
-      case 'retryChoice':
-        if (command === 'yes' || command === 'retry') {
-          console.log('[ArtisanJourney] Voice: Retake triggered');
-          speak('Opening camera for your second photo.');
-          handleRetake();
-        } else if (command === 'no' || command === 'continue') {
-          console.log('[ArtisanJourney] Voice: Skip to listing');
-          handleSkipToListing();
-        }
-        break;
-
-      case 'listing':
-        if (command === 'copy') {
-          const finalAttempt = attempts[strongerAttemptIndex ?? attempts.length - 1];
-          if (finalAttempt?.analysisJSON.listingCopy) {
-            copyToClipboard(finalAttempt.analysisJSON.listingCopy, 'description');
-          }
-        } else if (command === 'read-tags') {
-          handleReadAllTags();
-        } else if (command === 'start-over') {
-          onExit();
-        }
-        break;
-    }
-  }, [phase, attempts, strongerAttemptIndex]);
-
-  // Start/stop listening based on voice commands enabled
-  useEffect(() => {
-    if (voiceCommandsEnabled && !isCurrentlyListening()) {
-      startListening(handleVoiceCommand, true);
-    } else if (!voiceCommandsEnabled && isCurrentlyListening()) {
-      stopListening();
-    }
-  }, [voiceCommandsEnabled, handleVoiceCommand]);
-
-  // Voice greeting when entering voicePrompt phase (speak only once)
-  const hasGreeted = useRef(false);
-  useEffect(() => {
-    if (phase === 'voicePrompt' && voiceEnabled && !hasGreeted.current) {
-      hasGreeted.current = true;
-      stopSpeaking(); // Clear any previous speech
-      setTimeout(() => {
-        speak('Welcome to L.E.N.S. Artisan Studio. Tap Yes to enable voice commands.');
-      }, 500);
-    }
-  }, [phase, voiceEnabled]);
-
-  // Focus management: move focus to main content when phase changes
-  useEffect(() => {
-    if (phase === 'retryChoice' && retakeButtonRef.current) {
-      // For retry choice, focus the primary action button
-      retakeButtonRef.current.focus();
-    } else if (phase === 'listing' && listingButtonRef.current) {
-      // For listing, focus the listing button
-      listingButtonRef.current.focus();
-    } else if (mainContentRef.current) {
-      // Default: focus main content
-      mainContentRef.current.focus();
-    }
-  }, [phase]);
 
   // ========== Comparison Logic (App-Side, Deterministic) ==========
   const compareAttempts = useCallback((attempt1: Attempt, attempt2: Attempt): {
@@ -270,13 +158,16 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     return { strongerIndex, improvementText };
   }, []);
 
-  // ========== Phase 1: Entry ==========
-  const handleStart = useCallback(() => {
+  const goToFirstCapture = useCallback((withVoiceCommands: boolean) => {
+    if (withVoiceCommands) setVoiceCommandsEnabled(true);
     setPhase('firstCapture');
-    if (voiceEnabled) {
-      speak('Welcome to L.E.N.S. Artisan Studio. Voice coaching ready. Say "take photo" to begin.');
-    }
-  }, [voiceEnabled]);
+    setShowLiveCamera(true);
+    speak(
+      withVoiceCommands
+        ? 'Voice commands enabled. Opening your camera now. Position your craft in good light.'
+        : 'Opening your camera now. Position your craft in good light.'
+    );
+  }, []);
 
   /**
    * Handle captured image from getUserMedia canvas
@@ -455,15 +346,157 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     }
   }, [voiceEnabled]);
 
-  // ========== Phase 7: Listing Actions ==========
-  const copyToClipboard = (text: string, field: string) => {
+  const copyToClipboard = useCallback((text: string, field: string) => {
     navigator.clipboard.writeText(text);
     setCopiedField(field);
     if (voiceEnabled) {
       speak('Copied to clipboard.');
     }
     setTimeout(() => setCopiedField(null), 2000);
-  };
+  }, [voiceEnabled]);
+
+  const handleReadAllTags = useCallback(() => {
+    const finalAttempt = attempts[strongerAttemptIndex ?? attempts.length - 1];
+    if (finalAttempt?.analysisJSON.tags && finalAttempt.analysisJSON.tags.length > 0) {
+      const tagsList = finalAttempt.analysisJSON.tags.join(', ');
+      speak(`All tags: ${tagsList}`);
+      setShowAllTags(true);
+    }
+  }, [attempts, strongerAttemptIndex]);
+
+  const copyAllListingText = useCallback(() => {
+    const finalAttempt = attempts[strongerAttemptIndex ?? attempts.length - 1];
+    if (!finalAttempt) return;
+    const a = finalAttempt.analysisJSON;
+    const parts = [
+      a.listingCopy,
+      a.altText ? `Alt text: ${a.altText}` : '',
+      a.tags?.length ? `Tags: ${a.tags.join(', ')}` : '',
+    ].filter(Boolean);
+    copyToClipboard(parts.join('\n\n'), 'all');
+  }, [attempts, strongerAttemptIndex, copyToClipboard]);
+
+  // Voice command handler — must stay above all conditional returns (Rules of Hooks)
+  const handleVoiceCommand = useCallback((transcript: string) => {
+    const command = parseVoiceCommand(transcript);
+    if (!command) return;
+
+    stopSpeaking();
+
+    switch (phase) {
+      case 'voicePrompt':
+        if (command === 'yes') {
+          goToFirstCapture(true);
+        } else if (command === 'no') {
+          goToFirstCapture(false);
+        }
+        break;
+
+      case 'firstCapture':
+      case 'secondCapture':
+        if (command === 'take-photo') {
+          if ((window as Window & { __artisanCameraCapture?: () => void }).__artisanCameraCapture) {
+            (window as Window & { __artisanCameraCapture?: () => void }).__artisanCameraCapture!();
+            speak('Got it. Analyzing now.');
+          } else {
+            setShowLiveCamera(true);
+            speak('Opening camera.');
+          }
+        }
+        break;
+
+      case 'retryChoice':
+        if (command === 'yes' || command === 'retry') {
+          speak('Opening camera for your second photo.');
+          handleRetake();
+        } else if (command === 'no' || command === 'continue') {
+          handleSkipToListing();
+        }
+        break;
+
+      case 'comparison':
+        if (command === 'continue' || command === 'generate-listing') {
+          setPhase('listing');
+          if (voiceEnabled) {
+            speak('Here is your listing. Say copy to copy everything.');
+          }
+        }
+        break;
+
+      case 'listing':
+        if (command === 'copy') {
+          copyAllListingText();
+        } else if (command === 'read-tags') {
+          handleReadAllTags();
+        } else if (command === 'start-over') {
+          onExit();
+        }
+        break;
+    }
+  }, [
+    phase,
+    voiceEnabled,
+    goToFirstCapture,
+    handleRetake,
+    handleSkipToListing,
+    handleReadAllTags,
+    copyAllListingText,
+    onExit,
+  ]);
+
+  useEffect(() => {
+    if (voiceCommandsEnabled && !isCurrentlyListening()) {
+      startListening(handleVoiceCommand, true);
+    } else if (!voiceCommandsEnabled && isCurrentlyListening()) {
+      stopListening();
+    }
+  }, [voiceCommandsEnabled, handleVoiceCommand]);
+
+  const hasGreeted = useRef(false);
+  useEffect(() => {
+    if (phase === 'voicePrompt' && !hasGreeted.current) {
+      hasGreeted.current = true;
+      stopSpeaking();
+      setTimeout(() => {
+        speak(
+          'Welcome to L.E.N.S. Artisan Studio. I will help you photograph your craft and build a listing. Tap Yes to enable voice commands, or No to use buttons only.'
+        );
+      }, 500);
+    }
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase === 'retryChoice' && retakeButtonRef.current) {
+      retakeButtonRef.current.focus();
+    } else if (phase === 'listing' && listingButtonRef.current) {
+      listingButtonRef.current.focus();
+    } else if (mainContentRef.current) {
+      mainContentRef.current.focus();
+    }
+  }, [phase]);
+
+  const hasSpokenListing = useRef(false);
+  useEffect(() => {
+    if (phase !== 'listing') {
+      hasSpokenListing.current = false;
+      return;
+    }
+    if (!voiceEnabled || hasSpokenListing.current) return;
+
+    const finalAttempt = attempts[strongerAttemptIndex ?? attempts.length - 1];
+    if (!finalAttempt) return;
+
+    hasSpokenListing.current = true;
+    const a = finalAttempt.analysisJSON;
+    const voiceText = [
+      'Your listing is ready.',
+      a.listingCopy,
+      a.altText ? `Alt text: ${a.altText}` : '',
+      a.tags?.length ? `Tags: ${a.tags.slice(0, 5).join(', ')}` : '',
+      'Tap copy listing for Etsy, or say copy.',
+    ].filter(Boolean).join(' ');
+    speak(voiceText);
+  }, [phase, voiceEnabled, attempts, strongerAttemptIndex]);
 
   // ========== Render Phases ==========
 
@@ -510,11 +543,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button
-            onClick={() => {
-              setVoiceCommandsEnabled(true);
-              setPhase('firstCapture'); // Skip entry
-              speak('Voice commands enabled. Say "take photo" to begin.');
-            }}
+            onClick={() => goToFirstCapture(true)}
             className="inline-flex items-center gap-3 px-8 py-4 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full text-lg font-bold shadow-xl transition-colors focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
             aria-label="Enable voice commands"
           >
@@ -523,10 +552,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           </button>
 
           <button
-            onClick={() => {
-              setPhase('firstCapture'); // Skip entry
-              speak('You can use buttons.');
-            }}
+            onClick={() => goToFirstCapture(false)}
             className="inline-flex items-center gap-3 px-8 py-4 bg-[#F4ECDC] border-2 border-[#D8CDB8] hover:border-[#C06B45] text-[#241F18] rounded-full text-lg font-bold transition-colors focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
             aria-label="Use buttons instead"
           >
@@ -546,44 +572,8 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     );
   }
 
-  // Phase 1: Entry
-  if (phase === 'entry') {
-    return (
-      <div className="max-w-2xl mx-auto px-6 py-16 text-center" ref={mainContentRef} tabIndex={-1}>
-        <div className="mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#C06B45] text-white text-sm font-bold uppercase tracking-wide mb-6">
-            <Camera className="w-4 h-4" />
-            Artisan Studio
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold font-serif text-[#241F18] leading-tight mb-4">
-            Let's list your craft
-          </h1>
-          <p className="text-lg text-[#524A3D] leading-relaxed max-w-xl mx-auto">
-            Voice-guided coaching to photograph your work, hear what's working, and get marketplace-ready in minutes.
-          </p>
-        </div>
 
-        <button
-          onClick={handleStart}
-          className="inline-flex items-center gap-3 px-8 py-4 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full text-lg font-bold shadow-xl transition-colors focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
-          aria-label="Start guided listing journey"
-        >
-          <Camera className="w-5 h-5" />
-          <span>Start Guided Listing</span>
-          <ArrowRight className="w-5 h-5" />
-        </button>
-
-        <button
-          onClick={onExit}
-          className="block mx-auto mt-8 text-sm text-[#524A3D] hover:text-[#241F18] underline focus:outline-none focus:ring-2 focus:ring-[#C06B45]"
-        >
-          Go back to demo samples
-        </button>
-      </div>
-    );
-  }
-
-  // Phase 2 & 5: Camera Capture (getUserMedia - voice-first!)
+  // Camera capture (live view opens right after voice prompt)
   if (phase === 'firstCapture' || phase === 'secondCapture') {
     const isSecond = phase === 'secondCapture';
     const promptText = isSecond && attempts[0]?.analysisJSON?.primaryFix
@@ -910,33 +900,148 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   }
 
 
-  // ========== Phase 7: Listing Actions ==========
-  const handleReadAllTags = useCallback(() => {
-    const finalAttempt = attempts[strongerAttemptIndex ?? attempts.length - 1];
-    if (finalAttempt?.analysisJSON.tags && finalAttempt.analysisJSON.tags.length > 0) {
-      const tagsList = finalAttempt.analysisJSON.tags.join(', ');
-      speak(`All tags: ${tagsList}`);
-      setShowAllTags(true);
-    }
-  }, [attempts, strongerAttemptIndex]);
-
-  // Phase 7: Listing - SIMPLIFIED TEST VERSION
+  // Phase 7: Listing
   if (phase === 'listing') {
-    return (
-      <div className="max-w-2xl mx-auto px-6 py-12">
-        <div className="rounded-2xl bg-green-100 border-4 border-green-500 p-8">
-          <h1 className="text-3xl font-bold text-green-800 mb-4">✅ LISTING PHASE WORKS!</h1>
-          <div className="space-y-2 text-sm">
-            <p>Phase: {phase}</p>
-            <p>Attempts: {attempts.length}</p>
-            <p>Stronger Index: {strongerAttemptIndex ?? 'null'}</p>
+    const finalAttempt = attempts[strongerAttemptIndex ?? attempts.length - 1];
+
+    if (!finalAttempt) {
+      return (
+        <div className="max-w-2xl mx-auto px-6 py-12" ref={mainContentRef} tabIndex={-1}>
+          <div className="rounded-2xl bg-amber-50 border-2 border-amber-200 p-8 text-center" role="alert">
+            <p className="text-amber-800 font-medium mb-4">No photo selected for listing.</p>
+            <button
+              onClick={() => setPhase('firstCapture')}
+              className="px-6 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full font-semibold"
+            >
+              Start Over
+            </button>
           </div>
+        </div>
+      );
+    }
+
+    const analysis = finalAttempt.analysisJSON;
+
+    return (
+      <div className="max-w-4xl mx-auto px-6 py-8" ref={mainContentRef} tabIndex={-1}>
+        <h2 className="text-2xl font-bold text-[#241F18] mb-2">Your marketplace listing</h2>
+        <p className="text-[#524A3D] mb-6">
+          From your stronger photo — copy and paste into Etsy or Shopify.
+        </p>
+
+        <div className="flex flex-col md:flex-row gap-6 mb-8">
+          <div className="w-full md:w-80 shrink-0 rounded-2xl overflow-hidden border-2 border-[#2F4858] bg-[#A9B8BE]">
+            <img
+              src={finalAttempt.image}
+              alt="Winning product photo"
+              className="w-full object-contain"
+            />
+          </div>
+
+          <div className="flex-1">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#A9B8BE] border-2 border-[#2F4858] text-[#241F18] mb-4">
+              <CheckCircle2 className="w-4 h-4" />
+              <span className="text-sm font-bold">Ready to list</span>
+            </div>
+            <p className="text-lg font-semibold text-[#241F18]">{analysis.subject}</p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-[#F4ECDC] border-2 border-[#D8CDB8] p-6 mb-6">
+          <div className="flex items-center gap-2 mb-6">
+            <FileText className="w-4 h-4 text-[#C06B45]" />
+            <h3 className="text-sm font-bold text-[#241F18] uppercase tracking-wider">Listing assets</h3>
+          </div>
+
+          <div className="space-y-5">
+            {analysis.listingCopy && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-semibold text-[#524A3D] uppercase tracking-wider">Product description</p>
+                  <button
+                    onClick={() => copyToClipboard(analysis.listingCopy, 'description')}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                      copiedField === 'description' ? 'bg-[#A9B8BE] text-[#241F18]' : 'bg-[#ECE3D2] hover:bg-[#D8CDB8] text-[#524A3D]'
+                    }`}
+                    aria-label="Copy product description"
+                  >
+                    {copiedField === 'description' ? (
+                      <><CheckCircle2 className="w-3 h-3" /> Copied</>
+                    ) : (
+                      <><Copy className="w-3 h-3" /> Copy</>
+                    )}
+                  </button>
+                </div>
+                <p className="text-[#241F18] bg-[#ECE3D2] rounded-xl p-4 text-sm">{analysis.listingCopy}</p>
+              </div>
+            )}
+
+            {analysis.altText && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-semibold text-[#524A3D] uppercase tracking-wider flex items-center gap-1.5">
+                    <Accessibility className="w-3 h-3" /> Alt text
+                  </p>
+                  <button
+                    onClick={() => copyToClipboard(analysis.altText, 'altText')}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                      copiedField === 'altText' ? 'bg-[#A9B8BE] text-[#241F18]' : 'bg-[#ECE3D2] hover:bg-[#D8CDB8] text-[#524A3D]'
+                    }`}
+                    aria-label="Copy alt text"
+                  >
+                    {copiedField === 'altText' ? (
+                      <><CheckCircle2 className="w-3 h-3" /> Copied</>
+                    ) : (
+                      <><Copy className="w-3 h-3" /> Copy</>
+                    )}
+                  </button>
+                </div>
+                <p className="text-[#241F18] bg-[#ECE3D2] rounded-xl p-4 text-sm">{analysis.altText}</p>
+              </div>
+            )}
+
+            {analysis.tags && analysis.tags.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-semibold text-[#524A3D] uppercase tracking-wider">Tags</p>
+                  <button
+                    onClick={handleReadAllTags}
+                    className="text-xs font-semibold text-[#C06B45] hover:text-[#A6552F] underline"
+                    aria-label="Read all tags aloud"
+                  >
+                    Read aloud
+                  </button>
+                </div>
+                <p className="text-[#241F18] text-sm">
+                  {showAllTags ? analysis.tags.join(', ') : analysis.tags.slice(0, 8).join(', ')}
+                  {!showAllTags && analysis.tags.length > 8 && '…'}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
           <button
-            onClick={() => setPhase('firstCapture')}
-            className="mt-6 px-6 py-3 bg-green-600 text-white rounded-full"
+            ref={listingButtonRef}
+            onClick={copyAllListingText}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full font-semibold focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
+            aria-label="Copy all listing text for Etsy"
           >
-            Start Over
+            <Copy className="w-4 h-4" />
+            <span>{copiedField === 'all' ? 'Copied!' : 'Copy listing for Etsy'}</span>
           </button>
+          <button
+            onClick={onExit}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#F4ECDC] border-2 border-[#D8CDB8] hover:border-[#C06B45] text-[#241F18] rounded-full font-semibold"
+            aria-label="Finish and return"
+          >
+            Done
+          </button>
+        </div>
+
+        <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+          Listing ready. {analysis.listingCopy}
         </div>
       </div>
     );

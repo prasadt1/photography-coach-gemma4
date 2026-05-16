@@ -181,23 +181,39 @@
       }
 
       /* Strong focus states for accessibility */
-      button:focus-visible, a:focus-visible {
+      button:focus-visible,
+      a:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      textarea:focus-visible,
+      [tabindex]:not([tabindex="-1"]):focus-visible {
+        outline: 3px solid #E06442;
+        outline-offset: 2px;
+      }
+
+      /* Skip link — visible on keyboard focus only */
+      .skip-link {
+        position: absolute;
+        left: -9999px;
+        top: 0;
+        z-index: 10000;
+        padding: 0.75rem 1.25rem;
+        background: #241F18;
+        color: #FEFDFB;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-decoration: none;
+        border-radius: 0 0 0.5rem 0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      }
+      .skip-link:focus,
+      .skip-link:focus-visible {
+        left: 0.5rem;
+        top: 0.5rem;
         outline: 3px solid #E06442;
         outline-offset: 2px;
       }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0",
-    "recharts": "https://aistudiocdn.com/recharts@^3.5.1",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
-    "react/": "https://aistudiocdn.com/react@^19.2.1/",
-    "react": "https://aistudiocdn.com/react@^19.2.1"
-  }
-}
-</script>
 </head>
   <body>
     <div id="root"></div>
@@ -205,7 +221,17 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
+        const swUrl = '/sw.js?v=5';
+        navigator.serviceWorker.register(swUrl).then((reg) => {
+          reg.update();
+        }).catch(() => {});
+        let reloaded = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (reloaded || sessionStorage.getItem('sw-reloaded')) return;
+          reloaded = true;
+          sessionStorage.setItem('sw-reloaded', '1');
+          window.location.reload();
+        });
       });
     }
   </script>

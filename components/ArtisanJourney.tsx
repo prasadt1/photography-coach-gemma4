@@ -920,8 +920,30 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     }
   }, [attempts, strongerAttemptIndex]);
 
-  // Phase 7: Listing
+  // Phase 7: Listing - SIMPLIFIED TEST VERSION
   if (phase === 'listing') {
+    return (
+      <div className="max-w-2xl mx-auto px-6 py-12">
+        <div className="rounded-2xl bg-green-100 border-4 border-green-500 p-8">
+          <h1 className="text-3xl font-bold text-green-800 mb-4">✅ LISTING PHASE WORKS!</h1>
+          <div className="space-y-2 text-sm">
+            <p>Phase: {phase}</p>
+            <p>Attempts: {attempts.length}</p>
+            <p>Stronger Index: {strongerAttemptIndex ?? 'null'}</p>
+          </div>
+          <button
+            onClick={() => setPhase('firstCapture')}
+            className="mt-6 px-6 py-3 bg-green-600 text-white rounded-full"
+          >
+            Start Over
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // TEMPORARILY DISABLED - OLD LISTING CODE
+  if (false && phase === 'listing') {
     console.log('[ArtisanJourney] Listing phase - attempts:', attempts.length, 'strongerIndex:', strongerAttemptIndex);
 
     try {

@@ -16,7 +16,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Camera, Loader2, CheckCircle2, ArrowRight,
-  Lightbulb, Grid3X3, Sun, Copy, Accessibility,
+  Lightbulb, Grid3X3, Sun,
   AudioLines, Sparkles,
 } from 'lucide-react';
 import { analyzeForSellModeWithFallback, type InferenceSource } from '../services/analysisOrchestrator';
@@ -93,8 +93,8 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [showAllTags, setShowAllTags] = useState(false);
+  const [_copiedField, setCopiedField] = useState<string | null>(null);
+  const [_showAllTags, setShowAllTags] = useState(false);
   const [currentInferenceSource, setCurrentInferenceSource] = useState<InferenceSource>('demo');
   const [showLiveCamera, setShowLiveCamera] = useState(false);
 

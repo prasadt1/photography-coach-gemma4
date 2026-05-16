@@ -483,6 +483,7 @@ export interface ArtisanAnalysisV3 {
   alt_text: string;
   listing_copy: string;
   ready_to_list: boolean;
+  tags?: string[];  // Optional tags for marketplace listing
 }
 
 /**

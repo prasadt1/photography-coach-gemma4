@@ -8,10 +8,11 @@ import React, { useState, useEffect } from 'react';
 import {
   AudioLines, Camera, WifiOff,
   ArrowRight, Sparkles, Shield, Loader2, Heart,
-  User, Wrench, Smartphone, Target, Plus,
+  User, Wrench, Smartphone, Target, Plus, Cloud,
 } from 'lucide-react';
 import { OperationalMode } from '../types.v2';
 import { speak } from '../services/voiceCoach';
+import { detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
 import Header from './Header';
 import Footer from './Footer';
 
@@ -29,12 +30,19 @@ interface HomePageProps {
 
 const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaReady, stats: _stats, voiceEnabled = false, onVoiceToggle }) => {
   const [connectionState, setConnectionState] = useState<'connecting' | 'ready'>('connecting');
+  const [inferenceSource, setInferenceSource] = useState<InferenceSource>('demo');
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setConnectionState('ready');
     }, 1500);
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    detectInferenceSource().then((source) => {
+      setInferenceSource(source);
+    });
   }, []);
 
   const handleVoicePreview = () => {
@@ -72,12 +80,22 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
               {connectionState === 'connecting' ? (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F4ECDC] border border-[#D8CDB8] text-[#524A3D] text-xs">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Detecting local AI...</span>
+                  <span>Detecting AI...</span>
                 </div>
-              ) : (
+              ) : inferenceSource === 'local' ? (
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#2F4858] border border-[#2F4858] text-white text-xs font-semibold">
                   <Shield className="w-4 h-4" />
                   <span>Runs on your device · Private · Works offline</span>
+                </div>
+              ) : inferenceSource === 'cloud' ? (
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#A9B8BE] border border-[#2F4858] text-[#241F18] text-xs font-semibold">
+                  <Cloud className="w-4 h-4" />
+                  <span>Cloud demo · Install Ollama for local private mode</span>
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#F4ECDC] border border-[#D8CDB8] text-[#524A3D] text-xs font-semibold">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Demo mode · Real Gemma 4 responses</span>
                 </div>
               )}
             </div>

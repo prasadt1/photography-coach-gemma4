@@ -21,6 +21,7 @@ import { DEMO_RESPONSES, DemoResponse, simulateProcessing, getComparisonSamples,
 import { ComparisonResult } from '../services/ollamaService';
 import Header from './Header';
 import Footer from './Footer';
+import ArtisanJourney from './ArtisanJourney';
 
 interface SellModeProps {
   onBack: () => void;
@@ -78,6 +79,7 @@ const SellMode: React.FC<SellModeProps> = ({
   const [demoCompareResult, setDemoCompareResult] = useState<ComparisonResult | null>(null);
   const [inferenceSource, setInferenceSource] = useState<InferenceSource>('demo');
   const [sourceDetected, setSourceDetected] = useState(false);
+  const [showGuidedJourney, setShowGuidedJourney] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -304,7 +306,11 @@ const SellMode: React.FC<SellModeProps> = ({
   };
 
   const handleBack = () => {
-    if (result || showCompare) {
+    if (showGuidedJourney) {
+      setShowGuidedJourney(false);
+      stopSpeaking();
+      clearPausedSpeech();
+    } else if (result || showCompare) {
       setResult(null);
       setShowCompare(false);
       setDemoCompareResult(null);
@@ -367,6 +373,17 @@ const SellMode: React.FC<SellModeProps> = ({
 
       <div className="max-w-4xl mx-auto px-6 py-8 md:py-12">
 
+        {/* Guided Journey Mode */}
+        {showGuidedJourney && (
+          <ArtisanJourney
+            voiceEnabled={voiceEnabled}
+            inferenceSource={inferenceSource}
+            onExit={() => setShowGuidedJourney(false)}
+          />
+        )}
+
+        {/* Demo Samples Mode (existing) */}
+        {!showGuidedJourney && (
         <main role="main">
           {/* Title Section */}
           {!result && !isAnalyzing && !showCompare && (
@@ -379,8 +396,21 @@ const SellMode: React.FC<SellModeProps> = ({
                 Hear what your photo needs
               </h1>
               <p className="text-lg text-[#241F18] leading-relaxed max-w-2xl mb-4">
-                Take a photo of your work and hear exactly what's working and how to improve it — no sighted help needed. <span className="text-[#2F4858] font-semibold">New here? Start with a sample below.</span>
+                Take a photo of your work and hear exactly what's working and how to improve it — no sighted help needed. <span className="text-[#2F4858] font-semibold">New here? Start with a sample below, or try the guided listing journey.</span>
               </p>
+
+              {/* Guided Journey CTA */}
+              {inferenceSource !== 'demo' && (
+                <button
+                  onClick={() => setShowGuidedJourney(true)}
+                  className="inline-flex items-center gap-3 px-6 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full font-bold shadow-lg transition-colors mb-6 focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
+                  aria-label="Start guided listing journey"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Start Guided Listing Journey</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
 
               {/* Compact How It Works */}
               <div className="flex flex-wrap items-center gap-3 mb-4 text-sm">
@@ -725,6 +755,7 @@ const SellMode: React.FC<SellModeProps> = ({
             </div>
           )}
         </main>
+        )}
       </div>
 
       <Footer />

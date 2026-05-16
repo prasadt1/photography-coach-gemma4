@@ -924,10 +924,11 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   if (phase === 'listing') {
     console.log('[ArtisanJourney] Listing phase - attempts:', attempts.length, 'strongerIndex:', strongerAttemptIndex);
 
-    const finalAttempt = attempts[strongerAttemptIndex ?? attempts.length - 1];
-    console.log('[ArtisanJourney] Final attempt:', finalAttempt ? 'exists' : 'missing');
+    try {
+      const finalAttempt = attempts[strongerAttemptIndex ?? attempts.length - 1];
+      console.log('[ArtisanJourney] Final attempt:', finalAttempt ? 'exists' : 'missing');
 
-    if (!finalAttempt || !finalAttempt.analysisJSON) {
+      if (!finalAttempt || !finalAttempt.analysisJSON) {
       console.error('[ArtisanJourney] ERROR: No analysis data for listing', {
         attemptsLength: attempts.length,
         strongerAttemptIndex,
@@ -1144,6 +1145,29 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
         </div>
       </div>
     );
+    } catch (error) {
+      console.error('[ArtisanJourney] CRASH in listing phase:', error);
+      return (
+        <div className="max-w-2xl mx-auto px-6 py-12">
+          <div className="rounded-2xl bg-red-100 border-2 border-red-300 p-8">
+            <h2 className="text-xl font-bold text-red-800 mb-4">JavaScript Error in Listing Phase</h2>
+            <div className="space-y-2 text-sm text-left text-red-700">
+              <p><strong>Error:</strong> {error instanceof Error ? error.message : String(error)}</p>
+              <p><strong>Stack:</strong></p>
+              <pre className="text-xs bg-red-50 p-2 rounded overflow-auto">
+                {error instanceof Error ? error.stack : 'No stack trace'}
+              </pre>
+            </div>
+            <button
+              onClick={() => setPhase('firstCapture')}
+              className="mt-6 px-6 py-3 bg-red-600 text-white rounded-full"
+            >
+              Start Over
+            </button>
+          </div>
+        </div>
+      );
+    }
   }
 
   // Fallback - This should never show, but if it does, we need to know why

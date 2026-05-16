@@ -82,10 +82,10 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyz
       <div
         className={`relative group flex flex-col items-center justify-center w-full min-h-[320px] md:min-h-[400px] rounded-[2rem] md:rounded-[2.5rem] border-2 border-dashed transition-all duration-500 ease-out cursor-pointer overflow-hidden
           ${dragActive
-            ? 'border-brand-400 bg-brand-500/10 scale-[1.02] shadow-2xl shadow-brand-500/20'
-            : 'border-slate-700/50 bg-slate-800/30 hover:bg-slate-800/50 hover:border-brand-500/50 hover:shadow-2xl hover:shadow-brand-500/10'
+            ? 'border-[#C06B45] bg-[#C06B45]/10 scale-[1.02] shadow-2xl'
+            : 'border-[#D8CDB8] bg-[#F4ECDC] hover:bg-[#ECE3D2] hover:border-[#C06B45] hover:shadow-xl'
           }
-          ${isAnalyzing ? 'border-brand-500/20 bg-slate-900/80 cursor-default' : ''}
+          ${isAnalyzing ? 'border-[#C06B45]/20 bg-[#F4ECDC] cursor-default' : ''}
         `}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -112,22 +112,22 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyz
           {isAnalyzing ? (
             <div className="w-full animate-fadeIn flex flex-col items-center" role="status" aria-live="polite" aria-busy="true">
               <div className="relative mb-8">
-                <div className="absolute inset-0 bg-brand-500/20 blur-xl rounded-full animate-pulse" aria-hidden="true"></div>
-                <Loader2 className="w-16 h-16 text-brand-400 animate-spin relative z-10" aria-hidden="true" />
+                <div className="absolute inset-0 bg-[#C06B45]/20 blur-xl rounded-full animate-pulse" aria-hidden="true"></div>
+                <Loader2 className="w-16 h-16 text-[#C06B45] animate-spin relative z-10" aria-hidden="true" />
               </div>
 
-              <h3 className="text-xl md:text-2xl font-bold text-white mb-2">Gemma 4 is thinking...</h3>
+              <h3 className="text-xl md:text-2xl font-bold text-[#241F18] mb-2">Gemma 4 is thinking...</h3>
 
               {/* Live progress bar (streaming) */}
               {analysisProgress && (
                 <div className="w-full mt-3 mb-2">
-                  <div className="flex justify-between text-xs text-slate-400 mb-1">
+                  <div className="flex justify-between text-xs text-[#524A3D] mb-1">
                     <span>{analysisProgress.message}</span>
                     <span>{analysisProgress.pct}%</span>
                   </div>
-                  <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="w-full h-1.5 bg-[#D8CDB8] rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-brand-500 to-emerald-500 rounded-full transition-all duration-300"
+                      className="h-full bg-[#C06B45] rounded-full transition-all duration-300"
                       style={{ width: `${analysisProgress.pct}%` }}
                     />
                   </div>
@@ -135,7 +135,7 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyz
               )}
 
               {/* Thinking steps (fallback when no live progress) */}
-              <div className="w-full mt-4 bg-slate-950/80 rounded-xl border border-slate-800 p-4 font-mono text-sm text-left shadow-inner">
+              <div className="w-full mt-4 bg-white/50 rounded-xl border-2 border-[#D8CDB8] p-4 font-mono text-sm text-left shadow-inner">
                 <div className="space-y-3">
                   {THINKING_STEPS.map((step, index) => {
                     const isActive = index === currentThinkingStep;
@@ -151,21 +151,21 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyz
                       >
                         <div className={`
                           p-1.5 rounded-md transition-colors duration-300
-                          ${isActive ? 'bg-brand-500/20 text-brand-400' : 'bg-slate-800 text-slate-500'}
-                          ${isPast ? 'text-emerald-500' : ''}
+                          ${isActive ? 'bg-[#C06B45]/20 text-[#C06B45]' : 'bg-[#D8CDB8] text-[#524A3D]'}
+                          ${isPast ? 'text-[#2F4858]' : ''}
                         `}>
                           <step.icon className={`w-3.5 h-3.5 ${isActive ? 'animate-pulse' : ''}`} />
                         </div>
                         <span className={`
-                          ${isActive ? 'text-brand-200' : 'text-slate-400'}
-                          ${isPast ? 'text-slate-500 line-through decoration-slate-700' : ''}
+                          ${isActive ? 'text-[#241F18] font-semibold' : 'text-[#524A3D]'}
+                          ${isPast ? 'text-[#524A3D]/50 line-through decoration-[#D8CDB8]' : ''}
                         `}>
                           {step.text}
                         </span>
                         {isActive && (
                           <span className="flex h-2 w-2 relative ml-auto">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C06B45] opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#C06B45]"></span>
                           </span>
                         )}
                       </div>
@@ -178,26 +178,26 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyz
           ) : (
             <>
               <div className="mb-6 md:mb-8 relative group-hover:scale-110 transition-transform duration-500">
-                <div className="absolute inset-0 bg-brand-500/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <div className="w-20 h-20 md:w-24 md:h-24 bg-slate-900/80 rounded-full border border-slate-700 flex items-center justify-center shadow-xl backdrop-blur-sm group-hover:border-brand-500/50 transition-colors duration-300">
-                   <Upload className="w-8 h-8 md:w-10 md:h-10 text-slate-300 group-hover:text-brand-400 transition-colors duration-300" />
+                <div className="absolute inset-0 bg-[#C06B45]/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className="w-20 h-20 md:w-24 md:h-24 bg-white rounded-full border-2 border-[#D8CDB8] flex items-center justify-center shadow-xl group-hover:border-[#C06B45] transition-colors duration-300">
+                   <Upload className="w-8 h-8 md:w-10 md:h-10 text-[#524A3D] group-hover:text-[#C06B45] transition-colors duration-300" />
                 </div>
                 {/* Floating icons */}
-                <Aperture className="absolute -top-2 -right-2 w-6 h-6 md:w-8 md:h-8 text-slate-600 group-hover:text-brand-300/50 transition-colors duration-500 animate-bounce-slow delay-100" />
-                <ImageIcon className="absolute -bottom-2 -left-2 w-6 h-6 md:w-8 md:h-8 text-slate-600 group-hover:text-indigo-300/50 transition-colors duration-500 animate-bounce-slow delay-300" />
+                <Aperture className="absolute -top-2 -right-2 w-6 h-6 md:w-8 md:h-8 text-[#A9B8BE] group-hover:text-[#C06B45]/70 transition-colors duration-500 animate-bounce-slow delay-100" />
+                <ImageIcon className="absolute -bottom-2 -left-2 w-6 h-6 md:w-8 md:h-8 text-[#A9B8BE] group-hover:text-[#2F4858]/70 transition-colors duration-500 animate-bounce-slow delay-300" />
               </div>
 
-              <h3 className="text-2xl md:text-3xl font-bold text-white mb-3 tracking-tight">
+              <h3 className="text-2xl md:text-3xl font-bold text-[#241F18] mb-3 tracking-tight">
                 Upload a photo to get <br/>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-300 to-emerald-300">expert feedback in seconds</span>
+                <span className="text-[#C06B45]">expert feedback in seconds</span>
               </h3>
-              <p className="text-base md:text-lg text-slate-400 max-w-md mb-8 leading-relaxed">
+              <p className="text-base md:text-lg text-[#524A3D] max-w-md mb-8 leading-relaxed">
                 Drag and drop your image here, or click to browse.
                 <br />
-                <span className="text-sm text-slate-500 mt-2 block">Supports JPG, PNG, WEBP (Max 10MB)</span>
+                <span className="text-sm text-[#524A3D]/70 mt-2 block">Supports JPG, PNG, WEBP (Max 10MB)</span>
               </p>
-              
-              <div className="px-6 py-3 md:px-8 md:py-3.5 bg-slate-700/50 rounded-full text-slate-200 text-sm font-semibold border border-slate-600 group-hover:bg-brand-600 group-hover:text-white group-hover:border-brand-500 transition-all duration-300 shadow-lg flex items-center gap-2">
+
+              <div className="px-6 py-3 md:px-8 md:py-3.5 bg-[#C06B45] rounded-full text-white text-sm font-semibold border-2 border-[#C06B45] group-hover:bg-[#A6552F] group-hover:border-[#A6552F] transition-all duration-300 shadow-lg flex items-center gap-2">
                 <ArrowUp className="w-4 h-4" />
                 Start Analysis
               </div>

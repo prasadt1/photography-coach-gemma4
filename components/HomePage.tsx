@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { OperationalMode } from '../types.v2';
 import { speak } from '../services/voiceCoach';
+import Header from './Header';
+import Footer from './Footer';
 
 interface HomePageProps {
   onSelectMode: (mode: OperationalMode) => void;
@@ -41,57 +43,19 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
 
   return (
     <div className="min-h-[100dvh] bg-[#ECE3D2]">
-      {/* Compact header bar */}
-      <header className="border-b border-[#D8CDB8] bg-[#ECE3D2]/95 backdrop-blur sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg overflow-hidden shadow-sm ring-1 ring-[#D8CDB8] bg-[#F4ECDC]">
-              <svg viewBox="0 0 100 100" className="w-full h-full text-[#2F4858] p-1.5" role="img" aria-label="L.E.N.S.">
-                <circle cx="50" cy="50" r="38" fill="none" stroke="currentColor" strokeWidth="6"/>
-                <g stroke="currentColor" strokeWidth="6" strokeLinecap="round">
-                  <line x1="75" y1="50" x2="85" y2="50"/>
-                  <line x1="63" y1="72" x2="68" y2="80"/>
-                  <line x1="37" y1="72" x2="32" y2="80"/>
-                  <line x1="25" y1="50" x2="15" y2="50"/>
-                  <line x1="37" y1="28" x2="32" y2="20"/>
-                  <line x1="63" y1="28" x2="68" y2="20"/>
-                </g>
-                <polygon points="72,50 61,69 39,69 28,50 39,31 61,31" fill="currentColor" opacity="0.5"/>
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-base font-bold font-serif text-[#241F18]">L.E.N.S.</h1>
-              <p className="text-[9px] text-[#C06B45] font-semibold tracking-wider uppercase">
-                Local Edge Native Studio
-              </p>
-            </div>
-          </div>
-
-          {onVoiceToggle && (
-            <button
-              onClick={onVoiceToggle}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
-                voiceEnabled
-                  ? 'bg-[#C06B45] border-[#C06B45] text-white hover:bg-[#A6552F]'
-                  : 'bg-[#F4ECDC] border-[#D8CDB8] text-[#241F18] hover:border-[#2F4858]'
-              }`}
-              aria-pressed={voiceEnabled}
-            >
-              <AudioLines className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Voice {voiceEnabled ? 'ON' : 'OFF'}</span>
-            </button>
-          )}
-        </div>
-      </header>
+      <Header
+        voiceEnabled={voiceEnabled}
+        onVoiceToggle={onVoiceToggle}
+      />
 
       <div className="max-w-7xl mx-auto px-6">
         {/* ========== HERO ========== */}
         <section className="py-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           <div>
-            {/* Badge - keep existing */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#C06B45] text-white text-sm font-bold uppercase tracking-wide mb-4 shadow-lg">
-              <Heart className="w-4 h-4" />
-              For blind & low-vision artisans
+            {/* Badge - accessibility-first */}
+            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#C06B45] text-white text-base font-bold uppercase tracking-wide mb-4 shadow-lg">
+              <Heart className="w-5 h-5" />
+              For low-vision and blind artisans
             </div>
 
             <h2 className="text-3xl md:text-4xl font-bold font-serif text-[#241F18] leading-tight mb-3">
@@ -103,16 +67,16 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
               Voice-guided coaching for blind and low-vision artisans. Hear what's working in your photo, what isn't, and exactly how to fix it — no sighted help needed, nothing leaves your device.
             </p>
 
-            {/* Product truth badge - replace cloud-ready */}
-            <div className="mb-4">
+            {/* Product truth badge */}
+            <div className="mb-5">
               {connectionState === 'connecting' ? (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F4ECDC] border border-[#D8CDB8] text-[#524A3D] text-xs">
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  <span>Detecting...</span>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Detecting local AI...</span>
                 </div>
               ) : (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#A9B8BE] border border-[#2F4858] text-[#241F18] text-xs font-semibold">
-                  <Shield className="w-3 h-3" />
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#2F4858] border border-[#2F4858] text-white text-xs font-semibold">
+                  <Shield className="w-4 h-4" />
                   <span>Runs on your device · Private · Works offline</span>
                 </div>
               )}
@@ -120,7 +84,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
 
             <button
               onClick={() => onSelectMode('sell')}
-              className="group inline-flex items-center gap-2 px-6 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full text-base font-bold shadow-lg transition-colors"
+              className="group inline-flex items-center gap-3 px-8 py-4 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full text-lg font-bold shadow-xl transition-colors"
             >
               <Camera className="w-4 h-4" />
               <span>Enter Artisan Studio</span>
@@ -128,12 +92,12 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
             </button>
           </div>
 
-          {/* Hero image - camera lens framing artisan hands weaving */}
-          <div className="rounded-2xl overflow-hidden shadow-xl border-2 border-[#D8CDB8] bg-[#2F4858]">
+          {/* Hero image - artisan using phone on tripod with voice coaching UI */}
+          <div className="rounded-2xl overflow-hidden shadow-xl border-2 border-[#D8CDB8]">
             <img
-              src="/images-homepage/hero-lens-weaving.png"
-              alt="Artisan hands weaving, seen through a camera lens aperture"
-              className="w-full h-auto object-contain"
+              src="/images-homepage/hero-artisan-coaching.png"
+              alt="Artisan photographing woven textile with smartphone on tripod, voice coaching overlay showing feedback"
+              className="w-full h-auto object-cover"
             />
           </div>
         </section>
@@ -147,32 +111,32 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
             Built for makers — your craft, your voice, your terms.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="rounded-lg p-5 bg-[#F4ECDC] border border-[#D8CDB8]">
-              <div className="w-10 h-10 rounded-lg bg-[#A9B8BE] flex items-center justify-center mb-3">
-                <User className="w-5 h-5 text-[#2F4858]" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="rounded-xl p-6 bg-[#F4ECDC] border-2 border-[#D8CDB8] shadow-md hover:shadow-lg transition-shadow">
+              <div className="w-14 h-14 rounded-xl bg-[#C06B45] flex items-center justify-center mb-4 shadow-sm">
+                <User className="w-7 h-7 text-white" />
               </div>
-              <h4 className="text-lg font-bold font-serif text-[#241F18] mb-1">The artisan</h4>
-              <p className="text-xs text-[#524A3D] mb-1 font-medium">human · made by you</p>
-              <p className="text-sm text-[#241F18]">You make beautiful things. L.E.N.S. helps you show them.</p>
+              <h4 className="text-xl font-bold font-serif text-[#241F18] mb-2">The artisan</h4>
+              <p className="text-sm text-[#2F4858] mb-2 font-semibold uppercase tracking-wide">Human · Made by you</p>
+              <p className="text-base text-[#241F18]">You make beautiful things. L.E.N.S. helps you show them.</p>
             </div>
 
-            <div className="rounded-lg p-5 bg-[#F4ECDC] border border-[#D8CDB8]">
-              <div className="w-10 h-10 rounded-lg bg-[#A9B8BE] flex items-center justify-center mb-3">
-                <Wrench className="w-5 h-5 text-[#2F4858]" />
+            <div className="rounded-xl p-6 bg-[#F4ECDC] border-2 border-[#D8CDB8] shadow-md hover:shadow-lg transition-shadow">
+              <div className="w-14 h-14 rounded-xl bg-[#C06B45] flex items-center justify-center mb-4 shadow-sm">
+                <Wrench className="w-7 h-7 text-white" />
               </div>
-              <h4 className="text-lg font-bold font-serif text-[#241F18] mb-1">The craft</h4>
-              <p className="text-xs text-[#524A3D] mb-1 font-medium">the work itself</p>
-              <p className="text-sm text-[#241F18]">Wood, textiles, clay, metal — marketplace-ready photos.</p>
+              <h4 className="text-xl font-bold font-serif text-[#241F18] mb-2">The craft</h4>
+              <p className="text-sm text-[#2F4858] mb-2 font-semibold uppercase tracking-wide">The work itself</p>
+              <p className="text-base text-[#241F18]">Wood, textiles, clay, metal — marketplace-ready photos.</p>
             </div>
 
-            <div className="rounded-lg p-5 bg-[#F4ECDC] border border-[#D8CDB8]">
-              <div className="w-10 h-10 rounded-lg bg-[#A9B8BE] flex items-center justify-center mb-3">
-                <Smartphone className="w-5 h-5 text-[#2F4858]" />
+            <div className="rounded-xl p-6 bg-[#F4ECDC] border-2 border-[#D8CDB8] shadow-md hover:shadow-lg transition-shadow">
+              <div className="w-14 h-14 rounded-xl bg-[#C06B45] flex items-center justify-center mb-4 shadow-sm">
+                <Smartphone className="w-7 h-7 text-white" />
               </div>
-              <h4 className="text-lg font-bold font-serif text-[#241F18] mb-1">Local & private</h4>
-              <p className="text-xs text-[#524A3D] mb-1 font-medium">tech · on your device</p>
-              <p className="text-sm text-[#241F18]">On your device. Nothing leaves. No tracking.</p>
+              <h4 className="text-xl font-bold font-serif text-[#241F18] mb-2">Local & private</h4>
+              <p className="text-sm text-[#2F4858] mb-2 font-semibold uppercase tracking-wide">Tech · On your device</p>
+              <p className="text-base text-[#241F18]">On your device. Nothing leaves. No tracking.</p>
             </div>
           </div>
         </section>
@@ -338,75 +302,23 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
             </div>
           </div>
 
-          <div className="pt-5 border-t border-[#D8CDB8] max-w-md mx-auto">
-            <p className="text-xs text-[#524A3D] mb-2">
-              <strong className="text-[#241F18]">For sighted photographers:</strong> Detailed critique?
+          <div className="pt-6 border-t-2 border-[#D8CDB8] max-w-lg mx-auto">
+            <p className="text-base text-[#241F18] mb-3 font-medium">
+              <strong className="text-[#2F4858]">For sighted photographers:</strong> Want detailed visual critique?
             </p>
             <button
               onClick={() => onSelectMode('studio')}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#F4ECDC] border border-[#D8CDB8] hover:border-[#2F4858] text-[#241F18] hover:text-[#2F4858] rounded-full text-xs font-semibold transition-colors"
+              className="group inline-flex items-center gap-2 px-5 py-2.5 bg-[#2F4858] hover:bg-[#1D3444] text-white rounded-full text-sm font-bold shadow-md transition-colors"
             >
-              <Target className="w-3.5 h-3.5" />
+              <Target className="w-4 h-4" />
               <span>Visit Studio Mode</span>
-              <ArrowRight className="w-3 h-3" />
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
         </section>
       </div>
 
-      {/* Footer */}
-      <footer className="py-6 bg-[#F4ECDC] border-t border-[#D8CDB8] mt-8">
-        <div className="max-w-7xl mx-auto px-6 text-center space-y-4">
-          <p className="text-[14px] text-[#241F18] leading-relaxed">
-            Built for the{' '}
-            <a
-              href="https://www.kaggle.com/competitions/gemma-4-good-hackathon"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#C06B45] hover:text-[#A6552F] underline font-bold"
-            >
-              Gemma 4 Good Hackathon
-            </a>
-            {' '}· Digital Equity & Inclusivity Track
-          </p>
-
-          {/* Powered by - with logo treatment */}
-          <div className="flex flex-wrap items-center justify-center gap-6 text-[14px] text-[#241F18]">
-            <div className="flex items-center gap-2">
-              <span className="font-medium">Powered by</span>
-              <a
-                href="https://ai.google.dev/gemma"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-bold text-[#C06B45] hover:text-[#A6552F] underline inline-flex items-center gap-1"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                </svg>
-                Gemma 4
-              </a>
-              <span className="text-[#524A3D]">via</span>
-              <a
-                href="https://ollama.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-bold text-[#C06B45] hover:text-[#A6552F] underline inline-flex items-center gap-1"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                  <circle cx="12" cy="12" r="10"/>
-                  <circle cx="12" cy="12" r="4" fill="#ECE3D2"/>
-                </svg>
-                Ollama
-              </a>
-            </div>
-            <span className="text-[#524A3D]">·</span>
-            <div className="flex items-center gap-2">
-              <span className="font-medium">Voice via</span>
-              <span className="font-semibold text-[#241F18]">Web Speech API</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

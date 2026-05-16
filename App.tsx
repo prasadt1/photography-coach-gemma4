@@ -1,11 +1,13 @@
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  Cpu, Target, Coins, Github, Shield,
-  Image as ImageIcon, Zap, Scale, Volume2, VolumeX,
+  Cpu, Target,
+  Image as ImageIcon, Zap, Scale,
   ImagePlus, ArrowRight, X,
 } from 'lucide-react';
 import HomePage from './components/HomePage';
+import Header from './components/Header';
+import Footer from './components/Footer';
 import DemoBanner from './components/DemoBanner';
 import ModeSelector from './components/ModeSelector';
 import PhotoUploader from './components/PhotoUploader';
@@ -28,33 +30,8 @@ import { speak } from './services/voiceCoach';
 import { AppState } from './types';
 import { PhotoAnalysisV2, OperationalMode, SessionHistoryEntry } from './types.v2';
 
-const GITHUB_REPO = 'https://github.com/prasadt1/photography-coach-gemma4';
-
-const isElectron =
-  typeof window !== 'undefined' && Boolean((window as unknown as { electronAPI?: { isElectron?: boolean } }).electronAPI?.isElectron);
-
-// Floating badge — session token count
-const SessionSavingsBadge: React.FC<{
-  sessionHistory: SessionHistoryEntry[];
-  onClick: () => void;
-}> = ({ sessionHistory, onClick }) => {
-  if (sessionHistory.length === 0) return null;
-  const totalTokens = sessionHistory.reduce((acc, curr) => acc + curr.totalTokens, 0);
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex items-center gap-2 px-2 md:px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 cursor-pointer group relative"
-      title="Click to view inference stats"
-    >
-      <Coins className="w-4 h-4" />
-      <span className="text-xs font-bold tracking-wide font-mono">
-        <span className="hidden md:inline">Session: </span>
-        {sessionHistory.length} photo{sessionHistory.length === 1 ? '' : 's'} · {totalTokens.toLocaleString()} tokens
-      </span>
-    </button>
-  );
-};
+// Note: isElectron and SessionSavingsBadge removed as part of header consolidation
+// Can be re-added to Header component if needed for vault mode or session stats
 
 type UploadTab = 'single' | 'compare';
 
@@ -447,113 +424,19 @@ function App() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-slate-900 text-slate-200 font-sans selection:bg-brand-500/30 relative overflow-x-hidden">
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-[420px] h-[420px] bg-brand-500/6 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-[380px] h-[380px] bg-violet-500/6 rounded-full blur-[100px]" />
-      </div>
-
+    <div className="min-h-[100dvh] bg-[#ECE3D2] text-[#241F18] font-sans relative overflow-x-hidden">
       {/* Demo banner for deployed environments - explains Ollama requirement to judges */}
       <DemoBanner />
 
-      <header className="border-b border-slate-800 bg-slate-900/90 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 h-16 md:h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer group" onClick={handleGoHome}>
-            <div className="relative w-10 h-10 md:w-12 md:h-12 rounded-xl overflow-hidden shadow-lg shadow-brand-500/20 group-hover:shadow-brand-500/40 transition-shadow duration-200" style={{ transitionTimingFunction: 'var(--spring)' }}>
-              <img src="/lens-logo.svg" alt="L.E.N.S." className="w-full h-full object-contain p-1" />
-            </div>
-            <div className="flex flex-col justify-center gap-0.5">
-              <div className="flex items-center gap-3 flex-wrap">
-                <div className="flex flex-col" title="Local Edge Native Studio">
-                  <span className="text-xl md:text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-slate-300 tracking-[0.2em] leading-tight">
-                    L.E.N.S.
-                  </span>
-                  <span className="text-[9px] md:text-[10px] text-slate-500 font-medium tracking-wider uppercase -mt-0.5">
-                    Local Edge Native Studio
-                  </span>
-                </div>
-                <div className={`hidden sm:flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-semibold transition-colors ${
-                  ollamaReady === false
-                    ? 'border-red-500/40 bg-red-500/10 text-red-400'
-                    : mode === 'vault'
-                      ? 'border-amber-500/40 bg-amber-500/10 text-amber-300'
-                      : 'border-slate-600 bg-slate-800/60 text-slate-300'
-                }`}>
-                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                    ollamaReady === null ? 'bg-slate-400' :
-                    ollamaReady ? (mode === 'vault' ? 'bg-amber-400' : 'bg-emerald-400') :
-                    'bg-red-400 animate-pulse'
-                  }`} />
-                  <span>
-                    {ollamaReady === false ? 'AI offline — start Ollama' :
-                     mode === 'vault' ? '🔒 Vault · Client-safe · Audit trail' :
-                     'Local · Private'}
-                  </span>
-                </div>
-              </div>
-              <span className="text-[11px] md:text-xs text-slate-400 font-semibold tracking-wide border-l-2 border-brand-500/50 pl-2">
-                AI Photography Coach
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {/* Global Voice Toggle - Accessibility */}
-            <button
-              type="button"
-              onClick={() => setVoiceEnabled(!voiceEnabled)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border ${
-                voiceEnabled
-                  ? 'bg-purple-600/20 border-purple-500/50 text-purple-300'
-                  : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-slate-200'
-              }`}
-              title={voiceEnabled ? 'Voice feedback ON - Click to disable' : 'Enable voice feedback for accessibility'}
-            >
-              {voiceEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-              <span className="hidden md:inline">{voiceEnabled ? 'Voice ON' : 'Voice'}</span>
-            </button>
-
-            {/* Mode selector - Studio + Artisan (+ Vault on desktop) */}
-            <div className="hidden sm:flex items-center rounded-lg border border-slate-700 overflow-hidden text-xs font-semibold">
-              <button
-                type="button"
-                onClick={() => handleModeChange('studio')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 ${mode === 'studio' ? 'bg-brand-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-300'}`}
-                title="Full photo critique with scores and suggestions"
-              >
-                <Zap className="w-3 h-3" /> Studio
-              </button>
-              <button
-                type="button"
-                onClick={() => handleModeChange('sell')}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 text-slate-400 hover:text-slate-300"
-                title="Voice-guided product photography for artisans"
-              >
-                Artisan
-              </button>
-              {isElectron && (
-                <button
-                  type="button"
-                  onClick={() => handleModeChange('vault')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 ${mode === 'vault' ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-slate-300'}`}
-                  title="Client-safe mode with audit trail (desktop only)"
-                >
-                  <Shield className="w-3 h-3" /> Vault
-                </button>
-              )}
-            </div>
-            <SessionSavingsBadge
-              sessionHistory={sessionHistory}
-              onClick={() => {
-                if (appState === AppState.RESULTS) {
-                  setActiveResultTab('stats');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-              }}
-            />
-          </div>
-        </div>
-      </header>
+      <Header
+        showBack
+        onBack={handleGoHome}
+        backLabel="Home"
+        voiceEnabled={voiceEnabled}
+        onVoiceToggle={() => setVoiceEnabled(!voiceEnabled)}
+        inferenceSource={ollamaReady ? 'local' : 'demo'}
+        showInferenceStatus={ollamaReady !== null}
+      />
 
       {/* Studio/Vault Mode — standard photo analysis flow */}
       {(mode === 'studio' || mode === 'vault') && (
@@ -561,14 +444,14 @@ function App() {
         {appState === AppState.IDLE && (
           <div className="flex flex-col items-center animate-fadeIn pt-4 pb-16">
             <div className="w-full max-w-4xl flex flex-col items-center gap-6 mb-8">
-              <div className="flex flex-wrap items-center justify-center gap-2 p-1.5 rounded-full bg-slate-800/80 border border-slate-700/80">
+              <div className="flex flex-wrap items-center justify-center gap-2 p-1.5 rounded-full bg-[#F4ECDC] border-2 border-[#D8CDB8]">
                 <button
                   type="button"
                   onClick={() => setUploadTab('single')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${
                     uploadTab === 'single'
-                      ? 'bg-brand-600 text-white shadow-lg shadow-brand-900/50'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                      ? 'bg-[#C06B45] text-white shadow-lg'
+                      : 'text-[#524A3D] hover:text-[#C06B45] hover:bg-[#F4ECDC]'
                   }`}
                 >
                   <ImageIcon className="w-4 h-4" />
@@ -579,8 +462,8 @@ function App() {
                   onClick={() => setUploadTab('compare')}
                   className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${
                     uploadTab === 'compare'
-                      ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/50'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                      ? 'bg-[#2F4858] text-white shadow-lg'
+                      : 'text-[#524A3D] hover:text-[#2F4858] hover:bg-[#F4ECDC]'
                   }`}
                 >
                   <Scale className="w-4 h-4" />
@@ -593,26 +476,26 @@ function App() {
                   <button
                     type="button"
                     onClick={() => setDeepMode(!deepMode)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border-2 ${
                       deepMode
-                        ? 'bg-brand-600/20 border-brand-500/50 text-brand-300'
-                        : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-slate-200'
+                        ? 'bg-[#C06B45] border-[#C06B45] text-white'
+                        : 'bg-[#F4ECDC] border-[#D8CDB8] text-[#524A3D] hover:border-[#C06B45]'
                     }`}
                   >
                     <span>🧠</span>
                     Deep Critique
-                    {deepMode && <span className="w-1.5 h-1.5 rounded-full bg-brand-400" />}
+                    {deepMode && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
                   </button>
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800/60 border border-slate-700 text-xs">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F4ECDC] border-2 border-[#D8CDB8] text-xs">
                     <span>🌐</span>
                     <select
                       value={language}
                       onChange={(e) => setLanguage(e.target.value as SupportedLanguage)}
-                      className="bg-transparent text-slate-300 text-xs font-medium focus:outline-none cursor-pointer"
+                      className="bg-transparent text-[#241F18] text-xs font-medium focus:outline-none cursor-pointer"
                       aria-label="AI response language"
                     >
                       {(Object.entries(LANGUAGE_LABELS) as [SupportedLanguage, string][]).map(([code, label]) => (
-                        <option key={code} value={code} className="bg-slate-900">{label}</option>
+                        <option key={code} value={code} className="bg-[#F4ECDC]">{label}</option>
                       ))}
                     </select>
                   </div>
@@ -627,7 +510,7 @@ function App() {
                 {/* Dropzone with sample preview */}
                 {samplePreview ? (
                   <div className="w-full max-w-4xl mx-auto">
-                    <div className="relative rounded-[2rem] border-2 border-brand-500/50 bg-slate-800/50 p-6 shadow-2xl shadow-brand-500/10">
+                    <div className="relative rounded-[2rem] border-2 border-[#C06B45] bg-[#F4ECDC] p-6 shadow-xl">
                       {/* Preview image */}
                       <div className="relative w-full h-64 md:h-80 rounded-2xl overflow-hidden mb-4">
                         <img
@@ -654,7 +537,7 @@ function App() {
                       <button
                         type="button"
                         onClick={handleAnalyzeSample}
-                        className="w-full flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-brand-600 to-emerald-600 hover:from-brand-500 hover:to-emerald-500 text-white rounded-xl text-lg font-bold shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50"
+                        className="w-full flex items-center justify-center gap-3 px-8 py-4 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-xl text-lg font-bold shadow-lg"
                       >
                         <Zap className="w-5 h-5" />
                         Start Analysis
@@ -668,28 +551,28 @@ function App() {
 
                 <div className="w-full max-w-4xl mt-10">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent flex-grow" />
-                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-widest whitespace-nowrap">Or try a sample</span>
-                    <div className="h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent flex-grow" />
+                    <div className="h-px bg-gradient-to-r from-transparent via-[#D8CDB8] to-transparent flex-grow" />
+                    <span className="text-xs font-semibold text-[#524A3D] uppercase tracking-widest whitespace-nowrap">Or try a sample</span>
+                    <div className="h-px bg-gradient-to-r from-transparent via-[#D8CDB8] to-transparent flex-grow" />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <button
                       type="button"
                       onClick={() => handleSampleSelect('https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&q=80', 'Misty Valley', 'Landscape')}
-                      className={`group relative h-32 md:h-40 rounded-2xl overflow-hidden border shadow-xl card-transition ${
+                      className={`group relative h-32 md:h-40 rounded-2xl overflow-hidden border-2 shadow-xl card-transition ${
                         samplePreview?.label === 'Misty Valley'
-                          ? 'border-brand-500 ring-2 ring-brand-500/30'
-                          : 'border-slate-700/50 hover:border-brand-500/50'
+                          ? 'border-[#C06B45] ring-2 ring-[#C06B45]/30'
+                          : 'border-[#D8CDB8] hover:border-[#C06B45]'
                       }`}
                     >
                       <img src="https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&q=80" alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-300" style={{ transitionTimingFunction: 'var(--ease-out-expo)' }} />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent" />
                       <div className="absolute bottom-3 left-3 text-left">
-                        <span className="text-[10px] font-bold text-brand-400 uppercase tracking-wider block">Landscape</span>
+                        <span className="text-[10px] font-bold text-[#C06B45] uppercase tracking-wider block">Landscape</span>
                         <span className="text-sm font-semibold text-white">Misty Valley</span>
                       </div>
                       {samplePreview?.label === 'Misty Valley' && (
-                        <div className="absolute top-2 right-2 w-6 h-6 bg-brand-500 rounded-full flex items-center justify-center">
+                        <div className="absolute top-2 right-2 w-6 h-6 bg-[#C06B45] rounded-full flex items-center justify-center">
                           <span className="text-white text-xs">✓</span>
                         </div>
                       )}
@@ -697,20 +580,20 @@ function App() {
                     <button
                       type="button"
                       onClick={() => handleSampleSelect('https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&q=80', 'Urban Light', 'Portrait')}
-                      className={`group relative h-32 md:h-40 rounded-2xl overflow-hidden border shadow-xl card-transition ${
+                      className={`group relative h-32 md:h-40 rounded-2xl overflow-hidden border-2 shadow-xl card-transition ${
                         samplePreview?.label === 'Urban Light'
-                          ? 'border-purple-500 ring-2 ring-purple-500/30'
-                          : 'border-slate-700/50 hover:border-purple-500/50'
+                          ? 'border-[#2F4858] ring-2 ring-[#2F4858]/30'
+                          : 'border-[#D8CDB8] hover:border-[#2F4858]'
                       }`}
                     >
                       <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&q=80" alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-300" style={{ transitionTimingFunction: 'var(--ease-out-expo)' }} />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent" />
                       <div className="absolute bottom-3 left-3 text-left">
-                        <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider block">Portrait</span>
+                        <span className="text-[10px] font-bold text-[#A9B8BE] uppercase tracking-wider block">Portrait</span>
                         <span className="text-sm font-semibold text-white">Urban Light</span>
                       </div>
                       {samplePreview?.label === 'Urban Light' && (
-                        <div className="absolute top-2 right-2 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
+                        <div className="absolute top-2 right-2 w-6 h-6 bg-[#2F4858] rounded-full flex items-center justify-center">
                           <span className="text-white text-xs">✓</span>
                         </div>
                       )}
@@ -718,20 +601,20 @@ function App() {
                     <button
                       type="button"
                       onClick={() => handleSampleSelect('https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&q=80', 'Night City', 'Urban')}
-                      className={`group relative h-32 md:h-40 rounded-2xl overflow-hidden border shadow-xl card-transition ${
+                      className={`group relative h-32 md:h-40 rounded-2xl overflow-hidden border-2 shadow-xl card-transition ${
                         samplePreview?.label === 'Night City'
-                          ? 'border-blue-500 ring-2 ring-blue-500/30'
-                          : 'border-slate-700/50 hover:border-blue-500/50'
+                          ? 'border-[#C06B45] ring-2 ring-[#C06B45]/30'
+                          : 'border-[#D8CDB8] hover:border-[#C06B45]'
                       }`}
                     >
                       <img src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&q=80" alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-300" style={{ transitionTimingFunction: 'var(--ease-out-expo)' }} />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent" />
                       <div className="absolute bottom-3 left-3 text-left">
-                        <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider block">Urban</span>
+                        <span className="text-[10px] font-bold text-[#C06B45] uppercase tracking-wider block">Urban</span>
                         <span className="text-sm font-semibold text-white">Night City</span>
                       </div>
                       {samplePreview?.label === 'Night City' && (
-                        <div className="absolute top-2 right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                        <div className="absolute top-2 right-2 w-6 h-6 bg-[#C06B45] rounded-full flex items-center justify-center">
                           <span className="text-white text-xs">✓</span>
                         </div>
                       )}
@@ -745,8 +628,8 @@ function App() {
               <div className="w-full max-w-5xl mx-auto">
                 {/* Header */}
                 <div className="text-center mb-6">
-                  <h2 className="text-2xl font-bold text-white mb-2">Compare Two Photos</h2>
-                  <p className="text-sm text-slate-400">Upload two photos to compare. Gemma 4 will pick the winner.</p>
+                  <h2 className="text-2xl font-bold text-[#241F18] mb-2">Compare Two Photos</h2>
+                  <p className="text-sm text-[#524A3D]">Upload two photos to compare. Gemma 4 will pick the winner.</p>
                 </div>
 
                 {/* 50/50 Split Layout */}
@@ -754,30 +637,30 @@ function App() {
                   {/* Photo A */}
                   <div className={`relative rounded-2xl border-2 border-dashed min-h-[280px] card-transition ${
                     compareSlotA
-                      ? 'border-brand-500/50 bg-slate-800/50'
-                      : 'border-slate-700/50 bg-slate-800/30 hover:border-brand-500/30 hover:bg-slate-800/40'
+                      ? 'border-[#C06B45] bg-[#F4ECDC]'
+                      : 'border-[#D8CDB8] bg-[#F4ECDC] hover:border-[#C06B45]'
                   }`}>
                     {compareSlotA ? (
                       <div className="relative w-full h-full min-h-[280px]">
                         <img src={compareSlotA} alt="Photo A" className="w-full h-full object-cover rounded-xl" />
-                        <div className="absolute top-3 left-3 px-3 py-1.5 bg-brand-600 text-white rounded-full text-xs font-bold">
+                        <div className="absolute top-3 left-3 px-3 py-1.5 bg-[#C06B45] text-white rounded-full text-xs font-bold">
                           Photo A
                         </div>
                         <button
                           type="button"
                           onClick={() => setCompareSlotA(null)}
-                          className="absolute top-3 right-3 p-2 bg-slate-900/80 hover:bg-red-600 rounded-full text-slate-300 hover:text-white"
+                          className="absolute top-3 right-3 p-2 bg-[#241F18]/80 hover:bg-red-600 rounded-full text-white"
                         >
                           <X className="w-4 h-4" />
                         </button>
                       </div>
                     ) : (
                       <label className="flex flex-col items-center justify-center h-full min-h-[280px] cursor-pointer p-6">
-                        <div className="w-16 h-16 rounded-2xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center mb-4">
-                          <ImagePlus className="w-8 h-8 text-brand-400" />
+                        <div className="w-16 h-16 rounded-2xl bg-[#C06B45]/10 border-2 border-[#C06B45]/30 flex items-center justify-center mb-4">
+                          <ImagePlus className="w-8 h-8 text-[#C06B45]" />
                         </div>
-                        <span className="text-lg font-bold text-white mb-1">Photo A</span>
-                        <span className="text-sm text-slate-400">Click or drop image</span>
+                        <span className="text-lg font-bold text-[#241F18] mb-1">Photo A</span>
+                        <span className="text-sm text-[#524A3D]">Click or drop image</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -798,30 +681,30 @@ function App() {
                   {/* Photo B */}
                   <div className={`relative rounded-2xl border-2 border-dashed min-h-[280px] card-transition ${
                     compareSlotB
-                      ? 'border-emerald-500/50 bg-slate-800/50'
-                      : 'border-slate-700/50 bg-slate-800/30 hover:border-emerald-500/30 hover:bg-slate-800/40'
+                      ? 'border-[#2F4858] bg-[#F4ECDC]'
+                      : 'border-[#D8CDB8] bg-[#F4ECDC] hover:border-[#2F4858]'
                   }`}>
                     {compareSlotB ? (
                       <div className="relative w-full h-full min-h-[280px]">
                         <img src={compareSlotB} alt="Photo B" className="w-full h-full object-cover rounded-xl" />
-                        <div className="absolute top-3 left-3 px-3 py-1.5 bg-emerald-600 text-white rounded-full text-xs font-bold">
+                        <div className="absolute top-3 left-3 px-3 py-1.5 bg-[#2F4858] text-white rounded-full text-xs font-bold">
                           Photo B
                         </div>
                         <button
                           type="button"
                           onClick={() => setCompareSlotB(null)}
-                          className="absolute top-3 right-3 p-2 bg-slate-900/80 hover:bg-red-600 rounded-full text-slate-300 hover:text-white"
+                          className="absolute top-3 right-3 p-2 bg-[#241F18]/80 hover:bg-red-600 rounded-full text-white"
                         >
                           <X className="w-4 h-4" />
                         </button>
                       </div>
                     ) : (
                       <label className="flex flex-col items-center justify-center h-full min-h-[280px] cursor-pointer p-6">
-                        <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mb-4">
-                          <ImagePlus className="w-8 h-8 text-emerald-400" />
+                        <div className="w-16 h-16 rounded-2xl bg-[#2F4858]/10 border-2 border-[#2F4858]/30 flex items-center justify-center mb-4">
+                          <ImagePlus className="w-8 h-8 text-[#2F4858]" />
                         </div>
-                        <span className="text-lg font-bold text-white mb-1">Photo B</span>
-                        <span className="text-sm text-slate-400">Click or drop image</span>
+                        <span className="text-lg font-bold text-[#241F18] mb-1">Photo B</span>
+                        <span className="text-sm text-[#524A3D]">Click or drop image</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -906,32 +789,32 @@ function App() {
 
         {appState === AppState.ERROR && (
           <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-6">
-            <div className="bg-slate-800/50 border border-slate-700 p-8 rounded-2xl text-center max-w-md shadow-2xl backdrop-blur-sm">
+            <div className="bg-[#F4ECDC] border-2 border-[#D8CDB8] p-8 rounded-2xl text-center max-w-md shadow-xl">
               {error === 'OLLAMA_ERROR' ? (
                 <>
                   <div className="w-16 h-16 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Cpu className="w-8 h-8 text-amber-500" />
+                    <Cpu className="w-8 h-8 text-amber-600" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Ollama Not Running</h3>
-                  <p className="text-slate-400 mb-4 text-sm leading-relaxed">
+                  <h3 className="text-xl font-bold text-[#241F18] mb-2">Ollama Not Running</h3>
+                  <p className="text-[#524A3D] mb-4 text-sm leading-relaxed">
                     Gemma 4 runs locally via Ollama. Start Ollama and pull the model.
                   </p>
-                  <div className="bg-slate-900/80 rounded-lg p-3 text-left font-mono text-xs text-emerald-400 mb-6 space-y-1">
+                  <div className="bg-[#241F18] rounded-lg p-3 text-left font-mono text-xs text-emerald-400 mb-6 space-y-1">
                     <div>$ ollama serve</div>
                     <div>$ ollama pull gemma4:latest</div>
                   </div>
-                  <button type="button" onClick={handleReset} className="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium">
+                  <button type="button" onClick={handleReset} className="px-8 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-lg font-medium">
                     Try Again
                   </button>
                 </>
               ) : (
                 <>
                   <div className="w-16 h-16 bg-rose-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Target className="w-8 h-8 text-rose-500" />
+                    <Target className="w-8 h-8 text-rose-600" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Analysis Failed</h3>
-                  <p className="text-slate-400 mb-6 text-sm">{error}</p>
-                  <button type="button" onClick={handleReset} className="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium">
+                  <h3 className="text-xl font-bold text-[#241F18] mb-2">Analysis Failed</h3>
+                  <p className="text-[#524A3D] mb-6 text-sm">{error}</p>
+                  <button type="button" onClick={handleReset} className="px-8 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-lg font-medium">
                     Try Again
                   </button>
                 </>
@@ -945,23 +828,7 @@ function App() {
       {showAuditLog && <AuditLogPanel onClose={() => setShowAuditLog(false)} />}
       {showShortcuts && <KeyboardShortcutsOverlay onClose={() => setShowShortcuts(false)} />}
 
-      <footer className="border-t border-slate-800 mt-12 py-8 pb-24 flex flex-col items-center gap-4 text-slate-600 text-sm relative z-10">
-        <p>&copy; {new Date().getFullYear()} LENS. Local AI · Zero cloud · Zero cost.</p>
-        <p className="text-xs text-slate-700 text-center max-w-xl">
-          Powered by{' '}
-          <a href="https://ai.google.dev/gemma" target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-500">Gemma 4</a>
-          {' '}·{' '}
-          <a href="https://ollama.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-500">Ollama</a>
-          {' '}· Built for the{' '}
-          <a href="https://www.kaggle.com/competitions/gemma-4-good-hackathon" target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-500">Gemma 4 Good hackathon</a>
-        </p>
-        <div className="flex flex-wrap gap-4 justify-center">
-          <a href={GITHUB_REPO} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-slate-400">
-            <Github className="w-4 h-4" />
-            <span>View Source on GitHub</span>
-          </a>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

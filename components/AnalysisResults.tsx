@@ -120,8 +120,8 @@ const ListenButton: React.FC<{ text: string; className?: string }> = ({ text, cl
       onClick={toggle}
       className={`absolute top-0 right-0 p-2 rounded-lg transition-colors ${
         speaking
-          ? 'bg-brand-500/20 text-brand-300 hover:bg-brand-500/30'
-          : 'text-slate-500 hover:text-brand-400 hover:bg-slate-800'
+          ? 'bg-[#C06B45]/20 text-[#C06B45] hover:bg-[#C06B45]/30'
+          : 'text-[#524A3D] hover:text-[#C06B45] hover:bg-[#F4ECDC]'
       } ${className}`}
       title={speaking ? 'Stop reading' : 'Read aloud'}
       aria-label={speaking ? 'Stop reading aloud' : 'Read aloud'}
@@ -168,7 +168,7 @@ const MicButton: React.FC<{
       className={`p-2 rounded-xl transition-colors ${
         listening
           ? 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 animate-pulse'
-          : 'text-slate-500 hover:text-brand-400 hover:bg-slate-800'
+          : 'text-[#524A3D] hover:text-[#C06B45] hover:bg-[#F4ECDC]'
       } disabled:opacity-30 disabled:cursor-not-allowed`}
       title={listening ? 'Stop listening' : 'Voice ask'}
       aria-label={listening ? 'Stop voice input' : 'Ask using voice'}
@@ -212,27 +212,27 @@ const MentorChatWidget: React.FC<MentorChatWidgetProps> = ({ analysis, chatState
   };
 
   return (
-    <div className="mb-8 rounded-2xl bg-slate-900 border border-slate-700 shadow-xl overflow-hidden animate-fadeIn">
+    <div className="mb-8 rounded-2xl bg-[#F4ECDC] border border-[#D8CDB8] shadow-xl overflow-hidden animate-fadeIn">
       {/* Header */}
-      <div className="p-4 bg-slate-800 border-b border-slate-700 flex items-center justify-between">
+      <div className="p-4 bg-[#ECE3D2] border-b border-[#D8CDB8] flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-lg text-white">
+          <div className="p-2 bg-gradient-to-br from-[#C06B45] to-[#2F4858] rounded-lg text-[#241F18]">
             <MessageCircle className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-white font-bold text-sm md:text-base">Ask Your Photography Mentor</h3>
-            <p className="text-xs text-slate-400">
+            <h3 className="text-[#241F18] font-bold text-sm md:text-base">Ask Your Photography Mentor</h3>
+            <p className="text-xs text-[#524A3D]">
               {isVault ? '🔒 Vault Mode · Gemma 4 local' : 'Powered by Gemma 4 · Local inference'}
             </p>
           </div>
         </div>
-        <div className="text-xs font-mono text-slate-500">{userTurns}/8 turns</div>
+        <div className="text-xs font-mono text-[#524A3D]">{userTurns}/8 turns</div>
       </div>
 
       {/* Chat Area */}
-      <div ref={scrollRef} className="h-[380px] overflow-y-auto p-4 space-y-5 bg-slate-900/50">
+      <div ref={scrollRef} className="h-[380px] overflow-y-auto p-4 space-y-5 bg-[#ECE3D2]/50">
         {chatState.messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-2">
+          <div className="flex flex-col items-center justify-center h-full text-[#524A3D] space-y-2">
             <Bot className="w-10 h-10 opacity-20" />
             <p className="text-sm text-center">Ask about composition, settings, lighting, or creative ideas!</p>
           </div>
@@ -244,14 +244,14 @@ const MentorChatWidget: React.FC<MentorChatWidgetProps> = ({ analysis, chatState
             <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} animate-fadeIn gap-1.5`}>
               <div className={`flex items-start gap-3 max-w-[88%] ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  msg.role === 'user' ? 'bg-blue-500/20 text-blue-400' : 'bg-emerald-500/20 text-emerald-400'
+                  msg.role === 'user' ? 'bg-[#2F4858]/20 text-[#2F4858]' : 'bg-[#C06B45]/20 text-[#C06B45]'
                 }`}>
                   {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                 </div>
                 <div className={`relative p-3 rounded-2xl text-sm leading-relaxed ${
                   msg.role === 'user'
-                    ? 'bg-blue-500/20 text-blue-100 rounded-tr-none border border-blue-500/20'
-                    : 'bg-emerald-500/5 text-slate-200 rounded-tl-none border border-emerald-500/10 pr-10'
+                    ? 'bg-[#2F4858]/20 text-[#241F18] rounded-tr-none border border-[#2F4858]/20'
+                    : 'bg-white text-[#241F18] rounded-tl-none border border-[#D8CDB8] pr-10'
                 }`}>
                   {parsed.text}
                   {msg.role === 'assistant' && isTTSAvailable() && (
@@ -270,7 +270,7 @@ const MentorChatWidget: React.FC<MentorChatWidgetProps> = ({ analysis, chatState
                         <button
                           key={ai}
                           onClick={() => onShowPin(pinNum - 1)}
-                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-medium hover:bg-amber-500/20 transition-colors"
+                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-[#241F18] text-[11px] font-medium hover:bg-amber-500/20 transition-colors"
                           title={`Highlight pin ${pinNum} on the photo`}
                         >
                           📍 Show pin {pinNum}
@@ -283,7 +283,7 @@ const MentorChatWidget: React.FC<MentorChatWidgetProps> = ({ analysis, chatState
                         <button
                           key={ai}
                           onClick={() => onJumpToTab(tab)}
-                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-300 text-[11px] font-medium hover:bg-brand-500/20 transition-colors"
+                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#C06B45]/10 border border-[#C06B45]/30 text-[#241F18] text-[11px] font-medium hover:bg-[#C06B45]/20 transition-colors"
                           title={`Open the ${tab} tab`}
                         >
                           → Open {tab === 'details' ? 'Detailed Analysis' : tab}
@@ -300,10 +300,10 @@ const MentorChatWidget: React.FC<MentorChatWidgetProps> = ({ analysis, chatState
 
         {chatState.isLoading && (
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-[#C06B45]/20 text-[#C06B45] flex items-center justify-center">
               <Loader2 className="w-4 h-4 animate-spin" />
             </div>
-            <div className="p-3 rounded-2xl rounded-tl-none bg-emerald-500/5 border border-emerald-500/10 text-sm text-slate-400 italic">
+            <div className="p-3 rounded-2xl rounded-tl-none bg-white border border-[#D8CDB8] text-sm text-[#524A3D] italic">
               Gemma 4 is thinking locally…
             </div>
           </div>
@@ -317,9 +317,9 @@ const MentorChatWidget: React.FC<MentorChatWidgetProps> = ({ analysis, chatState
       </div>
 
       {/* Input */}
-      <div className="p-4 bg-slate-800/50 border-t border-slate-700">
+      <div className="p-4 bg-[#ECE3D2]/50 border-t border-[#D8CDB8]">
         {(isSTTAvailable() || isTTSAvailable()) && (
-          <div className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20 text-[11px] text-emerald-300/80">
+          <div className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20 text-[11px] text-[#524A3D]">
             <span>🎤 🔊</span>
             <span>Voice ready — tap the mic to ask, tap the speaker on any reply to listen.</span>
           </div>
@@ -332,7 +332,7 @@ const MentorChatWidget: React.FC<MentorChatWidgetProps> = ({ analysis, chatState
             onKeyDown={e => e.key === 'Enter' && handleSend()}
             placeholder={isLimitReached ? 'Session limit reached.' : 'Ask about composition, lighting, technique… (or tap 🎤 to speak)'}
             disabled={chatState.isLoading || isLimitReached}
-            className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 bg-white border border-[#D8CDB8] rounded-xl px-4 py-2 text-sm text-[#241F18] placeholder-[#524A3D] focus:outline-none focus:border-[#C06B45] focus:ring-1 focus:ring-[#C06B45] disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <MicButton
             disabled={chatState.isLoading || isLimitReached}
@@ -341,7 +341,7 @@ const MentorChatWidget: React.FC<MentorChatWidgetProps> = ({ analysis, chatState
           <button
             onClick={handleSend}
             disabled={!input.trim() || chatState.isLoading || isLimitReached}
-            className="p-2 bg-brand-600 text-white rounded-xl hover:bg-brand-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="p-2 bg-[#C06B45] text-[#241F18] rounded-xl hover:bg-[#A6552F] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <Send className="w-5 h-5" />
           </button>
@@ -491,7 +491,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
       {/* Multilingual hint — only when language != English */}
       {language !== 'en' && (
-        <div className="mb-4 px-4 py-2.5 rounded-xl bg-slate-800/40 border border-slate-700/40 flex items-center gap-3 text-xs text-slate-400">
+        <div className="mb-4 px-4 py-2.5 rounded-xl bg-[#F4ECDC] border border-[#D8CDB8] flex items-center gap-3 text-xs text-[#524A3D]">
           <span className="text-base shrink-0">🌐</span>
           <span>
             Gemma 4's critique and mentor responses below are in your selected language. The app interface labels (tab names, buttons) stay in English.
@@ -501,11 +501,11 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
       {/* Deep Critique badge — when this analysis used extended chain-of-thought */}
       {analysis.wasDeepMode && (
-        <div className="mb-4 px-4 py-2.5 rounded-xl bg-brand-500/10 border border-brand-500/30 flex items-center gap-3 text-xs text-brand-200">
+        <div className="mb-4 px-4 py-2.5 rounded-xl bg-[#C06B45]/10 border border-[#C06B45]/30 flex items-center gap-3 text-xs text-[#241F18]">
           <span className="text-base shrink-0">🧠</span>
           <span>
-            <span className="font-semibold text-brand-300">Deep Critique mode used</span>
-            <span className="text-slate-400 ml-2">— extended chain-of-thought reasoning. Expect more rationale steps, longer critique fields, and {analysis.boundingBoxes?.length || 2}+ bounding boxes covering more issue types.</span>
+            <span className="font-semibold text-[#C06B45]">Deep Critique mode used</span>
+            <span className="text-[#524A3D] ml-2">— extended chain-of-thought reasoning. Expect more rationale steps, longer critique fields, and {analysis.boundingBoxes?.length || 2}+ bounding boxes covering more issue types.</span>
           </span>
         </div>
       )}
@@ -526,7 +526,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           <div className="lg:sticky lg:top-24 space-y-6">
 
             {/* Image */}
-            <div className="relative group rounded-2xl bg-black shadow-2xl border border-slate-700 flex justify-center items-center min-h-[250px] md:min-h-[300px]">
+            <div className="relative group rounded-2xl bg-black shadow-2xl border border-[#D8CDB8] flex justify-center items-center min-h-[250px] md:min-h-[300px]">
               <div className="relative inline-block w-auto h-auto max-w-full m-2 md:m-4">
                 <img
                   src={imageSrc}
@@ -555,8 +555,8 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                     onClick={() => setShowOverlays(s => !s)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-md border transition-all duration-200 shadow-lg hover:scale-105 ${
                       showOverlays
-                        ? 'bg-brand-500 text-white border-brand-400'
-                        : 'bg-slate-900/80 text-slate-300 border-slate-600'
+                        ? 'bg-[#C06B45] text-[#241F18] border-[#A6552F]'
+                        : 'bg-[#241F18]/80 text-[#ECE3D2] border-[#524A3D]'
                     }`}
                   >
                     <ScanEye className="w-3.5 h-3.5" />
@@ -574,19 +574,19 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                 { icon: Clock,    label: 'Shutter',  value: analysis.settingsEstimate.shutterSpeed },
                 { icon: Gauge,    label: 'ISO',      value: analysis.settingsEstimate.iso },
               ].map(({ icon: Icon, label, value }) => (
-                <div key={label} className="bg-slate-800 p-2 md:p-3 rounded-xl border border-slate-700 flex flex-col items-center text-center">
-                  <Icon className="w-4 h-4 text-brand-400 mb-1" />
-                  <span className="text-[9px] md:text-[10px] text-slate-400 uppercase tracking-wider">{label}</span>
-                  <span className="text-xs font-semibold text-slate-200">{value}</span>
+                <div key={label} className="bg-[#F4ECDC] p-2 md:p-3 rounded-xl border border-[#D8CDB8] flex flex-col items-center text-center">
+                  <Icon className="w-4 h-4 text-[#C06B45] mb-1" />
+                  <span className="text-[9px] md:text-[10px] text-[#524A3D] uppercase tracking-wider">{label}</span>
+                  <span className="text-xs font-semibold text-[#241F18]">{value}</span>
                 </div>
               ))}
             </div>
 
             {/* Provenance chip */}
-            <div className="flex items-center gap-2 text-[10px] text-slate-500 font-mono">
+            <div className="flex items-center gap-2 text-[10px] text-[#524A3D] font-mono">
               <Cpu className="w-3 h-3" />
               <span>{analysis.model_id}</span>
-              {analysis.quantization && <span className="text-slate-600">· {analysis.quantization}</span>}
+              {analysis.quantization && <span className="text-[#524A3D]/60">· {analysis.quantization}</span>}
               {isVault && <span className="ml-auto text-amber-500">vault · local only</span>}
             </div>
           </div>
@@ -597,15 +597,15 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
           {/* Tab nav + Quick/Full toggle + Keyboard shortcuts */}
           <div className="flex items-center gap-2 mb-6 sticky top-24 z-40">
-            <div className="flex p-1 bg-slate-800/50 rounded-xl border border-slate-700 backdrop-blur-md overflow-x-auto no-scrollbar flex-1">
+            <div className="flex p-1 bg-[#F4ECDC] rounded-xl border border-[#D8CDB8] backdrop-blur-md overflow-x-auto no-scrollbar flex-1">
               {visibleTabs.map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => onTabChange(tab.id)}
                   className={`flex items-center gap-2 px-3 md:px-4 py-2.5 rounded-lg text-xs md:text-sm font-medium transition-all whitespace-nowrap flex-1 justify-center min-w-[80px] ${
                     activeTab === tab.id
-                      ? 'bg-brand-600 text-white shadow-lg shadow-brand-500/20'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
+                      ? 'bg-[#C06B45] text-[#241F18] shadow-lg shadow-[#C06B45]/20'
+                      : 'text-[#524A3D] hover:text-[#241F18] hover:bg-[#ECE3D2]'
                   }`}
                 >
                   <tab.icon className="w-4 h-4" />
@@ -619,8 +619,8 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                 onClick={onQuickGlanceToggle}
                 className={`hidden sm:flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all border ${
                   quickGlanceMode
-                    ? 'bg-amber-500/10 text-amber-300 border-amber-500/40'
-                    : 'bg-slate-800/50 text-slate-400 border-slate-700 hover:text-slate-300'
+                    ? 'bg-amber-500/10 text-[#241F18] border-amber-500/40'
+                    : 'bg-[#F4ECDC] text-[#524A3D] border-[#D8CDB8] hover:text-[#241F18]'
                 }`}
                 title={quickGlanceMode ? 'Show full analysis' : 'Show quick summary'}
               >
@@ -632,7 +632,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
             {onShowShortcuts && (
               <button
                 onClick={onShowShortcuts}
-                className="flex items-center gap-1 text-xs font-medium text-emerald-400/60 hover:text-emerald-300 transition-colors"
+                className="flex items-center gap-1 text-xs font-medium text-[#C06B45]/60 hover:text-[#C06B45] transition-colors"
                 title="Keyboard shortcuts"
               >
                 <span className="text-sm">?</span>
@@ -648,12 +648,12 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               <>
                 {/* Quick Glance Mode - compact summary */}
                 {quickGlanceMode ? (
-                  <div className="bg-slate-800/40 rounded-3xl p-6 border border-slate-700 backdrop-blur-sm">
+                  <div className="bg-[#F4ECDC] rounded-3xl p-6 border border-[#D8CDB8] backdrop-blur-sm">
                     {/* Compact verdict */}
                     <div className="flex items-start gap-3 mb-6">
-                      <Star className="text-brand-500 fill-brand-500 w-6 h-6 mt-0.5 shrink-0" />
+                      <Star className="text-[#C06B45] fill-[#C06B45] w-6 h-6 mt-0.5 shrink-0" />
                       <div className="flex-1">
-                        <p className="text-lg font-semibold text-white mb-2">
+                        <p className="text-lg font-semibold text-[#241F18] mb-2">
                           {analysis.critique.overall.split(/[.!?]/)[0]}.
                         </p>
                         <div className="flex items-center gap-2">
@@ -665,7 +665,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                     </div>
 
                     {/* Compact horizontal score row */}
-                    <div className="flex items-center justify-between gap-2 mb-6 p-3 bg-slate-900/50 rounded-xl">
+                    <div className="flex items-center justify-between gap-2 mb-6 p-3 bg-[#ECE3D2] rounded-xl">
                       {[
                         { label: 'Comp', score: analysis.scores.composition },
                         { label: 'Light', score: analysis.scores.lighting },
@@ -677,7 +677,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                         return (
                           <div key={item.label} className="text-center flex-1">
                             <div className={`text-lg font-bold ${color}`}>{item.score.toFixed(1)}</div>
-                            <div className="text-[10px] text-slate-500 uppercase">{item.label}</div>
+                            <div className="text-[10px] text-[#524A3D] uppercase">{item.label}</div>
                           </div>
                         );
                       })}
@@ -685,10 +685,10 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
                     {/* Top 2 improvements only */}
                     <div className="space-y-2 mb-6">
-                      <h4 className="text-xs font-semibold text-slate-400 uppercase">Focus on</h4>
+                      <h4 className="text-xs font-semibold text-[#524A3D] uppercase">Focus on</h4>
                       {analysis.improvements.slice(0, 2).map((imp, i) => (
-                        <div key={i} className="flex items-start gap-2 text-sm text-slate-300">
-                          <span className="text-brand-400 mt-0.5">→</span>
+                        <div key={i} className="flex items-start gap-2 text-sm text-[#241F18]">
+                          <span className="text-[#C06B45] mt-0.5">→</span>
                           <span>{imp}</span>
                         </div>
                       ))}
@@ -698,7 +698,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                     {onQuickGlanceToggle && (
                       <button
                         onClick={onQuickGlanceToggle}
-                        className="w-full py-2.5 text-sm font-medium text-slate-400 hover:text-white border border-slate-700 hover:border-slate-600 rounded-xl transition-colors"
+                        className="w-full py-2.5 text-sm font-medium text-[#524A3D] hover:text-[#241F18] border border-[#D8CDB8] hover:border-[#C06B45] rounded-xl transition-colors"
                       >
                         Show full analysis →
                       </button>
@@ -708,18 +708,18 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                   /* Full analysis mode */
                   <>
                     {/* Coach verdict */}
-                    <div className="bg-slate-800/40 rounded-3xl p-4 md:p-8 border border-slate-700 backdrop-blur-sm">
+                    <div className="bg-[#F4ECDC] rounded-3xl p-4 md:p-8 border border-[#D8CDB8] backdrop-blur-sm">
                       {/* Verdict headline - first sentence as the hook */}
                       <div className="flex flex-col gap-3 mb-6">
-                        <h2 className="text-xl md:text-2xl font-bold text-white flex items-start gap-3 leading-tight">
-                          <Star className="text-brand-500 fill-brand-500 w-6 h-6 mt-1 shrink-0" />
+                        <h2 className="text-xl md:text-2xl font-bold text-[#241F18] flex items-start gap-3 leading-tight">
+                          <Star className="text-[#C06B45] fill-[#C06B45] w-6 h-6 mt-1 shrink-0" />
                           <span>{analysis.critique.overall.split(/[.!?]/)[0]}.</span>
                         </h2>
                         <div className="flex items-center gap-3 ml-9">
                           <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${badgeClass}`}>
                             {skillLevel}
                           </span>
-                          <span className="text-xs text-slate-500">{averageScore.toFixed(1)}/10 overall</span>
+                          <span className="text-xs text-[#524A3D]">{averageScore.toFixed(1)}/10 overall</span>
                           {isTTSAvailable() && (
                             <ListenButton text={analysis.critique.overall} />
                           )}
@@ -729,7 +729,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                       {/* Full critique - only if there's more than one sentence */}
                       {analysis.critique.overall.split(/[.!?]/).filter(s => s.trim()).length > 1 && (
                         <div className="relative mb-6">
-                          <p className="text-sm md:text-base text-slate-400 leading-relaxed border-l-2 border-slate-600 pl-4 ml-9">
+                          <p className="text-sm md:text-base text-[#524A3D] leading-relaxed border-l-2 border-[#D8CDB8] pl-4 ml-9">
                             {analysis.critique.overall.split(/[.!?]/).slice(1).join('. ').trim()}
                           </p>
                         </div>
@@ -737,13 +737,13 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
                       {/* Next skills */}
                       {analysis.learningPath.length > 0 && (
-                        <div className="bg-slate-900/50 rounded-xl p-5 border-l-4 border-emerald-500/50 border-y border-r border-slate-700/50">
-                          <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wide mb-3 flex items-center gap-2">
+                        <div className="bg-[#ECE3D2] rounded-xl p-5 border-l-4 border-emerald-500/50 border-y border-r border-[#D8CDB8]">
+                          <h3 className="text-sm font-bold text-[#241F18] uppercase tracking-wide mb-3 flex items-center gap-2">
                             <span className="text-lg">📈</span> Next Skills to Master
                           </h3>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                             {analysis.learningPath.map((skill, i) => (
-                              <div key={i} className="flex items-center gap-2 text-sm text-slate-300 bg-slate-800/60 px-3 py-2.5 rounded-lg border border-slate-700/50">
+                              <div key={i} className="flex items-center gap-2 text-sm text-[#241F18] bg-white px-3 py-2.5 rounded-lg border border-[#D8CDB8]">
                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
                                 {skill}
                               </div>
@@ -756,8 +756,8 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                 {/* Score visualization + detail panel */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Horizontal bar chart - click to view details */}
-                  <div className="bg-slate-800/40 rounded-3xl p-4 md:p-6 border border-slate-700">
-                    <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-4">Score Breakdown</h3>
+                  <div className="bg-[#F4ECDC] rounded-3xl p-4 md:p-6 border border-[#D8CDB8]">
+                    <h3 className="text-sm font-semibold text-[#524A3D] uppercase tracking-wide mb-4">Score Breakdown</h3>
                     <div className="space-y-4">
                       {chartData.map((item, idx) => {
                         const isSelected = selectedDimension === item.subject;
@@ -769,19 +769,19 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                             key={item.subject}
                             onClick={() => setSelectedDimension(item.subject)}
                             className={`w-full flex items-center gap-3 p-2 -m-2 rounded-lg transition-all cursor-pointer group ${
-                              isSelected ? 'bg-slate-800/80' : 'hover:bg-slate-800/60'
+                              isSelected ? 'bg-[#ECE3D2]' : 'hover:bg-[#ECE3D2]/60'
                             } ${isLowest ? 'ring-1 ring-amber-500/30' : ''}`}
                             title={`Click to view ${item.subject} analysis`}
                           >
                             <div className="flex items-center gap-2 w-24">
-                              <span className={`text-xs truncate ${isSelected ? 'text-slate-200 font-semibold' : 'text-slate-400 group-hover:text-slate-300'}`}>{item.subject}</span>
+                              <span className={`text-xs truncate ${isSelected ? 'text-[#241F18] font-semibold' : 'text-[#524A3D] group-hover:text-[#241F18]'}`}>{item.subject}</span>
                               {isLowest && (
                                 <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-semibold whitespace-nowrap">
                                   Focus
                                 </span>
                               )}
                             </div>
-                            <div className={`flex-1 h-3 rounded-full overflow-hidden ${isSelected ? 'bg-slate-700' : 'bg-slate-700/50 group-hover:bg-slate-700'}`}>
+                            <div className={`flex-1 h-3 rounded-full overflow-hidden ${isSelected ? 'bg-[#D8CDB8]' : 'bg-[#D8CDB8]/50 group-hover:bg-[#D8CDB8]'}`}>
                               <div
                                 className={`h-full rounded-full transition-all duration-500 ${barColor} ${isSelected ? 'opacity-100' : 'opacity-90'}`}
                                 style={{ width: `${item.A * 10}%` }}
@@ -797,11 +797,11 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                   </div>
 
                   {/* Detail panel - shows selected dimension analysis */}
-                  <div className="bg-slate-800/40 rounded-3xl p-4 md:p-6 border border-slate-700">
+                  <div className="bg-[#F4ECDC] rounded-3xl p-4 md:p-6 border border-[#D8CDB8]">
                     {!selectedDimension ? (
                       <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
-                        <MousePointerClick className="w-12 h-12 text-slate-600 mb-3" />
-                        <p className="text-sm text-slate-400">Click a score to view detailed analysis</p>
+                        <MousePointerClick className="w-12 h-12 text-[#D8CDB8] mb-3" />
+                        <p className="text-sm text-[#524A3D]">Click a score to view detailed analysis</p>
                       </div>
                     ) : (
                       <>
@@ -812,8 +812,8 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                               label: 'Composition Analysis',
                               critique: analysis.critique.composition,
                               icon: <Layout className="w-5 h-5" />,
-                              color: 'text-brand-400',
-                              bg: 'bg-brand-500/10',
+                              color: 'text-[#C06B45]',
+                              bg: 'bg-[#C06B45]/10',
                               sectionId: 'composition-section'
                             },
                             'Lighting': {
@@ -856,9 +856,9 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                             <>
                               <div className={`flex items-center gap-3 font-medium mb-4 ${detail.color}`}>
                                 <div className={`p-2 rounded-lg ${detail.bg}`}>{detail.icon}</div>
-                                <h4 className="text-lg text-white">{detail.label}</h4>
+                                <h4 className="text-lg text-[#241F18]">{detail.label}</h4>
                               </div>
-                              <p className="text-slate-300 leading-relaxed text-sm mb-6">{detail.critique}</p>
+                              <p className="text-[#241F18] leading-relaxed text-sm mb-6">{detail.critique}</p>
                               <button
                                 onClick={() => {
                                   onTabChange('details');
@@ -867,7 +867,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                                     document.getElementById(detail.sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                                   }, 100);
                                 }}
-                                className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg transition-colors text-sm font-medium"
+                                className="flex items-center gap-2 px-4 py-2 bg-[#C06B45] hover:bg-[#A6552F] text-[#241F18] rounded-lg transition-colors text-sm font-medium"
                               >
                                 View in How to Fix →
                               </button>
@@ -899,7 +899,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                       <div className="px-4 md:px-6 pb-4 md:pb-6">
                         <ul className="space-y-3">
                           {analysis.strengths.map((s, i) => (
-                            <li key={i} className="flex items-start gap-3 text-slate-300 text-sm">
+                            <li key={i} className="flex items-start gap-3 text-[#241F18] text-sm">
                               <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />{s}
                             </li>
                           ))}
@@ -908,26 +908,26 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                     )}
                   </div>
 
-                  <div className="bg-indigo-900/10 border border-indigo-900/50 rounded-2xl overflow-hidden">
+                  <div className="bg-[#2F4858]/10 border border-[#2F4858]/50 rounded-2xl overflow-hidden">
                     <button
                       onClick={() => setExpandedSections(prev => ({ ...prev, improvements: !prev.improvements }))}
-                      className="w-full p-4 md:p-6 text-left flex items-center justify-between hover:bg-indigo-900/5 transition-colors"
+                      className="w-full p-4 md:p-6 text-left flex items-center justify-between hover:bg-[#2F4858]/5 transition-colors"
                     >
-                      <h3 className="text-indigo-400 font-bold flex items-center gap-2">
-                        <span className="bg-indigo-500/10 p-1 rounded">🚀</span> How to Improve
+                      <h3 className="text-[#2F4858] font-bold flex items-center gap-2">
+                        <span className="bg-[#2F4858]/10 p-1 rounded">🚀</span> How to Improve
                       </h3>
                       {expandedSections.improvements ? (
-                        <ChevronUp className="w-5 h-5 text-indigo-400" />
+                        <ChevronUp className="w-5 h-5 text-[#2F4858]" />
                       ) : (
-                        <ChevronDown className="w-5 h-5 text-indigo-400" />
+                        <ChevronDown className="w-5 h-5 text-[#2F4858]" />
                       )}
                     </button>
                     {expandedSections.improvements && (
                       <div className="px-4 md:px-6 pb-4 md:pb-6">
                         <ul className="space-y-3">
                           {analysis.improvements.map((imp, i) => (
-                            <li key={i} className="flex items-start gap-3 text-slate-300 text-sm">
-                              <ChevronRight className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />{imp}
+                            <li key={i} className="flex items-start gap-3 text-[#241F18] text-sm">
+                              <ChevronRight className="w-4 h-4 text-[#C06B45] flex-shrink-0 mt-0.5" />{imp}
                             </li>
                           ))}
                         </ul>
@@ -950,37 +950,37 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
               <>
                 {/* Rationale / reasoning */}
                 <div className="mb-8 rounded-2xl p-[1px] bg-gradient-to-r from-emerald-500 to-purple-600 shadow-xl animate-fadeIn">
-                  <div className="bg-slate-950/50 rounded-2xl overflow-hidden backdrop-blur-md">
+                  <div className="bg-[#F4ECDC] rounded-2xl overflow-hidden backdrop-blur-md">
                     <button
                       onClick={() => setIsRationaleExpanded(!isRationaleExpanded)}
-                      className="w-full flex items-center justify-between p-4 md:p-5 hover:bg-slate-900/50 transition-colors"
+                      className="w-full flex items-center justify-between p-4 md:p-5 hover:bg-[#ECE3D2] transition-colors"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-gradient-to-br from-emerald-500 to-purple-600 rounded-lg text-white shadow-lg">
+                        <div className="p-2 bg-gradient-to-br from-emerald-500 to-purple-600 rounded-lg text-[#241F18] shadow-lg">
                           <Brain className="w-5 h-5" />
                         </div>
                         <div className="text-left">
-                          <h3 className="text-white font-bold text-sm md:text-base">Gemma 4 Reasoning Process</h3>
+                          <h3 className="text-[#241F18] font-bold text-sm md:text-base">Gemma 4 Reasoning Process</h3>
                           <div className="flex items-center gap-2">
-                            <p className="text-xs text-slate-400 font-mono mt-0.5">Local structured rationale</p>
+                            <p className="text-xs text-[#524A3D] font-mono mt-0.5">Local structured rationale</p>
                             <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 rounded font-mono">
                               gemma-4-e4b
                             </span>
                           </div>
                         </div>
                       </div>
-                      {isRationaleExpanded ? <ChevronUp className="text-slate-400" /> : <ChevronDown className="text-slate-400" />}
+                      {isRationaleExpanded ? <ChevronUp className="text-[#524A3D]" /> : <ChevronDown className="text-[#524A3D]" />}
                     </button>
 
                     {isRationaleExpanded && (
-                      <div className="p-5 md:p-6 border-t border-slate-800 bg-slate-950/80 font-mono text-sm space-y-6 animate-fadeIn">
+                      <div className="p-5 md:p-6 border-t border-[#D8CDB8] bg-[#ECE3D2] font-mono text-sm space-y-6 animate-fadeIn">
                         <div>
                           <h4 className="flex items-center gap-2 text-emerald-400 font-bold mb-3 uppercase text-xs tracking-wider">
                             <Eye className="w-4 h-4" /> Key Observations
                           </h4>
                           <ul className="space-y-2 pl-2 border-l border-emerald-500/20">
                             {analysis.rationale.observations.map((obs, i) => (
-                              <li key={i} className="text-slate-300 pl-4 relative before:content-['>'] before:absolute before:left-0 before:text-emerald-500/50">{obs}</li>
+                              <li key={i} className="text-[#241F18] pl-4 relative before:content-['>'] before:absolute before:left-0 before:text-emerald-500/50">{obs}</li>
                             ))}
                           </ul>
                         </div>
@@ -991,7 +991,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                           </h4>
                           <ol className="space-y-3">
                             {analysis.rationale.reasoningSteps.map((step, i) => (
-                              <li key={i} className="flex gap-3 text-slate-300">
+                              <li key={i} className="flex gap-3 text-[#241F18]">
                                 <span className="text-purple-500/70 font-bold">{i + 1}.</span>
                                 <span>{step}</span>
                               </li>
@@ -1005,11 +1005,11 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                           </h4>
                           <div className="space-y-2">
                             {analysis.rationale.priorityFixes.map((fix, i) => (
-                              <div key={i} className="flex items-center gap-3 p-2 rounded bg-slate-900 border border-slate-800">
+                              <div key={i} className="flex items-center gap-3 p-2 rounded bg-white border border-[#D8CDB8]">
                                 <div className="w-4 h-4 rounded border border-amber-500/50 flex items-center justify-center">
                                   <div className="w-2 h-2 bg-amber-500 rounded-sm" />
                                 </div>
-                                <span className="text-slate-300">{fix}</span>
+                                <span className="text-[#241F18]">{fix}</span>
                               </div>
                             ))}
                           </div>
@@ -1021,21 +1021,21 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
                 {/* Technical deep dive */}
                 <div className="space-y-6">
-                  <h3 className="text-xl font-bold text-slate-100 pb-2">Technical Deep Dive</h3>
+                  <h3 className="text-xl font-bold text-[#241F18] pb-2">Technical Deep Dive</h3>
 
                   {[
-                    { id: 'composition-section', label: 'Composition Analysis',  text: analysis.critique.composition, color: 'text-brand-400', bg: 'bg-brand-500/10', icon: <Layout className="w-5 h-5" /> },
+                    { id: 'composition-section', label: 'Composition Analysis',  text: analysis.critique.composition, color: 'text-[#C06B45]', bg: 'bg-[#C06B45]/10', icon: <Layout className="w-5 h-5" /> },
                     { id: 'lighting-section', label: 'Lighting Analysis',     text: analysis.critique.lighting,    color: 'text-amber-400', bg: 'bg-amber-500/10', icon: <Zap className="w-5 h-5" /> },
                     { id: 'subject-section', label: 'Subject Impact',        text: `Your subject scores ${analysis.scores.subjectImpact.toFixed(1)}/10. ${analysis.scores.subjectImpact >= 7 ? 'Strong emotional connection and storytelling.' : analysis.scores.subjectImpact >= 5 ? 'Moderate impact - could be enhanced with better framing or moment selection.' : 'The subject needs more prominence or emotional resonance. Consider the story you want to tell.'} Review the improvements and strengths sections for specific guidance on enhancing your subject's impact.`, color: 'text-purple-400', bg: 'bg-purple-500/10', icon: <Eye className="w-5 h-5" /> },
-                    { id: 'technique-section', label: 'Technical Execution',   text: analysis.critique.technique,   color: 'text-blue-400',  bg: 'bg-blue-500/10',  icon: <Camera className="w-5 h-5" /> },
+                    { id: 'technique-section', label: 'Technical Execution',   text: analysis.critique.technique,   color: 'text-[#2F4858]',  bg: 'bg-[#2F4858]/10',  icon: <Camera className="w-5 h-5" /> },
                     { id: 'creativity-section', label: 'Creativity & Vision',   text: `Your creative vision scores ${analysis.scores.creativity.toFixed(1)}/10. ${analysis.scores.creativity >= 7 ? 'Strong artistic perspective and originality.' : analysis.scores.creativity >= 5 ? 'Good foundation - push boundaries with more unique perspectives or processing.' : 'Explore more creative approaches - unique angles, processing styles, or conceptual elements.'} Check the learning path section for skills to develop your creative voice.`, color: 'text-pink-400', bg: 'bg-pink-500/10', icon: <Sparkles className="w-5 h-5" /> },
                   ].map(({ id, label, text, color, bg, icon }) => (
-                    <div key={label} id={id} className="bg-slate-800/40 border border-slate-700 rounded-2xl p-4 md:p-6 scroll-mt-24">
+                    <div key={label} id={id} className="bg-[#F4ECDC] border border-[#D8CDB8] rounded-2xl p-4 md:p-6 scroll-mt-24">
                       <div className={`flex items-center gap-3 font-medium mb-3 ${color}`}>
                         <div className={`p-2 rounded-lg ${bg}`}>{icon}</div>
-                        <h4 className="text-lg text-white">{label}</h4>
+                        <h4 className="text-lg text-[#241F18]">{label}</h4>
                       </div>
-                      <p className="text-slate-300 leading-relaxed text-sm md:text-base">{text}</p>
+                      <p className="text-[#241F18] leading-relaxed text-sm md:text-base">{text}</p>
                     </div>
                   ))}
 
@@ -1043,17 +1043,17 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                   {hasBoundingBoxes && (
                     <div className="pt-6">
                       <div className="flex items-center mb-4">
-                        <h3 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-                          <Map className="w-5 h-5 text-slate-400" />
+                        <h3 className="text-xl font-bold text-[#241F18] flex items-center gap-2">
+                          <Map className="w-5 h-5 text-[#524A3D]" />
                           Spatial Issues
-                          <span className="text-sm font-normal text-slate-500 ml-1">
+                          <span className="text-sm font-normal text-[#524A3D] ml-1">
                             ({analysis.boundingBoxes!.length})
                           </span>
                         </h3>
                       </div>
 
-                      <div className="flex items-start gap-2 text-xs text-slate-500 bg-slate-800/40 p-3 rounded-lg border border-slate-700/50 mb-4">
-                        <MousePointerClick className="w-3.5 h-3.5 text-brand-400 mt-0.5 flex-shrink-0" />
+                      <div className="flex items-start gap-2 text-xs text-[#524A3D] bg-[#F4ECDC] p-3 rounded-lg border border-[#D8CDB8] mb-4">
+                        <MousePointerClick className="w-3.5 h-3.5 text-[#C06B45] mt-0.5 flex-shrink-0" />
                         <span>Hover a card to highlight its pin on the image. Click a pin on the photo to jump to its card here.</span>
                       </div>
 
@@ -1071,10 +1071,10 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                               ? 'bg-amber-400/10'
                               : 'bg-sky-400/10';
                           const pinColor = box.severity === 'critical'
-                            ? 'bg-rose-500 text-white'
+                            ? 'bg-rose-500 text-[#241F18]'
                             : box.severity === 'moderate'
-                              ? 'bg-amber-400 text-slate-900'
-                              : 'bg-sky-400 text-white';
+                              ? 'bg-amber-400 text-[#241F18]'
+                              : 'bg-sky-400 text-[#241F18]';
                           const tagColor = box.severity === 'critical'
                             ? 'text-rose-400 bg-rose-500/15'
                             : box.severity === 'moderate'
@@ -1088,7 +1088,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                               onMouseEnter={() => setActiveBoxIndex(i)}
                               onMouseLeave={() => setActiveBoxIndex(null)}
                               className={`flex gap-3 p-3 rounded-xl border cursor-default transition-all duration-200 ${borderColor} ${
-                                isActive ? `${activeBg} ring-1 ring-inset ${borderColor}` : 'bg-slate-800/30 hover:bg-slate-800/60'
+                                isActive ? `${activeBg} ring-1 ring-inset ${borderColor}` : 'bg-[#F4ECDC] hover:bg-[#ECE3D2]'
                               }`}
                             >
                               {/* Number badge */}
@@ -1101,11 +1101,11 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                                   <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${tagColor}`}>
                                     {box.type}
                                   </span>
-                                  <span className="text-[10px] text-slate-500 uppercase tracking-wider">{box.severity}</span>
+                                  <span className="text-[10px] text-[#524A3D] uppercase tracking-wider">{box.severity}</span>
                                 </div>
-                                <p className="text-sm font-medium text-slate-200 leading-snug mb-1">{box.description}</p>
-                                <p className="text-xs text-slate-400 flex items-start gap-1">
-                                  <span className="text-brand-400 font-bold flex-shrink-0">→</span>
+                                <p className="text-sm font-medium text-[#241F18] leading-snug mb-1">{box.description}</p>
+                                <p className="text-xs text-[#524A3D] flex items-start gap-1">
+                                  <span className="text-[#C06B45] font-bold flex-shrink-0">→</span>
                                   {box.suggestion}
                                 </p>
                               </div>
@@ -1157,7 +1157,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                   <Info className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
                   <div>
                     <h4 className="text-blue-400 font-bold text-sm">Local Inference Mode</h4>
-                    <p className="text-slate-300 text-xs mt-1">
+                    <p className="text-[#241F18] text-xs mt-1">
                       All inference runs on-device via Ollama. Zero cloud cost, zero egress.
                       Stats below reflect real hardware performance on your machine.
                     </p>
@@ -1166,8 +1166,8 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
                 {/* Current analysis token stats */}
                 {analysis.tokenUsage && (
-                  <div className="bg-slate-900/50 rounded-2xl border border-slate-700 p-4 md:p-6">
-                    <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <div className="bg-[#ECE3D2]/50 rounded-2xl border border-[#D8CDB8] p-4 md:p-6">
+                    <h3 className="text-lg font-bold text-[#241F18] mb-4 flex items-center gap-2">
                       <Activity className="w-5 h-5 text-emerald-400" />
                       This Analysis
                     </h3>
@@ -1175,9 +1175,9 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                       {[
                         { label: 'Prompt Tokens',     value: analysis.tokenUsage.promptTokens ?? '—', color: 'text-blue-400' },
                         { label: 'Completion Tokens', value: analysis.tokenUsage.completionTokens ?? '—', color: 'text-emerald-400' },
-                        { label: 'Total Tokens',      value: analysis.tokenUsage.totalTokens ?? '—', color: 'text-white' },
+                        { label: 'Total Tokens',      value: analysis.tokenUsage.totalTokens ?? '—', color: 'text-[#241F18]' },
                       ].map(({ label, value, color }) => (
-                        <div key={label} className="bg-slate-800/50 rounded-xl p-3 text-center border border-slate-700">
+                        <div key={label} className="bg-[#F4ECDC]/50 rounded-xl p-3 text-center border border-[#D8CDB8]">
                           <div className={`text-xl font-bold font-mono ${color}`}>{value?.toLocaleString()}</div>
                           <div className="text-[10px] text-slate-500 uppercase tracking-wider mt-1">{label}</div>
                         </div>
@@ -1191,8 +1191,8 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
 
                 {/* Session history chart */}
                 {sessionHistory.length > 1 && (
-                  <div className="bg-slate-900/50 rounded-2xl border border-slate-700 p-4 md:p-6">
-                    <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <div className="bg-[#ECE3D2]/50 rounded-2xl border border-[#D8CDB8] p-4 md:p-6">
+                    <h3 className="text-lg font-bold text-[#241F18] mb-4 flex items-center gap-2">
                       <Coins className="w-5 h-5 text-emerald-400" />
                       Session Token History
                     </h3>
@@ -1232,14 +1232,14 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                 <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3">
                   <button
                     onClick={handleExportXMP}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-white rounded-lg transition-all font-medium min-h-[44px] shadow-lg shadow-brand-500/20"
+                    className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-700 hover:to-brand-800 text-[#241F18] rounded-lg transition-all font-medium min-h-[44px] shadow-lg shadow-brand-500/20"
                   >
                     <Download className="w-4 h-4" />
                     Export XMP for Lightroom
                   </button>
                   <button
                     onClick={handleDownloadJSON}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors font-medium min-h-[44px]"
+                    className="flex items-center gap-2 px-6 py-2.5 bg-[#D8CDB8] hover:bg-slate-600 text-[#241F18] rounded-lg transition-colors font-medium min-h-[44px]"
                   >
                     <Download className="w-4 h-4" />
                     Export Analysis JSON
@@ -1248,7 +1248,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                     <button
                       onClick={handleSanitizeExif}
                       disabled={exifSanitizing}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-amber-700/80 hover:bg-amber-700 text-white rounded-lg transition-colors font-medium min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center gap-2 px-6 py-2.5 bg-amber-700/80 hover:bg-amber-700 text-[#241F18] rounded-lg transition-colors font-medium min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Strip GPS coordinates and other EXIF metadata before sharing — for journalists, NGO field workers, anyone protecting subjects"
                     >
                       {exifSanitizing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
@@ -1264,7 +1264,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
       </div>
 
       {/* Sticky bottom action bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-[60] bg-slate-900/95 backdrop-blur-md border-t border-slate-800 py-3 px-4 md:px-6 pointer-events-none">
+      <div className="fixed bottom-0 left-0 right-0 z-[60] bg-[#ECE3D2]/95 backdrop-blur-md border-t border-[#D8CDB8] py-3 px-4 md:px-6 pointer-events-none">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 pointer-events-auto">
           {/* Left: Session photo strip */}
           <div className="hidden md:flex flex-1 max-w-md">
@@ -1289,7 +1289,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
           <div className="flex items-center gap-2 md:gap-3 flex-1 md:flex-initial justify-center">
             <button
               onClick={handleExportXMP}
-              className="flex items-center gap-1.5 px-3 md:px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-xs md:text-sm font-medium transition-colors"
+              className="flex items-center gap-1.5 px-3 md:px-4 py-2 bg-[#C06B45] hover:bg-[#C06B45] text-[#241F18] rounded-lg text-xs md:text-sm font-medium transition-colors"
             >
               <Download className="w-4 h-4" />
               <span className="hidden sm:inline">Export XMP</span>
@@ -1297,7 +1297,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
             {onSendToSell && mode === 'studio' && (
               <button
                 onClick={() => onSendToSell(imageSrc)}
-                className="flex items-center gap-1.5 px-3 md:px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white rounded-lg text-xs md:text-sm font-semibold transition-all shadow-lg shadow-orange-500/20"
+                className="flex items-center gap-1.5 px-3 md:px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-[#241F18] rounded-lg text-xs md:text-sm font-semibold transition-all shadow-lg shadow-orange-500/20"
                 title="Optimize this photo for marketplace listing"
               >
                 <Sparkles className="w-4 h-4" />
@@ -1307,7 +1307,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
             )}
             <button
               onClick={onReset}
-              className="flex items-center gap-1.5 px-3 md:px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs md:text-sm font-medium transition-colors"
+              className="flex items-center gap-1.5 px-3 md:px-4 py-2 bg-[#D8CDB8] hover:bg-slate-600 text-[#241F18] rounded-lg text-xs md:text-sm font-medium transition-colors"
             >
               <Camera className="w-4 h-4" />
               <span className="hidden sm:inline">New Photo</span>

@@ -13,12 +13,14 @@ import {
   Camera, Loader2, CheckCircle2, AlertTriangle,
   Lightbulb, RotateCcw, Sun, Image as ImageIcon, Sparkles,
   Grid3X3, FileText, Accessibility, Copy, ArrowRight,
-  ChevronLeft, Upload, Cloud, Volume2, VolumeX, HelpCircle, AudioLines,
+  Upload, HelpCircle, AudioLines,
 } from 'lucide-react';
 import { analyzeForSellModeWithFallback, detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
 import { parseSellResponse, parseArtisanResponseV3, speak, stopSpeaking, resumeSpeech, hasPausedSpeech, isSpeechCompleted, clearPausedSpeech } from '../services/voiceCoach';
 import { DEMO_RESPONSES, DemoResponse, simulateProcessing, getComparisonSamples, DEMO_COMPARISON_RESULT } from '../src/data/demoResponses';
 import { ComparisonResult } from '../services/ollamaService';
+import Header from './Header';
+import Footer from './Footer';
 
 interface SellModeProps {
   onBack: () => void;
@@ -353,65 +355,17 @@ const SellMode: React.FC<SellModeProps> = ({
         aria-label="Take or select a product photo"
       />
 
+      <Header
+        showBack
+        onBack={handleBack}
+        backLabel={result || showCompare ? "Go back" : "Return home"}
+        voiceEnabled={voiceEnabled}
+        onVoiceToggle={onVoiceToggle}
+        inferenceSource={inferenceSource}
+        showInferenceStatus={sourceDetected}
+      />
+
       <div className="max-w-4xl mx-auto px-6 py-8 md:py-12">
-        {/* Header */}
-        <header className="flex items-center justify-between mb-10">
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#F4ECDC] border-2 border-[#D8CDB8] text-[#241F18] hover:border-[#C06B45] hover:text-[#C06B45] focus:outline-none focus:ring-2 focus:ring-[#C06B45]"
-            aria-label={result || showCompare ? "Go back" : "Return home"}
-          >
-            <ChevronLeft className="w-4 h-4" />
-            <span className="text-sm font-semibold">Back</span>
-          </button>
-
-          <div className="flex items-center gap-3">
-            {/* Voice Toggle */}
-            {onVoiceToggle && (
-              <button
-                onClick={onVoiceToggle}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold border-2 ${
-                  voiceEnabled
-                    ? 'bg-[#C06B45] border-[#C06B45] text-white shadow-lg'
-                    : 'bg-[#F4ECDC] border-[#D8CDB8] text-[#524A3D] hover:border-[#C06B45] hover:text-[#C06B45]'
-                }`}
-                aria-pressed={voiceEnabled}
-                aria-label={voiceEnabled ? 'Voice feedback enabled' : 'Enable voice feedback'}
-              >
-                {voiceEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-                <span className="hidden sm:inline">{voiceEnabled ? 'Voice ON' : 'Voice'}</span>
-              </button>
-            )}
-
-            {/* Status Badge */}
-            {sourceDetected && (
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border-2 ${
-                inferenceSource === 'local'
-                  ? 'bg-[#A9B8BE] border-[#2F4858] text-[#241F18]'
-                  : inferenceSource === 'cloud'
-                    ? 'bg-blue-50 border-blue-200 text-blue-700'
-                    : 'bg-[#F4ECDC] border-[#D8CDB8] text-[#524A3D]'
-              }`}>
-                {inferenceSource === 'local' ? (
-                  <>
-                    <div className="w-2 h-2 rounded-full bg-[#2F4858] animate-pulse" />
-                    <span className="text-xs font-semibold">Local · Private</span>
-                  </>
-                ) : inferenceSource === 'cloud' ? (
-                  <>
-                    <Cloud className="w-3.5 h-3.5" />
-                    <span className="text-xs font-semibold">Cloud</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span className="text-xs font-semibold">Demo Mode</span>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        </header>
 
         <main role="main">
           {/* Title Section */}
@@ -772,6 +726,8 @@ const SellMode: React.FC<SellModeProps> = ({
           )}
         </main>
       </div>
+
+      <Footer />
     </div>
   );
 };

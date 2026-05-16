@@ -373,7 +373,7 @@ const SellMode: React.FC<SellModeProps> = ({
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold border-2 ${
                   voiceEnabled
                     ? 'bg-[#C06B45] border-[#C06B45] text-white shadow-lg'
-                    : 'bg-[#F4ECDC] border-[#D8CDB8] text-[#6B6358] hover:border-[#C06B45] hover:text-[#C06B45]'
+                    : 'bg-[#F4ECDC] border-[#D8CDB8] text-[#524A3D] hover:border-[#C06B45] hover:text-[#C06B45]'
                 }`}
                 aria-pressed={voiceEnabled}
                 aria-label={voiceEnabled ? 'Voice feedback enabled' : 'Enable voice feedback'}
@@ -390,7 +390,7 @@ const SellMode: React.FC<SellModeProps> = ({
                   ? 'bg-[#A9B8BE] border-[#2F4858] text-[#241F18]'
                   : inferenceSource === 'cloud'
                     ? 'bg-blue-50 border-blue-200 text-blue-700'
-                    : 'bg-[#F4ECDC] border-[#D8CDB8] text-[#6B6358]'
+                    : 'bg-[#F4ECDC] border-[#D8CDB8] text-[#524A3D]'
               }`}>
                 {inferenceSource === 'local' ? (
                   <>
@@ -430,17 +430,17 @@ const SellMode: React.FC<SellModeProps> = ({
 
               {/* Compact How It Works */}
               <div className="flex flex-wrap items-center gap-3 mb-4 text-sm">
-                <span className="text-[#6B6358] font-medium">How it works:</span>
+                <span className="text-[#524A3D] font-medium">How it works:</span>
                 <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F4ECDC] border border-[#D8CDB8]">
                   <Camera className="w-3 h-3 text-[#2F4858]" />
                   <span className="text-xs font-semibold text-[#241F18]">Take photo</span>
                 </div>
-                <ArrowRight className="w-3 h-3 text-[#6B6358]" />
+                <ArrowRight className="w-3 h-3 text-[#524A3D]" />
                 <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F4ECDC] border border-[#D8CDB8]">
                   <AudioLines className="w-3 h-3 text-[#2F4858]" />
                   <span className="text-xs font-semibold text-[#241F18]">Hear feedback</span>
                 </div>
-                <ArrowRight className="w-3 h-3 text-[#6B6358]" />
+                <ArrowRight className="w-3 h-3 text-[#524A3D]" />
                 <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F4ECDC] border border-[#D8CDB8]">
                   <FileText className="w-3 h-3 text-[#2F4858]" />
                   <span className="text-xs font-semibold text-[#241F18]">Get listing copy</span>
@@ -466,7 +466,7 @@ const SellMode: React.FC<SellModeProps> = ({
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h2 className="text-xl font-bold text-[#241F18] mb-1">Try a Sample</h2>
-                    <p className="text-sm text-[#6B6358]">Real Gemma 4 E4B responses, generated locally via Ollama</p>
+                    <p className="text-sm text-[#524A3D]">Real Gemma 4 E4B responses, generated locally via Ollama</p>
                   </div>
                 </div>
 
@@ -493,7 +493,7 @@ const SellMode: React.FC<SellModeProps> = ({
                         </div>
                       </div>
                       <div className="p-4 flex items-center justify-between bg-[#F4ECDC]">
-                        <span className="text-sm font-medium text-[#6B6358]">See analysis</span>
+                        <span className="text-sm font-medium text-[#524A3D]">See analysis</span>
                         <ArrowRight className="w-4 h-4 text-[#C06B45] group-hover:translate-x-1 transition-transform" />
                       </div>
                     </button>
@@ -507,7 +507,7 @@ const SellMode: React.FC<SellModeProps> = ({
                   setShowCompare(true);
                   setDemoCompareResult(DEMO_COMPARISON_RESULT);
                 }}
-                className="flex items-center gap-3 text-[#6B6358] hover:text-[#C06B45] group"
+                className="flex items-center gap-3 text-[#524A3D] hover:text-[#C06B45] group"
                 aria-label="Compare two photos"
               >
                 <div className="w-10 h-10 rounded-full bg-[#F4ECDC] border border-[#D8CDB8] flex items-center justify-center group-hover:border-[#C06B45]">
@@ -520,7 +520,7 @@ const SellMode: React.FC<SellModeProps> = ({
               {/* SECONDARY: Upload Section */}
               {inferenceSource !== 'demo' && (
                 <div className="pt-8 border-t-2 border-[#D8CDB8]">
-                  <p className="text-sm text-[#6B6358] mb-4">
+                  <p className="text-sm text-[#524A3D] mb-4">
                     Want to try your own photo? Upload one below for {inferenceSource === 'cloud' ? 'cloud' : 'local'} analysis.
                     {inferenceSource === 'cloud' && (
                       <span className="block mt-2 text-xs italic">
@@ -534,11 +534,11 @@ const SellMode: React.FC<SellModeProps> = ({
                     aria-label="Upload your own photo"
                   >
                     <div className="w-14 h-14 rounded-2xl bg-[#F4ECDC] border border-[#D8CDB8] flex items-center justify-center group-hover:bg-[#A9B8BE] group-hover:border-[#2F4858]">
-                      <Upload className="w-6 h-6 text-[#6B6358] group-hover:text-[#C06B45]" />
+                      <Upload className="w-6 h-6 text-[#524A3D] group-hover:text-[#C06B45]" />
                     </div>
                     <div className="text-center">
                       <p className="text-base font-semibold text-[#241F18] mb-1">Upload your photo</p>
-                      <p className="text-sm text-[#6B6358]">
+                      <p className="text-sm text-[#524A3D]">
                         {inferenceSource === 'cloud' ? 'Analyzed via Ollama Cloud' : '100% private, on-device'}
                       </p>
                     </div>
@@ -570,7 +570,7 @@ const SellMode: React.FC<SellModeProps> = ({
               <p className="text-xl font-bold text-[#241F18] mb-2">
                 {inferenceSource === 'local' ? 'Analyzing locally...' : inferenceSource === 'cloud' ? 'Analyzing via cloud...' : 'Preparing analysis...'}
               </p>
-              <p className="text-[#6B6358]">
+              <p className="text-[#524A3D]">
                 {inferenceSource === 'local' ? 'Gemma 4 E4B · Nothing leaves your device' : inferenceSource === 'cloud' ? 'Gemma 4 via Ollama Cloud' : 'Demo response'}
               </p>
             </div>
@@ -582,7 +582,7 @@ const SellMode: React.FC<SellModeProps> = ({
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold text-[#241F18]">Photo Comparison</h2>
-                  <p className="text-sm text-[#6B6358] mt-1">Same product, different shots</p>
+                  <p className="text-sm text-[#524A3D] mt-1">Same product, different shots</p>
                 </div>
               </div>
 
@@ -612,7 +612,7 @@ const SellMode: React.FC<SellModeProps> = ({
                   <CheckCircle2 className="w-5 h-5 text-[#2F4858]" />
                   <h3 className="text-lg font-bold text-[#241F18]">Winner: Photo {demoCompareResult.winner}</h3>
                 </div>
-                <p className="text-[#6B6358] mb-6">{demoCompareResult.reason}</p>
+                <p className="text-[#524A3D] mb-6">{demoCompareResult.reason}</p>
                 <button
                   onClick={() => {
                     const winner = getComparisonSamples().find((_, idx) => (idx === 0 && demoCompareResult.winner === 'A') || (idx === 1 && demoCompareResult.winner === 'B'));
@@ -663,7 +663,7 @@ const SellMode: React.FC<SellModeProps> = ({
                   </div>
 
                   <div>
-                    <p className="text-xs font-semibold text-[#6B6358] uppercase tracking-wider mb-2">What I See</p>
+                    <p className="text-xs font-semibold text-[#524A3D] uppercase tracking-wider mb-2">What I See</p>
                     <p className="text-xl font-semibold text-[#241F18]">{result.subject}</p>
                   </div>
 
@@ -685,8 +685,8 @@ const SellMode: React.FC<SellModeProps> = ({
                   {result.framing && (
                     <div className="p-5 rounded-2xl bg-[#F4ECDC] border-2 border-[#D8CDB8]">
                       <div className="flex items-center gap-2 mb-3">
-                        <Grid3X3 className="w-4 h-4 text-[#6B6358]" />
-                        <p className="text-xs font-semibold text-[#6B6358] uppercase tracking-wider">Framing</p>
+                        <Grid3X3 className="w-4 h-4 text-[#524A3D]" />
+                        <p className="text-xs font-semibold text-[#524A3D] uppercase tracking-wider">Framing</p>
                       </div>
                       <p className="text-[#241F18]">{result.framing}</p>
                     </div>
@@ -694,8 +694,8 @@ const SellMode: React.FC<SellModeProps> = ({
                   {result.lighting && (
                     <div className="p-5 rounded-2xl bg-[#F4ECDC] border-2 border-[#D8CDB8]">
                       <div className="flex items-center gap-2 mb-3">
-                        <Sun className="w-4 h-4 text-[#6B6358]" />
-                        <p className="text-xs font-semibold text-[#6B6358] uppercase tracking-wider">Lighting</p>
+                        <Sun className="w-4 h-4 text-[#524A3D]" />
+                        <p className="text-xs font-semibold text-[#524A3D] uppercase tracking-wider">Lighting</p>
                       </div>
                       <p className="text-[#241F18]">{result.lighting}</p>
                     </div>
@@ -705,8 +705,8 @@ const SellMode: React.FC<SellModeProps> = ({
 
               {result.confidenceNote && (
                 <div className="flex items-start gap-3 p-4 rounded-xl bg-[#F4ECDC] border border-[#D8CDB8]">
-                  <AlertTriangle className="w-4 h-4 text-[#6B6358] mt-0.5 shrink-0" />
-                  <p className="text-sm text-[#6B6358]">{result.confidenceNote}</p>
+                  <AlertTriangle className="w-4 h-4 text-[#524A3D] mt-0.5 shrink-0" />
+                  <p className="text-sm text-[#524A3D]">{result.confidenceNote}</p>
                 </div>
               )}
 
@@ -722,11 +722,11 @@ const SellMode: React.FC<SellModeProps> = ({
                     {result.listingCopy && (
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <p className="text-xs font-semibold text-[#6B6358] uppercase tracking-wider">Product Description</p>
+                          <p className="text-xs font-semibold text-[#524A3D] uppercase tracking-wider">Product Description</p>
                           <button
                             onClick={() => copyToClipboard(result.listingCopy, 'description')}
                             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                              copiedField === 'description' ? 'bg-[#A9B8BE] text-[#241F18]' : 'bg-[#F4ECDC] hover:bg-[#D8CDB8] text-[#6B6358]'
+                              copiedField === 'description' ? 'bg-[#A9B8BE] text-[#241F18]' : 'bg-[#F4ECDC] hover:bg-[#D8CDB8] text-[#524A3D]'
                             }`}
                           >
                             {copiedField === 'description' ? <><CheckCircle2 className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}
@@ -739,13 +739,13 @@ const SellMode: React.FC<SellModeProps> = ({
                     {result.altText && (
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <p className="text-xs font-semibold text-[#6B6358] uppercase tracking-wider flex items-center gap-1.5">
+                          <p className="text-xs font-semibold text-[#524A3D] uppercase tracking-wider flex items-center gap-1.5">
                             <Accessibility className="w-3 h-3" /> Alt-Text
                           </p>
                           <button
                             onClick={() => copyToClipboard(result.altText, 'altText')}
                             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                              copiedField === 'altText' ? 'bg-[#A9B8BE] text-[#241F18]' : 'bg-[#F4ECDC] hover:bg-[#D8CDB8] text-[#6B6358]'
+                              copiedField === 'altText' ? 'bg-[#A9B8BE] text-[#241F18]' : 'bg-[#F4ECDC] hover:bg-[#D8CDB8] text-[#524A3D]'
                             }`}
                           >
                             {copiedField === 'altText' ? <><CheckCircle2 className="w-3 h-3" /> Copied</> : <><Copy className="w-3 h-3" /> Copy</>}

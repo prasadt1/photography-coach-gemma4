@@ -106,7 +106,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
             {/* Product truth badge - replace cloud-ready */}
             <div className="mb-4">
               {connectionState === 'connecting' ? (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F4ECDC] border border-[#D8CDB8] text-[#6B6358] text-xs">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F4ECDC] border border-[#D8CDB8] text-[#524A3D] text-xs">
                   <Loader2 className="w-3 h-3 animate-spin" />
                   <span>Detecting...</span>
                 </div>
@@ -128,12 +128,12 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
             </button>
           </div>
 
-          {/* Hero image */}
-          <div className="rounded-2xl overflow-hidden shadow-xl border-2 border-[#D8CDB8]">
+          {/* Hero image - camera lens framing artisan hands weaving */}
+          <div className="rounded-2xl overflow-hidden shadow-xl border-2 border-[#D8CDB8] bg-[#2F4858]">
             <img
-              src="/images-homepage/Wood.jpg"
-              alt="Artisan hands at work"
-              className="w-full h-64 md:h-80 object-cover"
+              src="/images-homepage/hero-lens-weaving.png"
+              alt="Artisan hands weaving, seen through a camera lens aperture"
+              className="w-full h-auto object-contain"
             />
           </div>
         </section>
@@ -143,7 +143,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
           <h3 className="text-2xl font-bold font-serif text-[#241F18] text-center mb-2">
             The whole product
           </h3>
-          <p className="text-sm text-[#6B6358] text-center mb-6">
+          <p className="text-sm text-[#524A3D] text-center mb-6">
             Built for makers — your craft, your voice, your terms.
           </p>
 
@@ -153,7 +153,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                 <User className="w-5 h-5 text-[#2F4858]" />
               </div>
               <h4 className="text-lg font-bold font-serif text-[#241F18] mb-1">The artisan</h4>
-              <p className="text-xs text-[#6B6358] mb-1 font-medium">human · made by you</p>
+              <p className="text-xs text-[#524A3D] mb-1 font-medium">human · made by you</p>
               <p className="text-sm text-[#241F18]">You make beautiful things. L.E.N.S. helps you show them.</p>
             </div>
 
@@ -162,7 +162,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                 <Wrench className="w-5 h-5 text-[#2F4858]" />
               </div>
               <h4 className="text-lg font-bold font-serif text-[#241F18] mb-1">The craft</h4>
-              <p className="text-xs text-[#6B6358] mb-1 font-medium">the work itself</p>
+              <p className="text-xs text-[#524A3D] mb-1 font-medium">the work itself</p>
               <p className="text-sm text-[#241F18]">Wood, textiles, clay, metal — marketplace-ready photos.</p>
             </div>
 
@@ -171,7 +171,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                 <Smartphone className="w-5 h-5 text-[#2F4858]" />
               </div>
               <h4 className="text-lg font-bold font-serif text-[#241F18] mb-1">Local & private</h4>
-              <p className="text-xs text-[#6B6358] mb-1 font-medium">tech · on your device</p>
+              <p className="text-xs text-[#524A3D] mb-1 font-medium">tech · on your device</p>
               <p className="text-sm text-[#241F18]">On your device. Nothing leaves. No tracking.</p>
             </div>
           </div>
@@ -182,7 +182,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
           <h3 className="text-2xl font-bold font-serif text-[#241F18] text-center mb-2">
             Voice-guided in 3 steps
           </h3>
-          <p className="text-sm text-[#6B6358] text-center mb-6">
+          <p className="text-sm text-[#524A3D] text-center mb-6">
             Real-time feedback. No reading, no guessing.
           </p>
 
@@ -192,7 +192,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                 <AudioLines className="w-8 h-8 text-[#2F4858]" />
               </div>
               <p className="text-lg font-serif font-bold text-[#241F18]">The app, speaking</p>
-              <p className="text-xs text-[#6B6358] mt-1">Real-time voice feedback</p>
+              <p className="text-xs text-[#524A3D] mt-1">Real-time voice feedback</p>
             </div>
 
             <div className="space-y-3">
@@ -200,7 +200,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                 <div className="w-7 h-7 rounded-full bg-[#C06B45] text-white flex items-center justify-center font-bold text-sm shrink-0">1</div>
                 <div>
                   <h4 className="text-sm font-bold text-[#241F18] mb-0.5">Take a photo</h4>
-                  <p className="text-xs text-[#6B6358]">Use your phone. No special setup.</p>
+                  <p className="text-xs text-[#524A3D]">Use your phone. No special setup.</p>
                 </div>
               </div>
 
@@ -208,7 +208,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                 <div className="w-7 h-7 rounded-full bg-[#C06B45] text-white flex items-center justify-center font-bold text-sm shrink-0">2</div>
                 <div>
                   <h4 className="text-sm font-bold text-[#241F18] mb-0.5">Hear what's working</h4>
-                  <p className="text-xs text-[#6B6358]">Lighting, framing, focus described aloud.</p>
+                  <p className="text-xs text-[#524A3D]">Lighting, framing, focus described aloud.</p>
                 </div>
               </div>
 
@@ -216,7 +216,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                 <div className="w-7 h-7 rounded-full bg-[#C06B45] text-white flex items-center justify-center font-bold text-sm shrink-0">3</div>
                 <div>
                   <h4 className="text-sm font-bold text-[#241F18] mb-0.5">Get one clear fix</h4>
-                  <p className="text-xs text-[#6B6358]">"Move camera 6 inches left" — not abstract.</p>
+                  <p className="text-xs text-[#524A3D]">"Move camera 6 inches left" — not abstract.</p>
                 </div>
               </div>
 
@@ -236,7 +236,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
           <h3 className="text-2xl font-bold font-serif text-[#241F18] text-center mb-2">
             For every maker
           </h3>
-          <p className="text-sm text-[#6B6358] text-center mb-6">
+          <p className="text-sm text-[#524A3D] text-center mb-6">
             Wood, textiles, ceramics, metalwork — L.E.N.S. understands your craft.
           </p>
 
@@ -296,12 +296,12 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
             <div className="group rounded-lg border-2 border-dashed border-[#D8CDB8] bg-[#F4ECDC] hover:border-[#2F4858] hover:bg-[#A9B8BE] transition-all">
               <div className="aspect-square flex flex-col items-center justify-center p-3">
                 <div className="w-10 h-10 rounded-full bg-[#ECE3D2] border border-[#D8CDB8] flex items-center justify-center mb-2 group-hover:bg-[#A9B8BE] group-hover:border-[#2F4858]">
-                  <Plus className="w-5 h-5 text-[#6B6358] group-hover:text-[#2F4858]" />
+                  <Plus className="w-5 h-5 text-[#524A3D] group-hover:text-[#2F4858]" />
                 </div>
                 <p className="text-sm font-bold text-[#241F18] group-hover:text-[#2F4858]">More...</p>
               </div>
               <div className="p-2 text-center">
-                <p className="text-xs text-[#6B6358]">All crafts</p>
+                <p className="text-xs text-[#524A3D]">All crafts</p>
               </div>
             </div>
           </div>
@@ -324,22 +324,22 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
           </button>
 
           <div className="flex flex-wrap items-center justify-center gap-5 mb-5 text-xs">
-            <div className="flex items-center gap-1 text-[#6B6358]">
+            <div className="flex items-center gap-1 text-[#524A3D]">
               <WifiOff className="w-3.5 h-3.5" />
               <span className="font-semibold">Offline</span>
             </div>
-            <div className="flex items-center gap-1 text-[#6B6358]">
+            <div className="flex items-center gap-1 text-[#524A3D]">
               <Shield className="w-3.5 h-3.5" />
               <span className="font-semibold">Private</span>
             </div>
-            <div className="flex items-center gap-1 text-[#6B6358]">
+            <div className="flex items-center gap-1 text-[#524A3D]">
               <Sparkles className="w-3.5 h-3.5" />
               <span className="font-semibold">Free</span>
             </div>
           </div>
 
           <div className="pt-5 border-t border-[#D8CDB8] max-w-md mx-auto">
-            <p className="text-xs text-[#6B6358] mb-2">
+            <p className="text-xs text-[#524A3D] mb-2">
               <strong className="text-[#241F18]">For sighted photographers:</strong> Detailed critique?
             </p>
             <button
@@ -385,7 +385,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                 </svg>
                 Gemma 4
               </a>
-              <span className="text-[#6B6358]">via</span>
+              <span className="text-[#524A3D]">via</span>
               <a
                 href="https://ollama.com"
                 target="_blank"
@@ -399,7 +399,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                 Ollama
               </a>
             </div>
-            <span className="text-[#6B6358]">·</span>
+            <span className="text-[#524A3D]">·</span>
             <div className="flex items-center gap-2">
               <span className="font-medium">Voice via</span>
               <span className="font-semibold text-[#241F18]">Web Speech API</span>

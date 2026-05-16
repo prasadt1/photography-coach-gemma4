@@ -59,6 +59,12 @@ let speechCompleted = false;
 // Lock to prevent multiple simultaneous speech sessions
 let isCurrentlySpeaking = false;
 
+// ─── Speech Recognition (Voice Commands) ──────────────────────────────────────
+
+let recognition: SpeechRecognition | null = null;
+let isListening = false;
+let recognitionCallback: ((command: string) => void) | null = null;
+
 /**
  * Speak text using Web Speech API
  *
@@ -234,6 +240,178 @@ export function resumeSpeech(rate = 0.95): boolean {
  */
 export function isSpeechCompleted(): boolean {
   return speechCompleted;
+}
+
+// ─── Speech Recognition Functions ─────────────────────────────────────────────
+
+/**
+ * Start listening for voice commands
+ * @param onCommand - Callback when a command is recognized
+ * @param continuous - Whether to keep listening after each command
+ */
+export function startListening(
+  onCommand: (command: string) => void,
+  continuous = true
+): boolean {
+  if (typeof window === 'undefined') {
+    console.warn('[voiceCoach] Speech recognition not available (SSR)');
+    return false;
+  }
+
+  const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognitionAPI) {
+    console.warn('[voiceCoach] Speech recognition not supported in this browser');
+    return false;
+  }
+
+  try {
+    recognition = new SpeechRecognitionAPI();
+    recognition.continuous = continuous;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+    recognition.maxAlternatives = 1;
+
+    recognitionCallback = onCommand;
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const last = event.results.length - 1;
+      const transcript = event.results[last][0].transcript.toLowerCase().trim();
+
+      console.log('[voiceCoach] Recognized:', transcript);
+
+      if (recognitionCallback) {
+        recognitionCallback(transcript);
+      }
+    };
+
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      console.error('[voiceCoach] Recognition error:', event.error, event.message);
+
+      // Auto-restart on certain errors
+      if (event.error === 'no-speech' || event.error === 'audio-capture') {
+        console.log('[voiceCoach] Restarting recognition after error');
+        setTimeout(() => {
+          if (recognition && isListening) {
+            try {
+              recognition.start();
+            } catch (e) {
+              console.warn('[voiceCoach] Could not restart recognition:', e);
+            }
+          }
+        }, 1000);
+      }
+    };
+
+    recognition.onend = () => {
+      console.log('[voiceCoach] Recognition ended');
+
+      // Auto-restart if continuous mode and still supposed to be listening
+      if (continuous && isListening) {
+        console.log('[voiceCoach] Restarting continuous recognition');
+        setTimeout(() => {
+          if (recognition && isListening) {
+            try {
+              recognition.start();
+            } catch (e) {
+              console.warn('[voiceCoach] Could not restart recognition:', e);
+            }
+          }
+        }, 500);
+      } else {
+        isListening = false;
+      }
+    };
+
+    recognition.start();
+    isListening = true;
+    console.log('[voiceCoach] Speech recognition started');
+    return true;
+  } catch (err) {
+    console.error('[voiceCoach] Failed to start recognition:', err);
+    return false;
+  }
+}
+
+/**
+ * Stop listening for voice commands
+ */
+export function stopListening(): void {
+  if (recognition) {
+    isListening = false;
+    try {
+      recognition.stop();
+      console.log('[voiceCoach] Speech recognition stopped');
+    } catch (e) {
+      console.warn('[voiceCoach] Error stopping recognition:', e);
+    }
+    recognition = null;
+    recognitionCallback = null;
+  }
+}
+
+/**
+ * Check if currently listening for voice commands
+ */
+export function isCurrentlyListening(): boolean {
+  return isListening;
+}
+
+/**
+ * Parse a voice command and return the intent
+ * Maps various phrasings to standard commands
+ */
+export function parseVoiceCommand(transcript: string): string | null {
+  const lower = transcript.toLowerCase().trim();
+
+  // Affirmative
+  if (/^(yes|yeah|yep|sure|ok|okay|correct|right|yup)$/i.test(lower)) {
+    return 'yes';
+  }
+
+  // Negative
+  if (/^(no|nope|nah|not really)$/i.test(lower)) {
+    return 'no';
+  }
+
+  // Take photo / capture
+  if (/(take|capture|snap|shoot).*(photo|picture|pic|shot)/i.test(lower) ||
+      /^(photo|picture|capture|snap)$/i.test(lower)) {
+    return 'take-photo';
+  }
+
+  // Retry / retake
+  if (/(retry|retake|try again|take another|redo)/i.test(lower)) {
+    return 'retry';
+  }
+
+  // Copy
+  if (/(copy|clipboard)/i.test(lower)) {
+    return 'copy';
+  }
+
+  // Read tags
+  if (/(read|hear).*(tag|hashtag)/i.test(lower)) {
+    return 'read-tags';
+  }
+
+  // Generate listing
+  if (/(generate|create|make).*(listing|description)/i.test(lower)) {
+    return 'generate-listing';
+  }
+
+  // List another / start over
+  if (/(list another|start over|new|begin)/i.test(lower)) {
+    return 'start-over';
+  }
+
+  // Happy with this / continue
+  if (/(happy|satisfied|good|continue|proceed|next)/i.test(lower)) {
+    return 'continue';
+  }
+
+  console.log('[voiceCoach] Unrecognized command:', lower);
+  return null;
 }
 
 /**
@@ -479,6 +657,14 @@ export interface ArtisanAnalysisV3 {
     lighting: string;
     primary_fix: string;
   };
+  // Structured ratings for deterministic comparison (1-10 scale)
+  ratings: {
+    lighting: number;      // 1-10: quality of lighting
+    framing: number;       // 1-10: composition/framing quality
+    background: number;    // 1-10: background cleanliness
+    focus: number;         // 1-10: subject sharpness
+  };
+  primary_issue: string;   // Single identified issue ("uneven lighting", "cluttered background", etc.)
   confidence_note: string;
   alt_text: string;
   listing_copy: string;

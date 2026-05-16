@@ -33,7 +33,7 @@ export const OLLAMA_CONFIG = {
   modelId: 'gemma-4-e4b',           // Canonical ID written to v2 schema
   quantization: 'Q4_K_M',
   options: {
-    temperature: 0.1,               // Low temp for structured output consistency
+    temperature: 0,                 // Zero temp for deterministic coaching (stable, repeatable critique)
     num_predict: 1200,              // Raised from 700: 2-4 bounding boxes require ~400 extra tokens (~15s extra at 27tok/s)
   },
   timeoutMs: 120_000,               // 2 min per photo (generous for cold start)

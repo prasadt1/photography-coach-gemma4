@@ -20,10 +20,19 @@ import {
   AudioLines, Sparkles,
 } from 'lucide-react';
 import { analyzeForSellModeWithFallback, type InferenceSource } from '../services/analysisOrchestrator';
-import { parseArtisanResponseV3, speak, stopSpeaking } from '../services/voiceCoach';
+import {
+  parseArtisanResponseV3,
+  speak,
+  stopSpeaking,
+  startListening,
+  stopListening,
+  parseVoiceCommand,
+  isCurrentlyListening,
+} from '../services/voiceCoach';
 import { comparePhotos, type ComparisonResult } from '../services/ollamaService';
 
 type JourneyPhase =
+  | 'voicePrompt'   // NEW: Ask to enable voice commands
   | 'entry'
   | 'firstCapture'
   | 'firstAnalysis'
@@ -37,6 +46,14 @@ interface AnalysisResult {
   framing: string;
   lighting: string;
   primaryFix: string;
+  // Structured ratings for comparison
+  ratings: {
+    lighting: number;
+    framing: number;
+    background: number;
+    focus: number;
+  };
+  primaryIssue: string;  // Single identified issue
   confidenceNote: string;
   altText: string;
   listingCopy: string;
@@ -45,9 +62,11 @@ interface AnalysisResult {
   tags?: string[];
 }
 
-interface PhotoData {
-  base64: string;
-  analysis?: AnalysisResult;
+// Attempt: each photo + its analysis (app holds the state, model is stateless)
+interface Attempt {
+  image: string;  // base64
+  analysisJSON: AnalysisResult;
+  timestamp: number;
 }
 
 interface ArtisanJourneyProps {
@@ -57,19 +76,28 @@ interface ArtisanJourneyProps {
 }
 
 const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
-  voiceEnabled,
+  voiceEnabled: voiceEnabledProp,
   inferenceSource,
   onExit,
 }) => {
   // Journey state
-  const [phase, setPhase] = useState<JourneyPhase>('entry');
-  const [firstPhoto, setFirstPhoto] = useState<PhotoData | null>(null);
-  const [secondPhoto, setSecondPhoto] = useState<PhotoData | null>(null);
-  const [strongerPhoto, setStrongerPhoto] = useState<'first' | 'second' | null>(null);
+  const [phase, setPhase] = useState<JourneyPhase>('voicePrompt');
+  const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(false);
+
+  // Attempts array: app maintains session state (model is stateless)
+  const [attempts, setAttempts] = useState<Attempt[]>([]);
+
+  // Comparison result
+  const [comparisonText, setComparisonText] = useState<string | null>(null);
+  const [strongerAttemptIndex, setStrongerAttemptIndex] = useState<number | null>(null);
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [showAllTags, setShowAllTags] = useState(false);
+
+  // Voice is primary if enabled, buttons are backup
+  const voiceEnabled = voiceEnabledProp || voiceCommandsEnabled;
 
   // Refs for accessibility
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -78,12 +106,75 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   const retakeButtonRef = useRef<HTMLButtonElement>(null);
   const listingButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Cleanup speech on unmount
+  // Cleanup speech and recognition on unmount
   useEffect(() => {
     return () => {
       stopSpeaking();
+      stopListening();
     };
   }, []);
+
+  // Voice command handler
+  const handleVoiceCommand = useCallback((transcript: string) => {
+    const command = parseVoiceCommand(transcript);
+    console.log('[ArtisanJourney] Voice command:', command, 'from:', transcript);
+
+    if (!command) {
+      speak('I didn\'t understand that. Please try again.');
+      return;
+    }
+
+    // Route commands based on current phase
+    switch (phase) {
+      case 'voicePrompt':
+        if (command === 'yes') {
+          setVoiceCommandsEnabled(true);
+          setPhase('entry');
+          speak('Voice commands enabled. Say "take photo" to begin.');
+        } else if (command === 'no') {
+          setPhase('entry');
+          speak('You can use buttons instead.');
+        }
+        break;
+
+      case 'entry':
+      case 'firstCapture':
+        if (command === 'take-photo') {
+          handleCameraOpen();
+        }
+        break;
+
+      case 'retryChoice':
+        if (command === 'yes' || command === 'retry') {
+          handleRetake();
+        } else if (command === 'no' || command === 'continue') {
+          handleSkipToListing();
+        }
+        break;
+
+      case 'listing':
+        if (command === 'copy') {
+          const finalAttempt = attempts[strongerAttemptIndex ?? attempts.length - 1];
+          if (finalAttempt?.analysisJSON.listingCopy) {
+            copyToClipboard(finalAttempt.analysisJSON.listingCopy, 'description');
+          }
+        } else if (command === 'read-tags') {
+          handleReadAllTags();
+        } else if (command === 'start-over') {
+          onExit();
+        }
+        break;
+    }
+  }, [phase, attempts, strongerAttemptIndex]);
+
+  // Start/stop listening based on voice commands enabled
+  useEffect(() => {
+    if (voiceCommandsEnabled && !isCurrentlyListening()) {
+      startListening(handleVoiceCommand, true);
+    } else if (!voiceCommandsEnabled && isCurrentlyListening()) {
+      stopListening();
+    }
+  }, [voiceCommandsEnabled, handleVoiceCommand]);
 
   // Focus management: move focus to main content when phase changes
   useEffect(() => {
@@ -99,11 +190,62 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     }
   }, [phase]);
 
+  // ========== Comparison Logic (App-Side, Deterministic) ==========
+  const compareAttempts = useCallback((attempt1: Attempt, attempt2: Attempt): {
+    strongerIndex: number;
+    improvementText: string;
+  } => {
+    const a1 = attempt1.analysisJSON;
+    const a2 = attempt2.analysisJSON;
+
+    // Check if the primary issue from attempt 1 was resolved in attempt 2
+    const primaryIssueResolved = a1.primaryIssue && a2.primaryIssue !== a1.primaryIssue;
+
+    // Compare ratings dimension by dimension
+    const lightingImproved = a2.ratings.lighting > a1.ratings.lighting;
+    const framingImproved = a2.ratings.framing > a1.ratings.framing;
+    const backgroundImproved = a2.ratings.background > a1.ratings.background;
+    const focusImproved = a2.ratings.focus > a1.ratings.focus;
+
+    // Count improvements
+    const improvementCount = [
+      lightingImproved,
+      framingImproved,
+      backgroundImproved,
+      focusImproved,
+    ].filter(Boolean).length;
+
+    // Determine stronger attempt
+    const strongerIndex = improvementCount >= 2 ? 1 : 0;  // Index in attempts array
+
+    // Generate truthful improvement text
+    let improvementText = '';
+    if (strongerIndex === 1) {
+      const improvements: string[] = [];
+      if (lightingImproved) improvements.push('the lighting is better');
+      if (framingImproved) improvements.push('the framing improved');
+      if (backgroundImproved) improvements.push('the background is cleaner');
+      if (focusImproved) improvements.push('the focus is sharper');
+
+      if (primaryIssueResolved) {
+        improvementText = `Photo two is the stronger one. ${a1.primaryIssue} was the issue — it's resolved now. ${improvements.join(', and ')}.`;
+      } else if (improvements.length > 0) {
+        improvementText = `Photo two is the stronger one. ${improvements.join(', and ')}.`;
+      } else {
+        improvementText = 'Photo two is the stronger one.';
+      }
+    } else {
+      improvementText = 'Photo one is still the stronger one. The second shot didn\'t improve the key issues.';
+    }
+
+    return { strongerIndex, improvementText };
+  }, []);
+
   // ========== Phase 1: Entry ==========
   const handleStart = useCallback(() => {
     setPhase('firstCapture');
     if (voiceEnabled) {
-      speak('Welcome to L.E.N.S. Artisan Studio. Voice coaching ready. Opening camera.');
+      speak('Welcome to L.E.N.S. Artisan Studio. Voice coaching ready. Say "take photo" to begin.');
     }
   }, [voiceEnabled]);
 
@@ -174,6 +316,13 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
         framing: parsed.critique.framing,
         lighting: parsed.critique.lighting,
         primaryFix: parsed.critique.primary_fix,
+        ratings: parsed.ratings || {
+          lighting: 5,
+          framing: 5,
+          background: 5,
+          focus: 5,
+        },
+        primaryIssue: parsed.primary_issue || parsed.critique.primary_fix,
         confidenceNote: parsed.confidence_note,
         altText: parsed.alt_text,
         listingCopy: parsed.listing_copy,
@@ -182,11 +331,16 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
         tags: parsed.tags || [],
       };
 
-      // Store photo data
-      const photoData: PhotoData = { base64, analysis };
+      // Store in attempts array
+      const attempt: Attempt = {
+        image: base64,
+        analysisJSON: analysis,
+        timestamp: Date.now(),
+      };
 
       if (isFirstPhoto) {
-        setFirstPhoto(photoData);
+        // First attempt
+        setAttempts([attempt]);
         setPhase('retryChoice');
 
         // Speak analysis results
@@ -194,52 +348,43 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           const voiceText = [
             'Analysis complete.',
             `What I see: ${analysis.subject}`,
-            analysis.framing ? `Framing: ${analysis.framing}` : '',
             analysis.lighting ? `Lighting: ${analysis.lighting}` : '',
+            analysis.framing ? `Framing: ${analysis.framing}` : '',
             analysis.readyToList
               ? 'This photo is ready to list.'
               : `Your next step: ${analysis.primaryFix}`,
+            analysis.readyToList ? '' : 'Say "yes" to try again, or "no" to continue.',
           ].filter(Boolean).join(' ');
           speak(voiceText);
         }
       } else {
-        // Second photo
-        setSecondPhoto(photoData);
+        // Second attempt
+        const updatedAttempts = [...attempts, attempt];
+        setAttempts(updatedAttempts);
         setPhase('comparison');
 
         if (voiceEnabled) {
           speak('Got your second photo. Comparing both shots now.');
         }
 
-        // Real comparison via Gemma 4 (non-blocking - fallback if fails)
+        // App-side deterministic comparison (non-blocking)
         try {
-          const comparisonResult: ComparisonResult = await comparePhotos(
-            firstPhoto!.base64,
-            photoData.base64
+          const { strongerIndex, improvementText } = compareAttempts(
+            updatedAttempts[0],
+            updatedAttempts[1]
           );
 
-          // Map winner to our state
-          if (comparisonResult.winner === 'A') {
-            setStrongerPhoto('first');
-          } else if (comparisonResult.winner === 'B') {
-            setStrongerPhoto('second');
-          } else {
-            // Tie or unclear - default to second (with fix applied)
-            setStrongerPhoto('second');
-          }
+          setStrongerAttemptIndex(strongerIndex);
+          setComparisonText(improvementText);
 
           if (voiceEnabled) {
-            const winnerText = comparisonResult.winner === 'A'
-              ? 'Photo one is the stronger one.'
-              : comparisonResult.winner === 'B'
-                ? 'Photo two is the stronger one.'
-                : 'Both photos are similar.';
-            speak(`${winnerText} ${comparisonResult.reason}`);
+            speak(improvementText);
           }
         } catch (err) {
           console.warn('[ArtisanJourney] Comparison failed, using fallback:', err);
-          // Fallback: assume second photo is stronger (fix was applied)
-          setStrongerPhoto('second');
+          // Fallback: assume second is stronger
+          setStrongerAttemptIndex(1);
+          setComparisonText('Photo two is the stronger one.');
 
           if (voiceEnabled) {
             speak('Photo two is the stronger one. The fix improved the shot.');
@@ -282,6 +427,66 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   };
 
   // ========== Render Phases ==========
+
+  // Phase 0: Voice Prompt
+  if (phase === 'voicePrompt') {
+    // Greet on entry
+    useEffect(() => {
+      speak('Welcome to L.E.N.S. Artisan Studio. Would you like to turn on voice commands? Say "yes" or tap the button.');
+    }, []);
+
+    return (
+      <div className="max-w-2xl mx-auto px-6 py-16 text-center" ref={mainContentRef} tabIndex={-1}>
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#C06B45] text-white text-sm font-bold uppercase tracking-wide mb-6">
+            <AudioLines className="w-4 h-4" />
+            Voice-First Coaching
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold font-serif text-[#241F18] leading-tight mb-4">
+            Turn on voice commands?
+          </h1>
+          <p className="text-lg text-[#524A3D] leading-relaxed max-w-xl mx-auto mb-8">
+            Say "yes" to use voice commands throughout, or "no" to use buttons instead.
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <button
+            onClick={() => {
+              setVoiceCommandsEnabled(true);
+              setPhase('entry');
+              speak('Voice commands enabled. Say "take photo" to begin.');
+            }}
+            className="inline-flex items-center gap-3 px-8 py-4 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full text-lg font-bold shadow-xl transition-colors focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
+            aria-label="Enable voice commands"
+          >
+            <AudioLines className="w-5 h-5" />
+            <span>Yes, Enable Voice</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setPhase('entry');
+              speak('You can use buttons instead.');
+            }}
+            className="inline-flex items-center gap-3 px-8 py-4 bg-[#F4ECDC] border-2 border-[#D8CDB8] hover:border-[#C06B45] text-[#241F18] rounded-full text-lg font-bold transition-colors focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
+            aria-label="Use buttons instead"
+          >
+            <span>No, Use Buttons</span>
+          </button>
+        </div>
+
+        <div
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          className="sr-only"
+        >
+          Welcome to L.E.N.S. Would you like to enable voice commands?
+        </div>
+      </div>
+    );
+  }
 
   // Phase 1: Entry
   if (phase === 'entry') {
@@ -383,8 +588,9 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   }
 
   // Phase 4: Retry Choice
-  if (phase === 'retryChoice' && firstPhoto?.analysis) {
-    const analysis = firstPhoto.analysis;
+  if (phase === 'retryChoice' && attempts.length > 0) {
+    const currentAttempt = attempts[attempts.length - 1];
+    const analysis = currentAttempt.analysisJSON;
 
     return (
       <div className="max-w-4xl mx-auto px-6 py-8" ref={mainContentRef} tabIndex={-1}>
@@ -392,7 +598,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
         <div className="flex flex-col md:flex-row gap-6 mb-8">
           <div className="w-full md:w-96 shrink-0 rounded-2xl overflow-hidden border-2 border-[#D8CDB8]">
             <img
-              src={firstPhoto.base64}
+              src={currentAttempt.image}
               alt="Your craft photo"
               className="w-full object-contain"
             />
@@ -509,9 +715,9 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   }
 
   // Phase 6: Comparison
-  if (phase === 'comparison' && firstPhoto && secondPhoto && strongerPhoto) {
-    const stronger = strongerPhoto === 'first' ? firstPhoto : secondPhoto;
-    const weaker = strongerPhoto === 'first' ? secondPhoto : firstPhoto;
+  if (phase === 'comparison' && attempts.length >= 2 && strongerAttemptIndex !== null) {
+    const stronger = attempts[strongerAttemptIndex];
+    const weaker = attempts[strongerAttemptIndex === 0 ? 1 : 0];
 
     return (
       <div className="max-w-4xl mx-auto px-6 py-8" ref={mainContentRef} tabIndex={-1}>
@@ -519,8 +725,8 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
         <p className="text-[#524A3D] mb-6">Same craft, two shots</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          {[firstPhoto, secondPhoto].map((photo, idx) => {
-            const isStronger = (idx === 0 && strongerPhoto === 'first') || (idx === 1 && strongerPhoto === 'second');
+          {attempts.map((attempt, idx) => {
+            const isStronger = idx === strongerAttemptIndex;
             return (
               <div
                 key={idx}
@@ -532,7 +738,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
               >
                 <div className="relative">
                   <img
-                    src={photo.base64}
+                    src={attempt.image}
                     alt={`Photo ${idx + 1}`}
                     className="w-full h-64 object-cover"
                   />
@@ -553,8 +759,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
         <div className="rounded-2xl bg-[#F4ECDC] border-2 border-[#D8CDB8] p-6 mb-6">
           <p className="text-[#241F18] mb-4">
-            Photo {strongerPhoto === 'first' ? '1' : '2'} is the stronger one.
-            {stronger.analysis?.subject && ` ${stronger.analysis.subject}`}
+            {comparisonText || `Photo ${strongerAttemptIndex + 1} is the stronger one.`}
           </p>
           <button
             onClick={() => {
@@ -571,36 +776,32 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
         </div>
 
         <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
-          Comparison complete. Photo {strongerPhoto === 'first' ? '1' : '2'} is stronger.
+          {comparisonText || `Photo ${strongerAttemptIndex + 1} is stronger.`}
         </div>
       </div>
     );
   }
 
+
   // ========== Phase 7: Listing Actions ==========
   const handleReadAllTags = useCallback(() => {
-    const finalPhoto = strongerPhoto
-      ? (strongerPhoto === 'first' ? firstPhoto : secondPhoto)
-      : firstPhoto;
-
-    if (finalPhoto?.analysis?.tags && finalPhoto.analysis.tags.length > 0) {
-      const tagsList = finalPhoto.analysis.tags.join(', ');
+    const finalAttempt = attempts[strongerAttemptIndex ?? attempts.length - 1];
+    if (finalAttempt?.analysisJSON.tags && finalAttempt.analysisJSON.tags.length > 0) {
+      const tagsList = finalAttempt.analysisJSON.tags.join(', ');
       speak(`All tags: ${tagsList}`);
       setShowAllTags(true);
     }
-  }, [strongerPhoto, firstPhoto, secondPhoto]);
+  }, [attempts, strongerAttemptIndex]);
 
   // Phase 7: Listing
   if (phase === 'listing') {
-    const finalPhoto = strongerPhoto
-      ? (strongerPhoto === 'first' ? firstPhoto : secondPhoto)
-      : firstPhoto;
+    const finalAttempt = attempts[strongerAttemptIndex ?? attempts.length - 1];
 
-    if (!finalPhoto?.analysis) {
-      return <div>Error: No analysis available</div>;
+    if (!finalAttempt) {
+      return <div>Error: No attempt available</div>;
     }
 
-    const analysis = finalPhoto.analysis;
+    const analysis = finalAttempt.analysisJSON;
     const tagCount = analysis.tags?.length || 0;
 
     return (
@@ -613,7 +814,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
         <div className="flex flex-col md:flex-row gap-6 mb-8">
           <div className="w-full md:w-64 shrink-0 rounded-2xl overflow-hidden border-2 border-[#D8CDB8]">
             <img
-              src={finalPhoto.base64}
+              src={finalAttempt.image}
               alt="Final marketplace photo"
               className="w-full object-contain"
             />

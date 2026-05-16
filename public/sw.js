@@ -5,7 +5,7 @@
  * Sources: docs/specs/10-platform-shells-spec.md §5.2
  */
 
-const CACHE_NAME = 'photography-coach-v3.0.0-getusermedia';
+const CACHE_NAME = 'photography-coach-v4.0.0-listing-fix';
 const ASSETS_TO_PRECACHE = [
   '/',
   '/index.html',

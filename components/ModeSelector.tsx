@@ -47,7 +47,7 @@ const STUDIO_FEATURES = [
 ];
 
 const VAULT_FEATURES = [
-  '🔒 Zero Cloud Egress — IP protection',
+  '🔒 Zero network egress — IP protection',
   'Hash-chained audit log',
   'Exportable tamper-evident report',
   'NDA-safe confidential workflows',

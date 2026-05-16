@@ -21,7 +21,7 @@ const VaultModeBanner: React.FC<VaultModeBannerProps> = ({
       <span className="text-xs font-bold text-amber-300 uppercase tracking-wider">Vault Mode Active</span>
       <span className="text-[11px] text-amber-400/70 flex items-center gap-1 mt-0.5">
         <WifiOff className="w-3 h-3 flex-shrink-0" />
-        All inference runs locally · No cloud egress
+        All inference runs locally · No network egress
       </span>
     </div>
 

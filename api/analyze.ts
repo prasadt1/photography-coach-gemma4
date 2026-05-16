@@ -1,20 +1,23 @@
 /**
  * Vercel Serverless API Route: /api/analyze
  *
- * Proxies image analysis requests to Ollama Cloud.
- * API docs: https://docs.ollama.com/cloud
+ * Proxies image analysis to Ollama (cloud or local Mac via OLLAMA_TARGET=local).
  *
- * Environment Variables (set in Vercel dashboard):
- *   OLLAMA_API_KEY - Required: Your Ollama Cloud API key from ollama.com/settings/keys
- *   OLLAMA_CLOUD_MODEL - Optional: Model to use (default: gemma3:27b)
+ * Environment Variables:
+ *   OLLAMA_API_KEY - Required when OLLAMA_TARGET=cloud (default)
+ *   OLLAMA_CLOUD_MODEL - Optional cloud model (default: gemma4:31b-cloud)
+ *   OLLAMA_TARGET - "cloud" (default) | "local"
+ *   OLLAMA_LOCAL_URL - Optional (default: http://127.0.0.1:11434)
+ *   OLLAMA_LOCAL_MODEL - Optional (default: gemma4:e4b)
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Ollama Cloud configuration - uses same API format as local Ollama
 const OLLAMA_CLOUD_URL = 'https://ollama.com/api/chat';
-const DEFAULT_MODEL = 'gemma4:31b-cloud';  // Gemma 4 31B cloud variant
-const TIMEOUT_MS = 120_000;  // 2 minutes
+const DEFAULT_CLOUD_MODEL = 'gemma4:31b-cloud';
+const DEFAULT_LOCAL_URL = 'http://127.0.0.1:11434';
+const DEFAULT_LOCAL_MODEL = 'gemma4:e4b';
+const TIMEOUT_MS = 120_000;
 
 interface AnalyzeRequest {
   base64Image: string;
@@ -23,11 +26,14 @@ interface AnalyzeRequest {
   healthCheck?: boolean;
 }
 
+function getTarget(): 'local' | 'cloud' {
+  return process.env.OLLAMA_TARGET === 'local' ? 'local' : 'cloud';
+}
+
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse,
 ) {
-  // CORS headers for browser requests
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -36,51 +42,53 @@ export default async function handler(
     return res.status(200).end();
   }
 
-  // Only accept POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Check for API key
+  const target = getTarget();
+  const isLocal = target === 'local';
+  const localUrl = (process.env.OLLAMA_LOCAL_URL || DEFAULT_LOCAL_URL).replace(/\/$/, '');
+  const localModel = process.env.OLLAMA_LOCAL_MODEL || DEFAULT_LOCAL_MODEL;
+  const cloudModel = process.env.OLLAMA_CLOUD_MODEL || DEFAULT_CLOUD_MODEL;
   const apiKey = process.env.OLLAMA_API_KEY;
-  if (!apiKey) {
+
+  if (!isLocal && !apiKey) {
     return res.status(503).json({
-      error: 'Ollama Cloud not configured',
+      error: 'Hosted analysis not configured',
       code: 'NO_API_KEY',
       message: 'OLLAMA_API_KEY environment variable not set.',
     });
   }
 
-  const model = process.env.OLLAMA_CLOUD_MODEL || DEFAULT_MODEL;
+  const model = isLocal ? localModel : cloudModel;
+  const endpoint = isLocal ? `${localUrl}/api/chat` : OLLAMA_CLOUD_URL;
 
   try {
     const body = req.body as AnalyzeRequest;
 
-    // Health check endpoint - check FIRST before validating other fields
-    if (body && body.healthCheck) {
+    if (body?.healthCheck) {
       return res.status(200).json({
         status: 'ok',
-        cloudConfigured: true,
-        model: model,
-        endpoint: OLLAMA_CLOUD_URL,
+        configured: true,
+        target,
+        model,
+        endpoint,
       });
     }
 
-    // Validate request
-    if (!body || !body.base64Image || !body.systemPrompt || !body.userPrompt) {
+    if (!body?.base64Image || !body.systemPrompt || !body.userPrompt) {
       return res.status(400).json({
         error: 'Missing required fields: base64Image, systemPrompt, userPrompt',
       });
     }
 
-    // Clean base64 if it has data URI prefix
     const cleanBase64 = body.base64Image.includes('base64,')
       ? body.base64Image.split('base64,')[1]
       : body.base64Image;
 
-    // Prepare Ollama Cloud request - same format as local Ollama
     const ollamaRequest = {
-      model: model,
+      model,
       messages: [
         { role: 'system', content: body.systemPrompt },
         { role: 'user', content: body.userPrompt, images: [cleanBase64] },
@@ -92,18 +100,19 @@ export default async function handler(
       },
     };
 
-    // Call Ollama Cloud
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-    console.log('[/api/analyze] Calling Ollama Cloud:', OLLAMA_CLOUD_URL, 'model:', model);
+    console.log(`[/api/analyze] target=${target}`, endpoint, 'model:', model);
 
-    const response = await fetch(OLLAMA_CLOUD_URL, {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (!isLocal && apiKey) {
+      headers.Authorization = `Bearer ${apiKey}`;
+    }
+
+    const response = await fetch(endpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
+      headers,
       body: JSON.stringify(ollamaRequest),
       signal: controller.signal,
     });
@@ -112,32 +121,18 @@ export default async function handler(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[/api/analyze] Ollama Cloud error:', response.status, errorText);
+      console.error('[/api/analyze] Ollama error:', response.status, errorText);
 
-      if (response.status === 401) {
+      if (!isLocal && response.status === 401) {
         return res.status(401).json({
           error: 'Invalid API key',
           code: 'INVALID_API_KEY',
-          details: 'Check your OLLAMA_API_KEY in Vercel environment variables',
-        });
-      }
-      if (response.status === 429) {
-        return res.status(429).json({
-          error: 'Rate limited',
-          code: 'RATE_LIMITED',
-        });
-      }
-      if (response.status === 404) {
-        return res.status(404).json({
-          error: 'Model not found',
-          code: 'MODEL_NOT_FOUND',
-          details: `Model "${model}" not available. Try: gemma3:27b, gemma2:27b, llama3.2-vision`,
         });
       }
 
       return res.status(502).json({
-        error: 'Ollama Cloud error',
-        code: 'CLOUD_ERROR',
+        error: 'Ollama error',
+        code: 'OLLAMA_ERROR',
         status: response.status,
         details: errorText.slice(0, 500),
       });
@@ -146,22 +141,17 @@ export default async function handler(
     const data = await response.json();
     const content = data.message?.content ?? '';
 
-    console.log('[/api/analyze] Success, response length:', content.length);
-
     return res.status(200).json({
       content,
-      source: 'ollama-cloud',
-      model: model,
+      source: isLocal ? 'ollama-local' : 'ollama-hosted',
+      model,
+      target,
     });
-
   } catch (err) {
     console.error('[/api/analyze] Error:', err);
 
     if (err instanceof Error && err.name === 'AbortError') {
-      return res.status(504).json({
-        error: 'Request timeout',
-        code: 'TIMEOUT',
-      });
+      return res.status(504).json({ error: 'Request timeout', code: 'TIMEOUT' });
     }
 
     return res.status(500).json({

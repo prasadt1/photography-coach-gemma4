@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { analyzeForSellModeWithFallback, detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
 import { parseSellResponse, parseArtisanResponseV3, speak, stopSpeaking, resumeSpeech, hasPausedSpeech, isSpeechCompleted, clearPausedSpeech } from '../services/voiceCoach';
+import { getAnalyzingStatus, getUploadHint } from '../config';
+import { showStudioModeEntry } from '../lib/launchRoute';
 import { DEMO_RESPONSES, DemoResponse, simulateProcessing, getComparisonSamples, DEMO_COMPARISON_RESULT } from '../src/data/demoResponses';
 import { ComparisonResult } from '../services/ollamaService';
 import Header from './Header';
@@ -248,7 +250,7 @@ const SellMode: React.FC<SellModeProps> = ({
       const { content: response, source } = await analyzeForSellModeWithFallback(base64, file.type, voiceEnabled);
       setInferenceSource(source);
       if (source === 'demo' || !response) {
-        setError('Cloud analysis unavailable. Try a demo sample instead.');
+        setError('Analysis unavailable. Try a demo sample instead.');
         setIsAnalyzing(false);
         return;
       }
@@ -311,9 +313,13 @@ const SellMode: React.FC<SellModeProps> = ({
 
   const handleBack = () => {
     if (showGuidedJourney) {
-      setShowGuidedJourney(false);
-      stopSpeaking();
-      clearPausedSpeech();
+      if (showStudioModeEntry()) {
+        setShowGuidedJourney(false);
+        stopSpeaking();
+        clearPausedSpeech();
+      } else {
+        onBack();
+      }
     } else if (result || showCompare) {
       setResult(null);
       setShowCompare(false);
@@ -517,7 +523,7 @@ const SellMode: React.FC<SellModeProps> = ({
                   <div className="text-center">
                     <p className="text-base font-semibold text-[#241F18] mb-1">Upload your photo</p>
                     <p className="text-sm text-[#524A3D]">
-                      {inferenceSource === 'cloud' ? 'Analyzed via Ollama Cloud' : '100% private, on-device'}
+                      {getUploadHint(inferenceSource)}
                     </p>
                   </div>
                 </button>
@@ -531,10 +537,10 @@ const SellMode: React.FC<SellModeProps> = ({
             <div className="rounded-2xl bg-[#F4ECDC] border-2 border-[#D8CDB8] p-12 text-center" role="status" aria-live="polite">
               <Loader2 className="w-12 h-12 text-[#C06B45] animate-spin mx-auto mb-4" />
               <p className="text-xl font-bold text-[#241F18] mb-2">
-                {inferenceSource === 'local' ? 'Analyzing locally...' : inferenceSource === 'cloud' ? 'Analyzing via cloud...' : 'Preparing analysis...'}
+                {getAnalyzingStatus(inferenceSource).title}
               </p>
               <p className="text-[#524A3D]">
-                {inferenceSource === 'local' ? 'Gemma 4 E4B · Nothing leaves your device' : inferenceSource === 'cloud' ? 'Gemma 4 via Ollama Cloud' : 'Demo response'}
+                {getAnalyzingStatus(inferenceSource).subtitle}
               </p>
             </div>
           )}

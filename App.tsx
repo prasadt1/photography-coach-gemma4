@@ -29,6 +29,7 @@ import { setOperationalMode, exportAuditLog } from './services/auditService';
 import { speak } from './services/voiceCoach';
 import { AppState } from './types';
 import { PhotoAnalysisV2, OperationalMode, SessionHistoryEntry } from './types.v2';
+import { getInitialAppRoute, showStudioModeEntry } from './lib/launchRoute';
 
 // Note: isElectron and SessionSavingsBadge removed as part of header consolidation
 // Can be re-added to Header component if needed for vault mode or session stats
@@ -44,8 +45,9 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [showSlides, setShowSlides] = useState(false);
 
-  const [mode, setMode] = useState<OperationalMode>('studio');
-  const [showHome, setShowHome] = useState(true); // Start on HomePage
+  const initialRoute = getInitialAppRoute();
+  const [mode, setMode] = useState<OperationalMode>(initialRoute.mode);
+  const [showHome, setShowHome] = useState(initialRoute.showHome);
   const [analysisProgress, setAnalysisProgress] = useState<AnalysisProgress | null>(null);
   const [ollamaReady, setOllamaReady] = useState<boolean | null>(null);
 
@@ -207,6 +209,14 @@ function App() {
   }, []);
 
   const handleGoHome = useCallback(() => {
+    // Submission build: stay in Artisan journey instead of marketing home / sample grid
+    if (!showStudioModeEntry()) {
+      setMode('sell');
+      setShowHome(false);
+      setAppState(AppState.IDLE);
+      setError(null);
+      return;
+    }
     setShowHome(true);
     setAppState(AppState.IDLE);
     setCurrentImage(null);

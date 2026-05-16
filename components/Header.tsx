@@ -6,8 +6,9 @@
 
 import React from 'react';
 import { ChevronLeft, Volume2, VolumeX, Sparkles } from 'lucide-react';
+import { type InferenceSource, getInferenceSourceLabel } from '../config';
 
-export type InferenceSource = 'local' | 'cloud' | 'demo';
+export type { InferenceSource };
 
 interface HeaderProps {
   showBack?: boolean;
@@ -81,23 +82,20 @@ const Header: React.FC<HeaderProps> = ({
           )}
 
           {/* Inference Status Badge */}
-          {showInferenceStatus && inferenceSource !== 'cloud' && (
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border-2 ${
-              inferenceSource === 'local'
-                ? 'bg-[#A9B8BE] border-[#2F4858] text-[#241F18]'
-                : 'bg-[#F4ECDC] border-[#D8CDB8] text-[#524A3D]'
-            }`}>
+          {showInferenceStatus && (
+            <div
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border-2 ${
+                inferenceSource === 'local'
+                  ? 'bg-[#A9B8BE] border-[#2F4858] text-[#241F18]'
+                  : 'bg-[#F4ECDC] border-[#D8CDB8] text-[#524A3D]'
+              }`}
+            >
               {inferenceSource === 'local' ? (
-                <>
-                  <div className="w-2 h-2 rounded-full bg-[#2F4858] animate-pulse" />
-                  <span className="text-xs font-semibold">Local · Private</span>
-                </>
+                <div className="w-2 h-2 rounded-full bg-[#2F4858] animate-pulse" />
               ) : (
-                <>
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span className="text-xs font-semibold">Demo Mode</span>
-                </>
+                <Sparkles className="w-3.5 h-3.5" />
               )}
+              <span className="text-xs font-semibold">{getInferenceSourceLabel(inferenceSource)}</span>
             </div>
           )}
         </div>

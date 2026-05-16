@@ -65,7 +65,7 @@ L.E.N.S. runs Gemma 4 through **Ollama**, and is honest about where inference ha
 | Mode | What it is | Network |
 |------|-----------|---------|
 | **Local — Gemma 4 E4B via Ollama** | The actual product. Runs on the maker's own machine; the image never leaves the device. | Fully offline |
-| **Ollama Cloud** | Powers the hosted web app and iPhone PWA so anyone — including judges — can try L.E.N.S. without a local install. Real Gemma 4 inference, hosted. | Requires a connection |
+| **Hosted Gemma 4** | Powers the live web app and iPhone PWA so anyone — including judges — can try L.E.N.S. without installing Ollama. Same coaching, Gemma 4 inference. | Requires a connection |
 | **Demo Mode** | Offline playback of real, previously recorded E4B responses — a no-setup walkthrough. | None |
 
 **On-device is the product; the hosted path is how you try it quickly.** The deployed demo is a convenience layer, labelled as such — it does not run on-device. Every mode produces the **same strict JSON contract**, validated on the client so a malformed response fails loudly instead of degrading silently.
@@ -98,7 +98,7 @@ npm start
 
 Open **http://localhost:5173**, capture or upload a photo, and L.E.N.S. coaches you through it.
 
-> Prefer to skip setup? Open the **[live demo](https://lens-app-gemma4.vercel.app)** — it runs on Ollama Cloud, no install required.
+> Prefer to skip setup? Open the **[live demo](https://photography-coach-gemma4.vercel.app)** — hosted Gemma 4 coaching, no install required.
 
 ---
 
@@ -106,11 +106,11 @@ Open **http://localhost:5173**, capture or upload a photo, and L.E.N.S. coaches 
 
 The hosted app is an installable PWA:
 
-1. On iPhone, open **https://lens-app-gemma4.vercel.app** in Safari.
+1. On iPhone, open **https://photography-coach-gemma4.vercel.app** in Safari.
 2. Share → **Add to Home Screen**, then launch it full-screen.
 3. Grant camera permission once. L.E.N.S. uses a live `getUserMedia` preview, so capture is voice-driven — say *"take photo"* and it grabs the frame; a labelled capture button is always available as an equal alternative.
 
-Phone inference runs on **Ollama Cloud** (on-device phone inference is on the roadmap — see below). To deploy your own copy, set `OLLAMA_API_KEY` in your Vercel project's environment variables; the `/api/analyze` serverless function reads it server-side.
+The hosted PWA uses the same Gemma 4 coaching pipeline via a server-side API (on-device phone inference is on the roadmap — see below). To deploy your own copy, set `OLLAMA_API_KEY` in your Vercel environment variables.
 
 ---
 
@@ -124,8 +124,8 @@ Phone inference runs on **Ollama Cloud** (on-device phone inference is on the ro
                                 ▼
 ┌──────────────────────────────────────────────────────────────┐
 │  INFERENCE — Gemma 4 via Ollama                              │
-│  Local E4B (on-device)  ·  Ollama Cloud  ·  Demo Mode        │
-│  Priority chain: local → cloud → demo                        │
+│  Local E4B (on-device)  ·  Hosted Gemma 4  ·  Demo Mode      │
+│  Priority chain: local → hosted → demo                       │
 └───────────────────────────────┬──────────────────────────────┘
                                 ▼
 ┌──────────────────────────────────────────────────────────────┐

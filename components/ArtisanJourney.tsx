@@ -23,6 +23,11 @@ import {
   isCurrentlyListening,
 } from '../services/voiceCoach';
 import LiveCameraCapture from './LiveCameraCapture';
+import { getArtisanInferenceBadge } from '../config';
+import {
+  extractColourCheckFromSubject,
+  buildArtisanVoiceScript,
+} from '../services/artisanDisplay';
 
 type JourneyPhase =
   | 'voicePrompt'
@@ -35,6 +40,8 @@ type JourneyPhase =
 
 interface AnalysisResult {
   subject: string;
+  sceneDescription: string;
+  colourCheck: string | null;
   framing: string;
   lighting: string;
   primaryFix: string;
@@ -211,7 +218,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
         // For second photo in demo, make it slightly better to show improvement
         const isSecond = attempts.length > 0;
         parsed = {
-          subject: 'handcrafted item with warm colors like honey',
+          subject: 'I see one handcrafted wool scarf in warm honey brown, similar to dried autumn leaves.',
           critique: {
             framing: isSecond ? 'Perfect framing — subject fills frame' : 'Subject fills frame well',
             lighting: isSecond ? 'Excellent natural light — soft and even' : 'Natural light from window — soft and even',
@@ -224,7 +231,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
             focus: isSecond ? 8 : 7,
           },
           primary_issue: isSecond ? '' : 'framing could be tighter',
-          confidence_note: 'Demo mode — using sample analysis',
+          confidence_note: '',
           alt_text: 'Handcrafted item photographed in natural window light',
           listing_copy: 'Lovingly handcrafted with attention to detail. This unique piece brings warmth and character to any space.',
           ready_to_list: isSecond,
@@ -240,8 +247,12 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
         }
       }
 
+      const { sceneDescription, colourCheck } = extractColourCheckFromSubject(parsed.subject);
+
       const analysis: AnalysisResult = {
         subject: parsed.subject,
+        sceneDescription,
+        colourCheck,
         framing: parsed.critique.framing,
         lighting: parsed.critique.lighting,
         primaryFix: parsed.critique.primary_fix,
@@ -274,17 +285,18 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
         // Speak analysis results
         if (voiceEnabled) {
-          const voiceText = [
-            'Analysis complete.',
-            `What I see: ${analysis.subject}`,
-            analysis.lighting ? `Lighting: ${analysis.lighting}` : '',
-            analysis.framing ? `Framing: ${analysis.framing}` : '',
-            analysis.readyToList
-              ? 'This photo is ready to list.'
-              : `Your next step: ${analysis.primaryFix}`,
-            analysis.readyToList ? '' : 'Say "yes" to try again, or "no" to continue.',
-          ].filter(Boolean).join(' ');
-          speak(voiceText);
+          speak(
+            buildArtisanVoiceScript({
+              sceneDescription: analysis.sceneDescription,
+              colourCheck: analysis.colourCheck,
+              lighting: analysis.lighting,
+              framing: analysis.framing,
+              primaryFix: analysis.primaryFix,
+              readyToList: analysis.readyToList,
+              confidenceNote: analysis.confidenceNote,
+              includeRetakePrompt: !analysis.readyToList,
+            })
+          );
         }
       } else {
         // Second attempt
@@ -536,7 +548,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           <h1 className="text-4xl md:text-5xl font-bold font-serif text-[#241F18] leading-tight mb-4">
             Turn on voice commands?
           </h1>
-          <p className="text-lg text-[#524A3D] leading-relaxed max-w-xl mx-auto mb-8">
+          <p className="text-lg text-[#3D362B] leading-relaxed max-w-xl mx-auto mb-8">
             Tap Yes to enable voice coaching, or use buttons only.
           </p>
         </div>
@@ -609,7 +621,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
             <p className="text-xl font-bold text-[#241F18] mb-2">
               Analysing with Gemma 4
             </p>
-            <p className="text-[#524A3D]">
+            <p className="text-[#3D362B]">
               Comparing both photos to find the stronger shot...
             </p>
           </div>
@@ -625,7 +637,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           <h2 className="text-2xl font-bold text-[#241F18] mb-3">
             {isSecond ? 'Take your second photo' : 'Take your first photo'}
           </h2>
-          <p className="text-[#524A3D] mb-6">{promptText}</p>
+          <p className="text-[#3D362B] mb-6">{promptText}</p>
 
           <button
             onClick={() => {
@@ -642,7 +654,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           </button>
 
           {voiceCommandsEnabled && (
-            <p className="text-sm text-[#524A3D] mt-4">
+            <p className="text-sm text-[#3D362B] mt-4">
               Say "take photo" or tap the button above
             </p>
           )}
@@ -665,7 +677,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           <p className="text-xl font-bold text-[#241F18] mb-2">
             Analysing with Gemma 4
           </p>
-          <p className="text-[#524A3D]">
+          <p className="text-[#3D362B]">
             This takes a moment...
           </p>
         </div>
@@ -685,7 +697,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           <div className="w-full md:w-96 shrink-0 rounded-2xl overflow-hidden border-2 border-[#D8CDB8]">
             <img
               src={currentAttempt.image}
-              alt="Your craft photo"
+              alt={currentAttempt.analysisJSON.sceneDescription || 'Your craft photo'}
               className="w-full object-contain"
             />
           </div>
@@ -707,23 +719,46 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
               {/* Inference source badge */}
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F4ECDC] border border-[#D8CDB8]">
-                <Sparkles className="w-3 h-3 text-[#524A3D]" />
-                <span className="text-xs font-medium text-[#524A3D]">
-                  {currentInferenceSource === 'local' && 'Local Gemma 4'}
-                  {currentInferenceSource === 'cloud' && 'Cloud Gemma 4'}
-                  {currentInferenceSource === 'demo' && 'Demo Mode'}
+                <Sparkles className="w-3 h-3 text-[#3D362B]" />
+                <span className="text-xs font-medium text-[#3D362B]">
+                  {getArtisanInferenceBadge(currentInferenceSource)}
                 </span>
               </div>
             </div>
 
             <div>
-              <p className="text-xs font-semibold text-[#524A3D] uppercase tracking-wider mb-2">
+              <p className="text-xs font-semibold text-[#3D362B] uppercase tracking-wider mb-2">
                 What I See
               </p>
               <p className="text-xl font-semibold text-[#241F18]">
-                {analysis.subject}
+                {analysis.sceneDescription}
               </p>
             </div>
+
+            {analysis.colourCheck && (
+              <div
+                className="p-5 rounded-2xl bg-[#F4ECDC] border-2 border-[#C06B45]/40"
+                role="region"
+                aria-label="Colour check"
+              >
+                <p className="text-xs font-semibold text-[#AB3B24] uppercase tracking-wider mb-2">
+                  Colour check
+                </p>
+                <p className="text-lg font-semibold text-[#241F18]">{analysis.colourCheck}</p>
+                <p className="text-sm text-[#3D362B] mt-1">
+                  Confirm this matches your yarn, glaze, or material.
+                </p>
+              </div>
+            )}
+
+            {analysis.confidenceNote?.trim() && (
+              <div className="p-4 rounded-xl bg-amber-50 border border-amber-200" role="note">
+                <p className="text-xs font-semibold text-[#78350F] uppercase tracking-wider mb-1">
+                  Honesty note
+                </p>
+                <p className="text-sm text-[#241F18]">{analysis.confidenceNote}</p>
+              </div>
+            )}
 
             {analysis.primaryFix && !analysis.readyToList && (
               <div className="p-5 rounded-2xl bg-[#A9B8BE] border-2 border-[#2F4858]">
@@ -743,8 +778,8 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
                 {analysis.framing && (
                   <div className="p-4 rounded-xl bg-[#F4ECDC] border border-[#D8CDB8]">
                     <div className="flex items-center gap-2 mb-2">
-                      <Grid3X3 className="w-3.5 h-3.5 text-[#524A3D]" />
-                      <p className="text-xs font-semibold text-[#524A3D] uppercase tracking-wider">
+                      <Grid3X3 className="w-3.5 h-3.5 text-[#3D362B]" />
+                      <p className="text-xs font-semibold text-[#3D362B] uppercase tracking-wider">
                         Framing
                       </p>
                     </div>
@@ -754,8 +789,8 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
                 {analysis.lighting && (
                   <div className="p-4 rounded-xl bg-[#F4ECDC] border border-[#D8CDB8]">
                     <div className="flex items-center gap-2 mb-2">
-                      <Sun className="w-3.5 h-3.5 text-[#524A3D]" />
-                      <p className="text-xs font-semibold text-[#524A3D] uppercase tracking-wider">
+                      <Sun className="w-3.5 h-3.5 text-[#3D362B]" />
+                      <p className="text-xs font-semibold text-[#3D362B] uppercase tracking-wider">
                         Lighting
                       </p>
                     </div>
@@ -797,7 +832,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
         {/* Voice prompt hint */}
         {voiceCommandsEnabled && !analysis.readyToList && (
-          <p className="text-center text-sm text-[#524A3D] mt-4">
+          <p className="text-center text-sm text-[#3D362B] mt-4">
             <AudioLines className="inline w-4 h-4 mr-1" />
             Say "yes" to retake or tap the button above
           </p>
@@ -811,7 +846,9 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           aria-atomic="true"
           className="sr-only"
         >
-          Analysis complete. {analysis.subject}.
+          Analysis complete. {analysis.sceneDescription}.
+          {analysis.colourCheck ? `Colour check: ${analysis.colourCheck}.` : ''}
+          {analysis.confidenceNote ? `Note: ${analysis.confidenceNote}.` : ''}
           {analysis.readyToList
             ? 'Ready to list.'
             : `Next step: ${analysis.primaryFix}`}
@@ -825,7 +862,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     return (
       <div className="max-w-4xl mx-auto px-6 py-8" ref={mainContentRef} tabIndex={-1}>
         <h2 className="text-2xl font-bold text-[#241F18] mb-2">Photo Comparison</h2>
-        <p className="text-[#524A3D] mb-6">Same craft, two shots</p>
+        <p className="text-[#3D362B] mb-6">Same craft, two shots</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           {attempts.map((attempt, idx) => {
@@ -925,7 +962,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     return (
       <div className="max-w-4xl mx-auto px-6 py-8" ref={mainContentRef} tabIndex={-1}>
         <h2 className="text-2xl font-bold text-[#241F18] mb-2">Your marketplace listing</h2>
-        <p className="text-[#524A3D] mb-6">
+        <p className="text-[#3D362B] mb-6">
           From your stronger photo — copy and paste into Etsy or Shopify.
         </p>
 
@@ -957,11 +994,11 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
             {analysis.listingCopy && (
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-semibold text-[#524A3D] uppercase tracking-wider">Product description</p>
+                  <p className="text-xs font-semibold text-[#3D362B] uppercase tracking-wider">Product description</p>
                   <button
                     onClick={() => copyToClipboard(analysis.listingCopy, 'description')}
                     className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                      copiedField === 'description' ? 'bg-[#A9B8BE] text-[#241F18]' : 'bg-[#ECE3D2] hover:bg-[#D8CDB8] text-[#524A3D]'
+                      copiedField === 'description' ? 'bg-[#A9B8BE] text-[#241F18]' : 'bg-[#ECE3D2] hover:bg-[#D8CDB8] text-[#3D362B]'
                     }`}
                     aria-label="Copy product description"
                   >
@@ -979,13 +1016,13 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
             {analysis.altText && (
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-semibold text-[#524A3D] uppercase tracking-wider flex items-center gap-1.5">
+                  <p className="text-xs font-semibold text-[#3D362B] uppercase tracking-wider flex items-center gap-1.5">
                     <Accessibility className="w-3 h-3" /> Alt text
                   </p>
                   <button
                     onClick={() => copyToClipboard(analysis.altText, 'altText')}
                     className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                      copiedField === 'altText' ? 'bg-[#A9B8BE] text-[#241F18]' : 'bg-[#ECE3D2] hover:bg-[#D8CDB8] text-[#524A3D]'
+                      copiedField === 'altText' ? 'bg-[#A9B8BE] text-[#241F18]' : 'bg-[#ECE3D2] hover:bg-[#D8CDB8] text-[#3D362B]'
                     }`}
                     aria-label="Copy alt text"
                   >
@@ -1003,7 +1040,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
             {analysis.tags && analysis.tags.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-semibold text-[#524A3D] uppercase tracking-wider">Tags</p>
+                  <p className="text-xs font-semibold text-[#3D362B] uppercase tracking-wider">Tags</p>
                   <button
                     onClick={handleReadAllTags}
                     className="text-xs font-semibold text-[#C06B45] hover:text-[#A6552F] underline"

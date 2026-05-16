@@ -748,16 +748,13 @@ export async function checkCloudAvailability(): Promise<boolean> {
       signal: AbortSignal.timeout(5000),
     });
 
-    // 503 with NO_API_KEY means cloud not configured
     if (res.status === 503) {
-      const data = await res.json();
-      if (data.code === 'NO_API_KEY') return false;
+      return false;
     }
 
-    // 200 with cloudConfigured: true means cloud is ready
     if (res.status === 200) {
       const data = await res.json();
-      return data.cloudConfigured === true;
+      return data.configured === true || data.cloudConfigured === true;
     }
 
     // Any other status means cloud is not available
@@ -800,9 +797,11 @@ async function analyzePhotoCloud(
   }
 
   const data = await res.json();
+  const source: InferenceSource =
+    data.source === 'ollama-local' || data.target === 'local' ? 'local' : 'cloud';
   return {
     content: data.content,
-    source: 'cloud' as InferenceSource,
+    source,
   };
 }
 

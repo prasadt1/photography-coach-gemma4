@@ -8,8 +8,10 @@ import React, { useState, useEffect } from 'react';
 import {
   AudioLines, Camera, WifiOff,
   ArrowRight, Sparkles, Shield, Loader2, Heart,
-  User, Wrench, Smartphone, Target, Plus, Cloud,
+  User, Wrench, Smartphone, Target, Plus,
 } from 'lucide-react';
+import { getHomeHeroBadgeText } from '../config';
+import { showStudioModeEntry } from '../lib/launchRoute';
 import { OperationalMode } from '../types.v2';
 import { speak } from '../services/voiceCoach';
 import { detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
@@ -72,7 +74,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
             </h2>
 
             <p className="text-base text-[#241F18] leading-relaxed mb-4">
-              Voice-guided coaching for blind and low-vision artisans. Hear what's working in your photo, what isn't, and exactly how to fix it — no sighted help needed, nothing leaves your device.
+              Voice-guided coaching for blind and low-vision artisans. Hear what's working in your photo, what isn't, and exactly how to fix it — no sighted help needed.
             </p>
 
             {/* Product truth badge */}
@@ -82,20 +84,22 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   <span>Detecting AI...</span>
                 </div>
-              ) : inferenceSource === 'local' ? (
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#2F4858] border border-[#2F4858] text-white text-xs font-semibold">
-                  <Shield className="w-4 h-4" />
-                  <span>Runs on your device · Private · Works offline</span>
-                </div>
-              ) : inferenceSource === 'cloud' ? (
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#A9B8BE] border border-[#2F4858] text-[#241F18] text-xs font-semibold">
-                  <Cloud className="w-4 h-4" />
-                  <span>Cloud demo · Install Ollama for local private mode</span>
-                </div>
-              ) : (
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#F4ECDC] border border-[#D8CDB8] text-[#524A3D] text-xs font-semibold">
-                  <Sparkles className="w-4 h-4" />
-                  <span>Demo mode · Real Gemma 4 responses</span>
+                            ) : (
+                <div
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold ${
+                    inferenceSource === 'local'
+                      ? 'bg-[#2F4858] border border-[#2F4858] text-white'
+                      : inferenceSource === 'cloud'
+                        ? 'bg-[#A9B8BE] border border-[#2F4858] text-[#241F18]'
+                        : 'bg-[#F4ECDC] border border-[#D8CDB8] text-[#524A3D]'
+                  }`}
+                >
+                  {inferenceSource === 'local' ? (
+                    <Shield className="w-4 h-4" />
+                  ) : (
+                    <Sparkles className="w-4 h-4" />
+                  )}
+                  <span>{getHomeHeroBadgeText(inferenceSource)}</span>
                 </div>
               )}
             </div>
@@ -320,19 +324,21 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
             </div>
           </div>
 
-          <div className="pt-6 border-t-2 border-[#D8CDB8] max-w-lg mx-auto">
-            <p className="text-base text-[#241F18] mb-3 font-medium">
-              <strong className="text-[#2F4858]">For sighted photographers:</strong> Want detailed visual critique?
-            </p>
-            <button
-              onClick={() => onSelectMode('studio')}
-              className="group inline-flex items-center gap-2 px-5 py-2.5 bg-[#2F4858] hover:bg-[#1D3444] text-white rounded-full text-sm font-bold shadow-md transition-colors"
-            >
-              <Target className="w-4 h-4" />
-              <span>Visit Studio Mode</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
+          {showStudioModeEntry() && (
+            <div className="pt-6 border-t-2 border-[#D8CDB8] max-w-lg mx-auto">
+              <p className="text-base text-[#241F18] mb-3 font-medium">
+                <strong className="text-[#2F4858]">For sighted photographers:</strong> Want detailed visual critique?
+              </p>
+              <button
+                onClick={() => onSelectMode('studio')}
+                className="group inline-flex items-center gap-2 px-5 py-2.5 bg-[#2F4858] hover:bg-[#1D3444] text-white rounded-full text-sm font-bold shadow-md transition-colors"
+              >
+                <Target className="w-4 h-4" />
+                <span>Visit Studio Mode</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
+          )}
         </section>
       </main>
 

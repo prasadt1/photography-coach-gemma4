@@ -70,15 +70,70 @@ export const OLLAMA_CLOUD_CONFIG = {
 // Inference source tracking for UI badges
 export type InferenceSource = 'local' | 'cloud' | 'demo';
 
-// Get current inference source (used for UI badges)
+// User-facing copy only — never expose "cloud" in the product UI
 export const getInferenceSourceLabel = (source: InferenceSource): string => {
   switch (source) {
     case 'local':
-      return 'Local Gemma 4 · 100% Private';
+      return 'Local Gemma 4 · Private';
     case 'cloud':
-      return 'Ollama Cloud · Real Gemma 4';
+      return 'Gemma 4 · Voice-guided coaching';
     case 'demo':
-      return 'Demo Mode · Sample Analysis';
+      return 'Demo Mode · Sample coaching';
+  }
+};
+
+export const getHomeHeroBadgeText = (source: InferenceSource): string => {
+  switch (source) {
+    case 'local':
+      return 'Runs on your device · Private · Works offline';
+    case 'cloud':
+      return 'Gemma 4 ready · Voice-guided coaching';
+    case 'demo':
+      return 'Demo mode · Sample Gemma 4 responses';
+  }
+};
+
+export const getAnalyzingStatus = (
+  source: InferenceSource
+): { title: string; subtitle: string } => {
+  switch (source) {
+    case 'local':
+      return {
+        title: 'Analyzing locally...',
+        subtitle: 'Gemma 4 E4B · Nothing leaves your device',
+      };
+    case 'cloud':
+      return {
+        title: 'Analyzing with Gemma 4...',
+        subtitle: 'Voice-guided product coaching',
+      };
+    case 'demo':
+      return {
+        title: 'Preparing analysis...',
+        subtitle: 'Sample coaching response',
+      };
+  }
+};
+
+export const getUploadHint = (source: InferenceSource): string => {
+  switch (source) {
+    case 'local':
+      return '100% private, on your device';
+    case 'cloud':
+      return 'Analyzed with Gemma 4';
+    case 'demo':
+      return 'Try a sample or upload a photo';
+  }
+};
+
+export const getArtisanInferenceBadge = (source: InferenceSource): string => {
+  switch (source) {
+    case 'local':
+      return 'Local Gemma 4';
+    case 'cloud':
+      return 'Gemma 4';
+    case 'demo':
+      return 'Demo Mode';
   }
 };
 

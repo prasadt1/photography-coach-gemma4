@@ -160,8 +160,11 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
       case 'retryChoice':
         if (command === 'yes' || command === 'retry') {
+          console.log('[ArtisanJourney] Voice: Retake triggered');
+          speak('Opening camera for your second photo.');
           handleRetake();
         } else if (command === 'no' || command === 'continue') {
+          console.log('[ArtisanJourney] Voice: Skip to listing');
           handleSkipToListing();
         }
         break;
@@ -799,6 +802,14 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           </button>
         </div>
 
+        {/* Voice prompt hint */}
+        {voiceCommandsEnabled && !analysis.readyToList && (
+          <p className="text-center text-sm text-[#524A3D] mt-4">
+            <AudioLines className="inline w-4 h-4 mr-1" />
+            Say "yes" to retake or tap the button above
+          </p>
+        )}
+
         {/* ARIA announcer */}
         <div
           ref={phaseAnnouncerRef}
@@ -908,12 +919,25 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
   // Phase 7: Listing
   if (phase === 'listing') {
+    console.log('[ArtisanJourney] Listing phase - attempts:', attempts.length, 'strongerIndex:', strongerAttemptIndex);
+
     const finalAttempt = attempts[strongerAttemptIndex ?? attempts.length - 1];
+    console.log('[ArtisanJourney] Final attempt:', finalAttempt ? 'exists' : 'missing');
 
     if (!finalAttempt || !finalAttempt.analysisJSON) {
+      console.error('[ArtisanJourney] ERROR: No analysis data for listing', {
+        attemptsLength: attempts.length,
+        strongerAttemptIndex,
+        finalAttempt: !!finalAttempt,
+        hasAnalysis: finalAttempt?.analysisJSON ? true : false,
+      });
+
       return (
         <div className="max-w-2xl mx-auto px-6 py-12 text-center">
           <p className="text-red-600 mb-4">Error: No analysis data available</p>
+          <p className="text-sm text-[#524A3D] mb-4">
+            Debug: {attempts.length} attempts, index: {strongerAttemptIndex ?? 'none'}
+          </p>
           <button
             onClick={() => setPhase('firstCapture')}
             className="px-6 py-3 bg-[#C06B45] text-white rounded-full"
@@ -926,6 +950,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
     const analysis = finalAttempt.analysisJSON;
     const tagCount = analysis.tags?.length || 0;
+    console.log('[ArtisanJourney] Listing ready - tagCount:', tagCount, 'listingCopy:', analysis.listingCopy ? 'exists' : 'missing');
 
     return (
       <div className="max-w-4xl mx-auto px-6 py-8" ref={mainContentRef} tabIndex={-1}>

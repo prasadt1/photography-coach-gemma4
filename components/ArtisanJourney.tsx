@@ -488,6 +488,9 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     );
   }
 
+  // DEBUG: Log current state at every render
+  console.log('[ArtisanJourney] RENDER - Phase:', phase, 'Attempts:', attempts.length, 'StrongerIdx:', strongerAttemptIndex);
+
   // Phase 0: Voice Prompt
   if (phase === 'voicePrompt') {
     return (
@@ -1143,10 +1146,33 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     );
   }
 
-  // Fallback
+  // Fallback - This should never show, but if it does, we need to know why
   return (
     <div className="max-w-2xl mx-auto px-6 py-12">
-      <p className="text-center text-[#524A3D]">Loading...</p>
+      <div className="rounded-2xl bg-yellow-50 border-2 border-yellow-200 p-8">
+        <h2 className="text-xl font-bold text-yellow-800 mb-4">Unexpected State - Debug Info</h2>
+        <div className="space-y-2 text-sm text-left">
+          <p><strong>Phase:</strong> {phase}</p>
+          <p><strong>Attempts:</strong> {attempts.length}</p>
+          <p><strong>Stronger Index:</strong> {strongerAttemptIndex ?? 'null'}</p>
+          <p><strong>Is Processing:</strong> {isProcessing ? 'yes' : 'no'}</p>
+          <p><strong>Show Live Camera:</strong> {showLiveCamera ? 'yes' : 'no'}</p>
+          <p><strong>Voice Enabled:</strong> {voiceEnabled ? 'yes' : 'no'}</p>
+          <p className="pt-4 text-xs text-gray-600">
+            This fallback should never render. If you see this, something is wrong with the phase logic.
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            setPhase('firstCapture');
+            setAttempts([]);
+            setStrongerAttemptIndex(null);
+          }}
+          className="mt-6 px-6 py-3 bg-yellow-600 text-white rounded-full"
+        >
+          Reset and Start Over
+        </button>
+      </div>
     </div>
   );
 };

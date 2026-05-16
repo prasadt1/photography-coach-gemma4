@@ -1,0 +1,24 @@
+# Electron builds
+dist-electron/
+electron-dist/
+electron/
+
+# Build artifacts
+node_modules/
+.git/
+
+# Development
+.claude/
+spike/
+spikes/
+docs/
+tests/
+ai-response/
+ios-app/
+
+# Large markdown files
+*.md
+!README.md
+
+# Local env
+.env.local

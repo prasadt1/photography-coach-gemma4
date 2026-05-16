@@ -293,21 +293,28 @@ const VoiceMode: React.FC<VoiceModeProps> = ({ onBack, ollamaReady }) => {
 
   const toggleListening = useCallback(() => {
     if (isListening) {
-      stopListeningRef.current?.();
+      stopListening();
       stopListeningRef.current = null;
       setIsListening(false);
       setTranscript(null);
     } else {
-      const cleanup = startListening({
-        onCapture: handleCapture,
-        onRepeat: () => !isMuted && repeatLast(),
-        onMore: () => !isMuted && speakMore(),
-        onStop: () => stopSpeaking(),
-        onHelp: () => !isMuted && speakHelp(),
-        onTranscript: setTranscript,
-      });
-      if (cleanup) {
-        stopListeningRef.current = cleanup;
+      const success = startListening((transcript: string) => {
+        setTranscript(transcript);
+        const lower = transcript.toLowerCase();
+        if (lower.includes('capture') || lower.includes('take') || lower.includes('photo')) {
+          handleCapture();
+        } else if (lower.includes('repeat')) {
+          !isMuted && repeatLast();
+        } else if (lower.includes('more') || lower.includes('detail')) {
+          !isMuted && speakMore();
+        } else if (lower.includes('stop') || lower.includes('quiet')) {
+          stopSpeaking();
+        } else if (lower.includes('help')) {
+          !isMuted && speakHelp();
+        }
+      }, true);
+      if (success) {
+        stopListeningRef.current = stopListening;
         setIsListening(true);
         if (!isMuted) {
           speak('Listening. Say a command.');

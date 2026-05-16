@@ -5,7 +5,7 @@
  * Sources: docs/specs/10-platform-shells-spec.md §5.2
  */
 
-const CACHE_NAME = 'photography-coach-v2.1.0';
+const CACHE_NAME = 'photography-coach-v3.0.0-getusermedia';
 const ASSETS_TO_PRECACHE = [
   '/',
   '/index.html',
@@ -15,6 +15,11 @@ const ASSETS_TO_PRECACHE = [
 // ─── Install: precache static shell ───────────────────────────────────────────
 
 self.addEventListener('install', (event) => {
+  // During dev, skip caching to avoid stale code issues
+  if (self.location.hostname.includes('ngrok')) {
+    self.skipWaiting();
+    return;
+  }
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_PRECACHE))
   );
@@ -69,11 +74,13 @@ self.addEventListener('fetch', (event) => {
   //  - Cross-origin requests (Gemini API, fonts, CDN, anything off our origin)
   //  - The /share-target route (handled by the earlier listener)
   //  - Demo samples (these may change, don't cache them)
+  //  - ngrok URLs during dev (always fetch fresh)
   if (
     event.request.method !== 'GET' ||
     url.origin !== self.location.origin ||
     url.pathname === '/share-target' ||
-    url.pathname.startsWith('/demo-samples/')
+    url.pathname.startsWith('/demo-samples/') ||
+    self.location.hostname.includes('ngrok')
   ) {
     return;
   }

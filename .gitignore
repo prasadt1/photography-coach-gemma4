@@ -50,3 +50,4 @@ models/
 *.njsproj
 *.sln
 *.sw?
+.vercel

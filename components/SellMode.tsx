@@ -79,7 +79,7 @@ const SellMode: React.FC<SellModeProps> = ({
   const [demoCompareResult, setDemoCompareResult] = useState<ComparisonResult | null>(null);
   const [inferenceSource, setInferenceSource] = useState<InferenceSource>('demo');
   const [sourceDetected, setSourceDetected] = useState(false);
-  const [showGuidedJourney, setShowGuidedJourney] = useState(false);
+  const [showGuidedJourney, setShowGuidedJourney] = useState(true); // Start with voice-first journey
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -400,17 +400,15 @@ const SellMode: React.FC<SellModeProps> = ({
               </p>
 
               {/* Guided Journey CTA */}
-              {inferenceSource !== 'demo' && (
-                <button
-                  onClick={() => setShowGuidedJourney(true)}
-                  className="inline-flex items-center gap-3 px-6 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full font-bold shadow-lg transition-colors mb-6 focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
-                  aria-label="Start guided listing journey"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>Start Guided Listing Journey</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              )}
+              <button
+                onClick={() => setShowGuidedJourney(true)}
+                className="inline-flex items-center gap-3 px-6 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full font-bold shadow-lg transition-colors mb-6 focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
+                aria-label="Start guided listing journey"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>Start Guided Listing Journey</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
 
               {/* Compact How It Works */}
               <div className="flex flex-wrap items-center gap-3 mb-4 text-sm">
@@ -502,48 +500,27 @@ const SellMode: React.FC<SellModeProps> = ({
               </button>
 
               {/* SECONDARY: Upload Section */}
-              {inferenceSource !== 'demo' && (
-                <div className="pt-8 border-t-2 border-[#D8CDB8]">
-                  <p className="text-sm text-[#524A3D] mb-4">
-                    Want to try your own photo? Upload one below for {inferenceSource === 'cloud' ? 'cloud' : 'local'} analysis.
-                    {inferenceSource === 'cloud' && (
-                      <span className="block mt-2 text-xs italic">
-                        Note: Ollama Cloud is available for demo purposes only — to show how Gemma 4 works without installing Ollama locally. For private, offline analysis, install Ollama on your device.
-                      </span>
-                    )}
-                  </p>
-                  <button
-                    onClick={handleCapture}
-                    className="w-full rounded-2xl border-2 border-dashed border-[#D8CDB8] bg-[#F4ECDC] hover:border-[#C06B45] hover:bg-[#F4ECDC] p-8 flex flex-col items-center gap-4 focus:outline-none focus:ring-2 focus:ring-[#C06B45] group"
-                    aria-label="Upload your own photo"
-                  >
-                    <div className="w-14 h-14 rounded-2xl bg-[#F4ECDC] border border-[#D8CDB8] flex items-center justify-center group-hover:bg-[#A9B8BE] group-hover:border-[#2F4858]">
-                      <Upload className="w-6 h-6 text-[#524A3D] group-hover:text-[#C06B45]" />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-base font-semibold text-[#241F18] mb-1">Upload your photo</p>
-                      <p className="text-sm text-[#524A3D]">
-                        {inferenceSource === 'cloud' ? 'Analyzed via Ollama Cloud' : '100% private, on-device'}
-                      </p>
-                    </div>
-                  </button>
-                </div>
-              )}
-
-              {/* Demo mode notice */}
-              {inferenceSource === 'demo' && (
-                <div className="flex items-start gap-3 p-5 rounded-2xl bg-[#F4ECDC] border border-[#D8CDB8]">
-                  <Sparkles className="w-5 h-5 text-[#C06B45] mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-sm text-[#241F18]">
-                      <strong className="text-[#241F18]">Demo Mode</strong> — These are real Gemma 4 E4B responses captured from local Ollama.
-                      <a href="https://github.com/prasadt1/photography-coach-gemma4#quick-start" target="_blank" rel="noopener noreferrer" className="text-[#C06B45] hover:text-[#C06B45] underline ml-1">
-                        Install Ollama
-                      </a> for live analysis.
+              <div className="pt-8 border-t-2 border-[#D8CDB8]">
+                <p className="text-sm text-[#524A3D] mb-4">
+                  Want to try your own photo? Upload one below for analysis.
+                </p>
+                <button
+                  onClick={handleCapture}
+                  className="w-full rounded-2xl border-2 border-dashed border-[#D8CDB8] bg-[#F4ECDC] hover:border-[#C06B45] hover:bg-[#F4ECDC] p-8 flex flex-col items-center gap-4 focus:outline-none focus:ring-2 focus:ring-[#C06B45] group"
+                  aria-label="Upload your own photo"
+                >
+                  <div className="w-14 h-14 rounded-2xl bg-[#F4ECDC] border border-[#D8CDB8] flex items-center justify-center group-hover:bg-[#A9B8BE] group-hover:border-[#2F4858]">
+                    <Upload className="w-6 h-6 text-[#524A3D] group-hover:text-[#C06B45]" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-base font-semibold text-[#241F18] mb-1">Upload your photo</p>
+                    <p className="text-sm text-[#524A3D]">
+                      {inferenceSource === 'cloud' ? 'Analyzed via Ollama Cloud' : '100% private, on-device'}
                     </p>
                   </div>
-                </div>
-              )}
+                </button>
+              </div>
+
             </div>
           )}
 

@@ -64,6 +64,8 @@ let isCurrentlySpeaking = false;
 let recognition: SpeechRecognition | null = null;
 let isListening = false;
 let recognitionCallback: ((command: string) => void) | null = null;
+let lastCommandTime = 0;
+const COMMAND_DEBOUNCE_MS = 2000; // Wait 2 seconds between commands
 
 /**
  * Speak text using Web Speech API
@@ -280,6 +282,14 @@ export function startListening(
 
       console.log('[voiceCoach] Recognized:', transcript);
 
+      // Debounce: ignore commands that come too quickly
+      const now = Date.now();
+      if (now - lastCommandTime < COMMAND_DEBOUNCE_MS) {
+        console.log('[voiceCoach] Ignoring command (too soon after last command)');
+        return;
+      }
+      lastCommandTime = now;
+
       if (recognitionCallback) {
         recognitionCallback(transcript);
       }
@@ -362,21 +372,23 @@ export function isCurrentlyListening(): boolean {
  * Maps various phrasings to standard commands
  */
 export function parseVoiceCommand(transcript: string): string | null {
-  const lower = transcript.toLowerCase().trim();
+  const lower = transcript.toLowerCase().trim().replace(/[.,!?]/g, '');
 
-  // Affirmative
-  if (/^(yes|yeah|yep|sure|ok|okay|correct|right|yup)$/i.test(lower)) {
+  console.log('[voiceCoach] Parsing transcript:', transcript, '-> cleaned:', lower);
+
+  // Affirmative - more lenient, check if it contains the word
+  if (/(^|\s)(yes|yeah|yep|sure|ok|okay|correct|right|yup)(\s|$)/i.test(lower)) {
     return 'yes';
   }
 
   // Negative
-  if (/^(no|nope|nah|not really)$/i.test(lower)) {
+  if (/(^|\s)(no|nope|nah)(\s|$)/i.test(lower)) {
     return 'no';
   }
 
-  // Take photo / capture
-  if (/(take|capture|snap|shoot).*(photo|picture|pic|shot)/i.test(lower) ||
-      /^(photo|picture|capture|snap)$/i.test(lower)) {
+  // Take photo / capture - more lenient
+  if (/(take|capture|snap|shoot|open).*(photo|picture|pic|shot|camera)/i.test(lower) ||
+      /(photo|picture|capture|snap|camera)/i.test(lower)) {
     return 'take-photo';
   }
 
@@ -521,19 +533,6 @@ export function stopSpeaking(): void {
 
 // ─── Voice Input (Speech Recognition) ──────────────────────────────────────────
 
-type VoiceCommand = 'capture' | 'repeat' | 'more' | 'stop' | 'help' | 'unknown';
-
-interface VoiceInputCallbacks {
-  onCapture?: () => void;
-  onRepeat?: () => void;
-  onMore?: () => void;
-  onStop?: () => void;
-  onHelp?: () => void;
-  onTranscript?: (text: string) => void;
-}
-
-let recognitionInstance: SpeechRecognition | null = null;
-
 /**
  * Check if speech recognition is supported
  */
@@ -542,106 +541,10 @@ export function isSpeechRecognitionSupported(): boolean {
 }
 
 /**
- * Parse transcript to voice command
- */
-function parseCommand(transcript: string): VoiceCommand {
-  const text = transcript.toLowerCase().trim();
-
-  if (text.includes('take') || text.includes('capture') || text.includes('shoot') || text.includes('photo')) {
-    return 'capture';
-  }
-  if (text.includes('repeat') || text.includes('again') || text.includes('say that')) {
-    return 'repeat';
-  }
-  if (text.includes('more') || text.includes('detail') || text.includes('explain')) {
-    return 'more';
-  }
-  if (text.includes('stop') || text.includes('quiet') || text.includes('silence')) {
-    return 'stop';
-  }
-  if (text.includes('help') || text.includes('commands') || text.includes('what can')) {
-    return 'help';
-  }
-
-  return 'unknown';
-}
-
-/**
- * Start listening for voice commands
- */
-export function startListening(callbacks: VoiceInputCallbacks): (() => void) | null {
-  if (!isSpeechRecognitionSupported()) {
-    console.warn('Speech recognition not supported in this browser');
-    return null;
-  }
-
-  const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
-  const recognition = new SpeechRecognition();
-
-  recognition.continuous = false;
-  recognition.interimResults = false;
-  recognition.lang = 'en-US';
-  recognition.maxAlternatives = 1;
-
-  recognition.onresult = (event: SpeechRecognitionEvent) => {
-    const transcript = event.results[0][0].transcript;
-    callbacks.onTranscript?.(transcript);
-
-    const command = parseCommand(transcript);
-
-    switch (command) {
-      case 'capture':
-        callbacks.onCapture?.();
-        break;
-      case 'repeat':
-        callbacks.onRepeat?.();
-        break;
-      case 'more':
-        callbacks.onMore?.();
-        break;
-      case 'stop':
-        callbacks.onStop?.();
-        break;
-      case 'help':
-        callbacks.onHelp?.();
-        break;
-    }
-  };
-
-  recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-    console.warn('Speech recognition error:', event.error);
-  };
-
-  recognition.start();
-  recognitionInstance = recognition;
-
-  // Return cleanup function
-  return () => {
-    recognition.stop();
-    recognitionInstance = null;
-  };
-}
-
-/**
- * Stop listening
- */
-export function stopListening(): void {
-  if (recognitionInstance) {
-    recognitionInstance.stop();
-    recognitionInstance = null;
-  }
-}
-
-/**
- * Speak help instructions
+ * Speak help text for voice commands
  */
 export function speakHelp(): void {
-  speak(
-    'Voice commands available: Say "take photo" to capture. ' +
-    'Say "repeat" to hear the last feedback again. ' +
-    'Say "more" for additional details. ' +
-    'Say "stop" to silence me.'
-  );
+  speak('You can say: take photo, repeat, more details, or stop speaking.');
 }
 
 // ─── Utility: Parse Gemma response for Voice Mode ──────────────────────────────

@@ -9,6 +9,13 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 3000,
         host: '0.0.0.0',
+        allowedHosts: [
+          '.ngrok-free.dev',  // Allow all ngrok domains
+          '.ngrok.io',        // Alternative ngrok domain
+        ],
+        headers: {
+          'Cache-Control': 'no-store',  // Prevent caching during development
+        },
       },
       plugins: [react()],
       define: {

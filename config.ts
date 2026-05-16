@@ -28,6 +28,7 @@ const _isDeployedEnvironment = (() => {
 })();
 
 export const OLLAMA_CONFIG = {
+  // Local Ollama configuration (not used when cloud is enabled)
   baseUrl: `http://${_ollamaHost}:11434`,
   model: 'gemma4:latest',
   modelId: 'gemma-4-e4b',           // Canonical ID written to v2 schema
@@ -45,20 +46,10 @@ export const OLLAMA_CONFIG = {
 
 export const SCHEMA_VERSION = '2.0';
 
-// Demo Mode: When deployed (not localhost), default to Demo Mode for judges
-// This allows testing the app without requiring local Ollama setup
-//
-// USAGE:
-// 1. Deploy to Vercel/Netlify/GitHub Pages
-// 2. App automatically detects it's not localhost
-// 3. Shows banner: "Demo Mode: To use your own Ollama, visit http://YOUR_IP:5173"
-// 4. Gracefully handles Ollama not being available (fallback to Gemini or mock)
-//
+// Demo Mode: Disabled - using Ollama Cloud for all analysis
 export const DEMO_MODE_CONFIG = {
   isDeployedEnvironment: _isDeployedEnvironment,
-  // When deployed, show a banner explaining Demo Mode and how to connect own Ollama
-  enableDemoModeBanner: _isDeployedEnvironment,
-  // Fallback strategy: 'gemini' = use Gemini API, 'mock' = mock responses, 'ollama-optional' = try Ollama but gracefully fallback
+  enableDemoModeBanner: false,  // Disabled - no demo mode banner
   deployedFallbackStrategy: 'ollama-optional' as 'gemini' | 'mock' | 'ollama-optional',
 } as const;
 
@@ -71,8 +62,9 @@ export const OLLAMA_CLOUD_CONFIG = {
   // Model identifier on Ollama Cloud (gemma4 has vision support)
   model: 'gemma4',
   modelId: 'gemma4-cloud',
-  // Whether cloud fallback is enabled (requires OLLAMA_API_KEY in Vercel)
-  enabled: _isDeployedEnvironment,
+  // Whether cloud fallback is enabled (requires OLLAMA_API_KEY env var)
+  // Enabled for ngrok to use Ollama Cloud from iPhone
+  enabled: true,
 } as const;
 
 // Inference source tracking for UI badges

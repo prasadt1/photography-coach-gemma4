@@ -16,7 +16,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Camera, Loader2, CheckCircle2, ArrowRight,
-  Lightbulb, Grid3X3, Sun, FileText, Copy, Accessibility,
+  Lightbulb, Grid3X3, Sun, Copy, Accessibility,
   AudioLines, Sparkles,
 } from 'lucide-react';
 import { analyzeForSellModeWithFallback, type InferenceSource } from '../services/analysisOrchestrator';
@@ -29,7 +29,7 @@ import {
   parseVoiceCommand,
   isCurrentlyListening,
 } from '../services/voiceCoach';
-import { comparePhotos, type ComparisonResult } from '../services/ollamaService';
+import LiveCameraCapture from './LiveCameraCapture';
 
 type JourneyPhase =
   | 'voicePrompt'   // NEW: Ask to enable voice commands
@@ -77,7 +77,7 @@ interface ArtisanJourneyProps {
 
 const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   voiceEnabled: voiceEnabledProp,
-  inferenceSource,
+  inferenceSource: _inferenceSource,
   onExit,
 }) => {
   // Journey state
@@ -95,12 +95,13 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [showAllTags, setShowAllTags] = useState(false);
+  const [currentInferenceSource, setCurrentInferenceSource] = useState<InferenceSource>('demo');
+  const [showLiveCamera, setShowLiveCamera] = useState(false);
 
   // Voice is primary if enabled, buttons are backup
   const voiceEnabled = voiceEnabledProp || voiceCommandsEnabled;
 
   // Refs for accessibility
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const phaseAnnouncerRef = useRef<HTMLDivElement>(null);
   const mainContentRef = useRef<HTMLDivElement>(null);
   const retakeButtonRef = useRef<HTMLButtonElement>(null);
@@ -120,27 +121,40 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     console.log('[ArtisanJourney] Voice command:', command, 'from:', transcript);
 
     if (!command) {
-      speak('I didn\'t understand that. Please try again.');
+      // Don't respond to unrecognized commands - reduces noise
+      console.log('[ArtisanJourney] Ignoring unrecognized command');
       return;
     }
+
+    // Stop any current speech before responding
+    stopSpeaking();
 
     // Route commands based on current phase
     switch (phase) {
       case 'voicePrompt':
         if (command === 'yes') {
           setVoiceCommandsEnabled(true);
-          setPhase('entry');
+          setPhase('firstCapture'); // Skip entry, go straight to camera
           speak('Voice commands enabled. Say "take photo" to begin.');
         } else if (command === 'no') {
-          setPhase('entry');
+          setPhase('firstCapture'); // Skip entry either way
           speak('You can use buttons instead.');
         }
         break;
 
       case 'entry':
       case 'firstCapture':
+      case 'secondCapture':
         if (command === 'take-photo') {
-          handleCameraOpen();
+          // Call global capture function if camera is already open
+          if ((window as any).__artisanCameraCapture) {
+            (window as any).__artisanCameraCapture();
+            speak('Got it. Analyzing now.');
+          } else {
+            // Open camera if not already open
+            setShowLiveCamera(true);
+            speak('Opening camera.');
+          }
         }
         break;
 
@@ -176,10 +190,15 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     }
   }, [voiceCommandsEnabled, handleVoiceCommand]);
 
-  // Voice greeting when entering voicePrompt phase
+  // Voice greeting when entering voicePrompt phase (speak only once)
+  const hasGreeted = useRef(false);
   useEffect(() => {
-    if (phase === 'voicePrompt' && voiceEnabled) {
-      speak('Welcome to L.E.N.S. Artisan Studio. Would you like to turn on voice commands? Say "yes" or tap the button.');
+    if (phase === 'voicePrompt' && voiceEnabled && !hasGreeted.current) {
+      hasGreeted.current = true;
+      stopSpeaking(); // Clear any previous speech
+      setTimeout(() => {
+        speak('Welcome to L.E.N.S. Artisan Studio. Tap Yes to enable voice commands.');
+      }, 500);
     }
   }, [phase, voiceEnabled]);
 
@@ -256,36 +275,15 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     }
   }, [voiceEnabled]);
 
-  // ========== Phase 2 & 5: Camera Capture ==========
-  const handleCameraOpen = useCallback(() => {
-    fileInputRef.current?.click();
-    const isSecondPhoto = phase === 'secondCapture';
-    const prompt = isSecondPhoto && firstPhoto?.analysis?.primaryFix
-      ? `Remember: ${firstPhoto.analysis.primaryFix}`
-      : 'Position your craft in good light. Tap to capture.';
-
-    if (voiceEnabled) {
-      speak(`Opening camera. ${prompt}`);
-    }
-  }, [phase, firstPhoto, voiceEnabled]);
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    e.target.value = ''; // Reset for reuse
+  /**
+   * Handle captured image from getUserMedia canvas
+   * This is called with a data URL from LiveCameraCapture
+   */
+  const handleImageCapture = async (imageDataUrl: string) => {
     setError(null);
     setIsProcessing(true);
 
     try {
-      // Convert to base64
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
       const isFirstPhoto = phase === 'firstCapture';
 
       if (voiceEnabled) {
@@ -295,27 +293,57 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
       // Move to analysis phase
       if (isFirstPhoto) {
         setPhase('firstAnalysis');
+      } else {
+        // Second photo - stay in secondCapture but mark as processing
+        // Phase will change to 'comparison' after analysis completes
       }
 
       // Call Gemma 4
       const { content: response, source } = await analyzeForSellModeWithFallback(
-        base64,
-        file.type,
+        imageDataUrl,
+        'image/jpeg', // getUserMedia canvas captures as JPEG
         voiceEnabled
       );
 
-      if (source === 'demo' || !response) {
-        setError('Analysis unavailable. Please try again.');
-        setIsProcessing(false);
-        return;
-      }
+      // Store inference source for badge display
+      setCurrentInferenceSource(source);
 
-      // Parse response (REAL Gemma output only)
-      const parsed = parseArtisanResponseV3(response);
-      if (!parsed) {
-        setError('Could not parse analysis. Please try again.');
-        setIsProcessing(false);
-        return;
+      // Demo fallback with canned artisan coaching
+      let parsed;
+      if (source === 'demo' || !response) {
+        // Add realistic delay to demo mode
+        await new Promise(resolve => setTimeout(resolve, 3000));
+
+        // For second photo in demo, make it slightly better to show improvement
+        const isSecond = attempts.length > 0;
+        parsed = {
+          subject: 'handcrafted item with warm colors like honey',
+          critique: {
+            framing: isSecond ? 'Perfect framing — subject fills frame' : 'Subject fills frame well',
+            lighting: isSecond ? 'Excellent natural light — soft and even' : 'Natural light from window — soft and even',
+            primary_fix: isSecond ? 'Ready to list as is' : 'Move 6 inches closer to fill the frame completely',
+          },
+          ratings: {
+            lighting: isSecond ? 9 : 7,
+            framing: isSecond ? 9 : 6,
+            background: isSecond ? 8 : 8,
+            focus: isSecond ? 8 : 7,
+          },
+          primary_issue: isSecond ? '' : 'framing could be tighter',
+          confidence_note: 'Demo mode — using sample analysis',
+          alt_text: 'Handcrafted item photographed in natural window light',
+          listing_copy: 'Lovingly handcrafted with attention to detail. This unique piece brings warmth and character to any space.',
+          ready_to_list: isSecond,
+          tags: ['handmade', 'artisan', 'craft', 'unique', 'handcrafted'],
+        };
+      } else {
+        // Parse real Gemma output
+        parsed = parseArtisanResponseV3(response);
+        if (!parsed) {
+          setError('Could not parse analysis. Please try again.');
+          setIsProcessing(false);
+          return;
+        }
       }
 
       const analysis: AnalysisResult = {
@@ -340,7 +368,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
       // Store in attempts array
       const attempt: Attempt = {
-        image: base64,
+        image: imageDataUrl,
         analysisJSON: analysis,
         timestamp: Date.now(),
       };
@@ -410,11 +438,12 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   // ========== Phase 4: Retry Choice ==========
   const handleRetake = useCallback(() => {
     setPhase('secondCapture');
+    // Auto-open camera for voice-first experience
+    setShowLiveCamera(true);
     if (voiceEnabled) {
       speak('Opening camera for a second photo. Apply the fix.');
     }
-    setTimeout(() => handleCameraOpen(), 500);
-  }, [voiceEnabled, handleCameraOpen]);
+  }, [voiceEnabled]);
 
   const handleSkipToListing = useCallback(() => {
     setPhase('listing');
@@ -435,6 +464,27 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
   // ========== Render Phases ==========
 
+  // Error state - MUST be checked FIRST
+  if (error) {
+    return (
+      <div className="max-w-2xl mx-auto px-6 py-12" ref={mainContentRef} tabIndex={-1}>
+        <div className="rounded-2xl bg-red-50 border-2 border-red-200 p-8 text-center" role="alert" aria-live="assertive">
+          <p className="text-red-700 font-medium mb-4">{error}</p>
+          <button
+            onClick={() => {
+              setError(null);
+              setPhase('firstCapture');
+              setIsProcessing(false);
+            }}
+            className="px-6 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full font-semibold"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Phase 0: Voice Prompt
   if (phase === 'voicePrompt') {
     return (
@@ -448,7 +498,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
             Turn on voice commands?
           </h1>
           <p className="text-lg text-[#524A3D] leading-relaxed max-w-xl mx-auto mb-8">
-            Say "yes" to use voice commands throughout, or "no" to use buttons instead.
+            Tap Yes to enable voice coaching, or use buttons only.
           </p>
         </div>
 
@@ -456,7 +506,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           <button
             onClick={() => {
               setVoiceCommandsEnabled(true);
-              setPhase('entry');
+              setPhase('firstCapture'); // Skip entry
               speak('Voice commands enabled. Say "take photo" to begin.');
             }}
             className="inline-flex items-center gap-3 px-8 py-4 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full text-lg font-bold shadow-xl transition-colors focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
@@ -468,8 +518,8 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
           <button
             onClick={() => {
-              setPhase('entry');
-              speak('You can use buttons instead.');
+              setPhase('firstCapture'); // Skip entry
+              speak('You can use buttons.');
             }}
             className="inline-flex items-center gap-3 px-8 py-4 bg-[#F4ECDC] border-2 border-[#D8CDB8] hover:border-[#C06B45] text-[#241F18] rounded-full text-lg font-bold transition-colors focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
             aria-label="Use buttons instead"
@@ -527,9 +577,51 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     );
   }
 
-  // Phase 2 & 5: Camera Capture
+  // Phase 2 & 5: Camera Capture (getUserMedia - voice-first!)
   if (phase === 'firstCapture' || phase === 'secondCapture') {
     const isSecond = phase === 'secondCapture';
+    const promptText = isSecond && attempts[0]?.analysisJSON?.primaryFix
+      ? `Remember: ${attempts[0].analysisJSON.primaryFix}`
+      : 'Position your craft in good light';
+
+    // Show live camera if requested
+    if (showLiveCamera) {
+      return (
+        <LiveCameraCapture
+          onCapture={(imageDataUrl) => {
+            setShowLiveCamera(false);
+            handleImageCapture(imageDataUrl);
+          }}
+          onClose={() => setShowLiveCamera(false)}
+          promptText={promptText}
+          buttonLabel="Take Photo"
+        />
+      );
+    }
+
+    // Show processing screen if analyzing second photo
+    if (isSecond && isProcessing) {
+      return (
+        <div className="max-w-2xl mx-auto px-6 py-12" ref={mainContentRef} tabIndex={-1}>
+          <div
+            className="rounded-2xl bg-[#F4ECDC] border-2 border-[#D8CDB8] p-12 text-center"
+            role="status"
+            aria-live="polite"
+            aria-busy="true"
+          >
+            <Loader2 className="w-12 h-12 text-[#C06B45] animate-spin mx-auto mb-4" />
+            <p className="text-xl font-bold text-[#241F18] mb-2">
+              Analysing with Gemma 4
+            </p>
+            <p className="text-[#524A3D]">
+              Comparing both photos to find the stronger shot...
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    // Camera launch screen
     return (
       <div className="max-w-2xl mx-auto px-6 py-12" ref={mainContentRef} tabIndex={-1}>
         <div className="rounded-2xl bg-[#F4ECDC] border-2 border-[#D8CDB8] p-12 text-center">
@@ -537,32 +629,28 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           <h2 className="text-2xl font-bold text-[#241F18] mb-3">
             {isSecond ? 'Take your second photo' : 'Take your first photo'}
           </h2>
-          <p className="text-[#524A3D] mb-6">
-            {isSecond && firstPhoto?.analysis?.primaryFix
-              ? `Remember: ${firstPhoto.analysis.primaryFix}`
-              : 'Position your craft in good light.'}
-          </p>
+          <p className="text-[#524A3D] mb-6">{promptText}</p>
 
           <button
-            onClick={handleCameraOpen}
+            onClick={() => {
+              setShowLiveCamera(true);
+              if (voiceEnabled) {
+                speak('Opening camera. ' + promptText);
+              }
+            }}
             className="inline-flex items-center gap-2 px-6 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full font-semibold focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
             aria-label={isSecond ? "Open camera for second photo" : "Open camera for first photo"}
           >
             <Camera className="w-5 h-5" />
             <span>Open Camera</span>
           </button>
-        </div>
 
-        {/* Hidden file input - real, accessible */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={handleFileChange}
-          className="sr-only"
-          aria-label={isSecond ? "Capture second photo" : "Capture first photo"}
-        />
+          {voiceCommandsEnabled && (
+            <p className="text-sm text-[#524A3D] mt-4">
+              Say "take photo" or tap the button above
+            </p>
+          )}
+        </div>
       </div>
     );
   }
@@ -607,17 +695,29 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           </div>
 
           <div className="flex-1 space-y-4">
-            <div
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border-2 ${
-                analysis.readyToList
-                  ? 'bg-[#A9B8BE] text-[#241F18] border-[#2F4858]'
-                  : 'bg-amber-100 text-amber-700 border-amber-200'
-              }`}
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              <span className="text-sm font-bold">
-                {analysis.readyToList ? 'Ready to List' : 'One fix will strengthen this'}
-              </span>
+            <div className="flex flex-wrap gap-2 items-center">
+              <div
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border-2 ${
+                  analysis.readyToList
+                    ? 'bg-[#A9B8BE] text-[#241F18] border-[#2F4858]'
+                    : 'bg-amber-100 text-amber-700 border-amber-200'
+                }`}
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span className="text-sm font-bold">
+                  {analysis.readyToList ? 'Ready to List' : 'One fix will strengthen this'}
+                </span>
+              </div>
+
+              {/* Inference source badge */}
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F4ECDC] border border-[#D8CDB8]">
+                <Sparkles className="w-3 h-3 text-[#524A3D]" />
+                <span className="text-xs font-medium text-[#524A3D]">
+                  {currentInferenceSource === 'local' && 'Local Gemma 4'}
+                  {currentInferenceSource === 'cloud' && 'Cloud Gemma 4'}
+                  {currentInferenceSource === 'demo' && 'Demo Mode'}
+                </span>
+              </div>
             </div>
 
             <div>
@@ -718,9 +818,6 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
   // Phase 6: Comparison
   if (phase === 'comparison' && attempts.length >= 2 && strongerAttemptIndex !== null) {
-    const stronger = attempts[strongerAttemptIndex];
-    const weaker = attempts[strongerAttemptIndex === 0 ? 1 : 0];
-
     return (
       <div className="max-w-4xl mx-auto px-6 py-8" ref={mainContentRef} tabIndex={-1}>
         <h2 className="text-2xl font-bold text-[#241F18] mb-2">Photo Comparison</h2>
@@ -763,18 +860,32 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           <p className="text-[#241F18] mb-4">
             {comparisonText || `Photo ${strongerAttemptIndex + 1} is the stronger one.`}
           </p>
-          <button
-            onClick={() => {
-              setPhase('listing');
-              if (voiceEnabled) {
-                speak('Generating your listing from the stronger photo.');
-              }
-            }}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full font-semibold focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
-          >
-            <span>Generate Listing</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => {
+                setPhase('listing');
+                if (voiceEnabled) {
+                  speak('Generating your listing from the stronger photo.');
+                }
+              }}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full font-semibold focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
+            >
+              <span>Generate Listing</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => {
+                setPhase('secondCapture');
+                if (voiceEnabled) {
+                  speak('Opening camera for another attempt.');
+                }
+              }}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#F4ECDC] border-2 border-[#D8CDB8] hover:border-[#C06B45] text-[#241F18] rounded-full font-semibold focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
+            >
+              <Camera className="w-4 h-4" />
+              <span>Try Another Photo</span>
+            </button>
+          </div>
         </div>
 
         <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
@@ -799,8 +910,18 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   if (phase === 'listing') {
     const finalAttempt = attempts[strongerAttemptIndex ?? attempts.length - 1];
 
-    if (!finalAttempt) {
-      return <div>Error: No attempt available</div>;
+    if (!finalAttempt || !finalAttempt.analysisJSON) {
+      return (
+        <div className="max-w-2xl mx-auto px-6 py-12 text-center">
+          <p className="text-red-600 mb-4">Error: No analysis data available</p>
+          <button
+            onClick={() => setPhase('firstCapture')}
+            className="px-6 py-3 bg-[#C06B45] text-white rounded-full"
+          >
+            Start Over
+          </button>
+        </div>
+      );
     }
 
     const analysis = finalAttempt.analysisJSON;
@@ -978,28 +1099,12 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     );
   }
 
-  // Error state
-  if (error) {
-    return (
-      <div className="max-w-2xl mx-auto px-6 py-12" ref={mainContentRef} tabIndex={-1}>
-        <div className="rounded-2xl bg-red-50 border-2 border-red-200 p-8 text-center" role="alert" aria-live="assertive">
-          <p className="text-red-700 font-medium mb-4">{error}</p>
-          <button
-            onClick={() => {
-              setError(null);
-              setPhase('firstCapture');
-            }}
-            className="px-6 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full font-semibold focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
-            aria-label="Try taking photo again"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return null;
+  // Fallback
+  return (
+    <div className="max-w-2xl mx-auto px-6 py-12">
+      <p className="text-center text-[#524A3D]">Loading...</p>
+    </div>
+  );
 };
 
 export default ArtisanJourney;

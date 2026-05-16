@@ -176,6 +176,13 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     }
   }, [voiceCommandsEnabled, handleVoiceCommand]);
 
+  // Voice greeting when entering voicePrompt phase
+  useEffect(() => {
+    if (phase === 'voicePrompt' && voiceEnabled) {
+      speak('Welcome to L.E.N.S. Artisan Studio. Would you like to turn on voice commands? Say "yes" or tap the button.');
+    }
+  }, [phase, voiceEnabled]);
+
   // Focus management: move focus to main content when phase changes
   useEffect(() => {
     if (phase === 'retryChoice' && retakeButtonRef.current) {
@@ -430,11 +437,6 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
   // Phase 0: Voice Prompt
   if (phase === 'voicePrompt') {
-    // Greet on entry
-    useEffect(() => {
-      speak('Welcome to L.E.N.S. Artisan Studio. Would you like to turn on voice commands? Say "yes" or tap the button.');
-    }, []);
-
     return (
       <div className="max-w-2xl mx-auto px-6 py-16 text-center" ref={mainContentRef} tabIndex={-1}>
         <div className="mb-8">

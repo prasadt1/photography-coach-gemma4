@@ -1,19 +1,20 @@
 /**
- * Artisan journey entry — skip voice-consent for LAN demo / video recording.
+ * Artisan journey entry — demo vs standard paths.
  *
- * - `?skipConsent=1` or `?record=1` — always skip (any host)
- * - DEV + HTTPS + LAN IP — auto-skip (phone filming on same Wi‑Fi)
+ * Tap-only demo (LAN / ?record=1): welcome → TTS tap guidance → no speech recognition.
+ * Standard: voice consent screen (Yes / No) then journey.
  */
 
 function isLanHostname(hostname: string): boolean {
   return /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)/.test(hostname);
 }
 
-export function shouldSkipArtisanVoiceConsent(): boolean {
+/** LAN HTTPS dev or ?record=1 — tap + TTS demo for video (no voice commands). */
+export function shouldUseTapOnlyDemo(): boolean {
   if (typeof window === 'undefined') return false;
 
   const q = new URLSearchParams(window.location.search);
-  if (q.get('skipConsent') === '1' || q.get('record') === '1') return true;
+  if (q.get('record') === '1' || q.get('skipConsent') === '1') return true;
 
   if (!import.meta.env.DEV || !window.isSecureContext) return false;
   const h = window.location.hostname;

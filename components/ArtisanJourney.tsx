@@ -21,6 +21,7 @@ import {
 import {
   parseArtisanResponseV3,
   speak,
+  speakFromUserGesture,
   unlockSpeechForSession,
   stopSpeaking,
   startListening,
@@ -36,13 +37,21 @@ import {
   getAnalysisStatusCopy,
   type ArtisanCaptureKind,
 } from '../services/artisanDisplay';
-import { shouldSkipArtisanVoiceConsent } from '../lib/artisanJourneyRoute';
+import { shouldUseTapOnlyDemo } from '../lib/artisanJourneyRoute';
+import {
+  TAP_BTN_PRIMARY,
+  TAP_BTN_SECONDARY,
+  TAP_GUIDANCE,
+  TAP_HINT_CLASS,
+  TAP_LABELS,
+} from '../lib/artisanTapGuidance';
 import {
   consumeOpenCameraAfterHttps,
   redirectToHttpsForCamera,
 } from '../lib/devSecureUrl';
 
 type JourneyPhase =
+  | 'demoWelcome'
   | 'voicePrompt'
   | 'firstCapture'
   | 'firstAnalysis'
@@ -92,13 +101,13 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   inferenceSource: _inferenceSource,
   onExit,
 }) => {
-  const skipVoiceConsentInitial = shouldSkipArtisanVoiceConsent();
+  const tapOnlyDemo = shouldUseTapOnlyDemo();
 
   // Journey state
   const [phase, setPhase] = useState<JourneyPhase>(() =>
-    skipVoiceConsentInitial ? 'firstCapture' : 'voicePrompt',
+    tapOnlyDemo ? 'demoWelcome' : 'voicePrompt',
   );
-  const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(skipVoiceConsentInitial);
+  const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(false);
   const [voiceListeningPrimed, setVoiceListeningPrimed] = useState(false);
 
   // Attempts array: app maintains session state (model is stateless)
@@ -113,23 +122,31 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [showAllTags, setShowAllTags] = useState(false);
   const [currentInferenceSource, setCurrentInferenceSource] = useState<InferenceSource>('demo');
-  const [showLiveCamera, setShowLiveCamera] = useState(skipVoiceConsentInitial);
+  const [showLiveCamera, setShowLiveCamera] = useState(false);
 
-  // Voice is primary if enabled, buttons are backup
+  // Voice commands (mic) — off on tap-only demo path
   const voiceEnabled = voiceEnabledProp || voiceCommandsEnabled;
+  /** Spoken coaching (TTS) — on for voice path and tap-only LAN / ?record=1 demo */
+  const coachingEnabled = voiceEnabled || tapOnlyDemo;
 
   const handleVoiceCommandRef = useRef<(transcript: string) => void>(() => {});
 
   const primeVoiceListening = useCallback(() => {
-    if (!voiceCommandsEnabled) return;
+    if (tapOnlyDemo || !voiceCommandsEnabled) return;
     unlockSpeechForSession();
     stopSpeaking();
     setVoiceListeningPrimed(true);
-    const started = startListening((transcript) => handleVoiceCommandRef.current(transcript), true);
-    if (!started) {
-      speak('Voice commands are not available in this browser. Use the Take Photo button.');
-    }
-  }, [voiceCommandsEnabled]);
+    startListening((transcript) => handleVoiceCommandRef.current(transcript), true);
+  }, [tapOnlyDemo, voiceCommandsEnabled]);
+
+  const handleDemoWelcomeStart = useCallback(() => {
+    unlockSpeechForSession();
+    speakFromUserGesture(TAP_GUIDANCE.welcome.tts, 0.95, () => {
+      setPhase('firstCapture');
+      setShowLiveCamera(true);
+      speak(TAP_GUIDANCE.camera.tts);
+    });
+  }, []);
 
   // Refs for accessibility
   const phaseAnnouncerRef = useRef<HTMLDivElement>(null);
@@ -269,7 +286,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
       const analysisStatus = getAnalysisStatusCopy(captureKind);
 
       clearAnalysisStatusTimer();
-      if (voiceEnabled) {
+      if (coachingEnabled) {
         stopSpeaking();
         analysisStatusTimerRef.current = setTimeout(() => {
           speak(analysisStatus.voiceAfterDelay);
@@ -379,7 +396,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
         setPhase('retryChoice');
 
         // Speak analysis results
-        if (voiceEnabled) {
+        if (coachingEnabled) {
           speak(
             buildArtisanVoiceScript({
               sceneDescription: analysis.sceneDescription,
@@ -389,7 +406,8 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
               primaryFix: analysis.primaryFix,
               readyToList: analysis.readyToList,
               confidenceNote: analysis.confidenceNote,
-              includeRetakePrompt: !analysis.readyToList,
+              includeRetakePrompt: !tapOnlyDemo && !analysis.readyToList,
+              tapOnlyRetakeCue: tapOnlyDemo && !analysis.readyToList ? TAP_GUIDANCE.retake.ttsSuffix : undefined,
             })
           );
         }
@@ -410,8 +428,12 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           setStrongerAttemptIndex(strongerIndex);
           setComparisonText(improvementText);
 
-          if (voiceEnabled) {
-            speak(improvementText);
+          if (coachingEnabled) {
+            speak(
+              tapOnlyDemo
+                ? `${improvementText} ${TAP_GUIDANCE.comparison.tts}`
+                : improvementText,
+            );
           }
         } catch (err) {
           console.warn('[ArtisanJourney] Comparison failed, using fallback:', err);
@@ -419,8 +441,12 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           setStrongerAttemptIndex(1);
           setComparisonText('Photo two is the stronger one.');
 
-          if (voiceEnabled) {
-            speak('Photo two is the stronger one. The fix improved the shot.');
+          if (coachingEnabled) {
+            speak(
+              tapOnlyDemo
+                ? `Photo two is the stronger one. The fix improved the shot. ${TAP_GUIDANCE.comparison.tts}`
+                : 'Photo two is the stronger one. The fix improved the shot.',
+            );
           }
         }
       }
@@ -437,24 +463,37 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   // ========== Phase 4: Retry Choice ==========
   const handleRetake = useCallback(() => {
     setPhase('secondCapture');
-    openLiveCamera('Opening camera for a second photo. Apply the fix.');
-  }, [openLiveCamera]);
+    if (tapOnlyDemo) {
+      setShowLiveCamera(true);
+      speak(TAP_GUIDANCE.camera.tts);
+    } else {
+      openLiveCamera('Opening camera for a second photo. Apply the fix.');
+    }
+  }, [openLiveCamera, tapOnlyDemo]);
+
+  const handleContinueToListing = useCallback(() => {
+    setPhase('listing');
+    if (coachingEnabled) {
+      speak(
+        tapOnlyDemo
+          ? `Your listing is ready. ${TAP_GUIDANCE.listing.ttsSuffix}`
+          : 'Generating your listing from the stronger photo.',
+      );
+    }
+  }, [coachingEnabled, tapOnlyDemo]);
 
   const handleSkipToListing = useCallback(() => {
-    setPhase('listing');
-    if (voiceEnabled) {
-      speak('Generating your listing.');
-    }
-  }, [voiceEnabled]);
+    handleContinueToListing();
+  }, [handleContinueToListing]);
 
   const copyToClipboard = useCallback((text: string, field: string) => {
     navigator.clipboard.writeText(text);
     setCopiedField(field);
-    if (voiceEnabled) {
+    if (coachingEnabled) {
       speak('Copied to clipboard.');
     }
     setTimeout(() => setCopiedField(null), 2000);
-  }, [voiceEnabled]);
+  }, [coachingEnabled]);
 
   const handleReadAllTags = useCallback(() => {
     const finalAttempt = attempts[strongerAttemptIndex ?? attempts.length - 1];
@@ -479,6 +518,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
   // Voice command handler — must stay above all conditional returns (Rules of Hooks)
   const handleVoiceCommand = useCallback((transcript: string) => {
+    if (tapOnlyDemo) return;
     const command = parseVoiceCommand(transcript);
     if (!command) return;
 
@@ -516,8 +556,8 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
       case 'comparison':
         if (command === 'continue' || command === 'generate-listing') {
-          setPhase('listing');
-          if (voiceEnabled) {
+          handleContinueToListing();
+          if (voiceEnabled && !tapOnlyDemo) {
             speak('Here is your listing. Say copy to copy everything.');
           }
         }
@@ -540,14 +580,17 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     openLiveCamera,
     handleRetake,
     handleSkipToListing,
+    handleContinueToListing,
     handleReadAllTags,
     copyAllListingText,
     onExit,
+    tapOnlyDemo,
   ]);
 
   handleVoiceCommandRef.current = handleVoiceCommand;
 
   useEffect(() => {
+    if (tapOnlyDemo) return;
     if (!voiceCommandsEnabled) {
       if (isCurrentlyListening()) stopListening();
       return;
@@ -556,12 +599,8 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     if (!isCurrentlyListening()) {
       startListening((transcript) => handleVoiceCommandRef.current(transcript), true);
     }
-  }, [voiceCommandsEnabled, voiceListeningPrimed]);
+  }, [tapOnlyDemo, voiceCommandsEnabled, voiceListeningPrimed]);
 
-  useEffect(() => {
-    if (!skipVoiceConsentInitial) return;
-    void warmUpModelViaApi();
-  }, [skipVoiceConsentInitial]);
 
   const hasGreeted = useRef(false);
   useEffect(() => {
@@ -632,10 +671,36 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     );
   }
 
-  // DEBUG: Log current state at every render
-  console.log('[ArtisanJourney] RENDER - Phase:', phase, 'Attempts:', attempts.length, 'StrongerIdx:', strongerAttemptIndex);
+  // Tap-only demo welcome (LAN / ?record=1)
+  if (phase === 'demoWelcome') {
+    return (
+      <div className="max-w-2xl mx-auto px-6 py-16 text-center" ref={mainContentRef} tabIndex={-1}>
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#C06B45] text-white text-sm font-bold uppercase tracking-wide mb-6">
+            <AudioLines className="w-4 h-4" />
+            Voice-guided coaching
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold font-serif text-[#241F18] leading-tight mb-4">
+            {TAP_GUIDANCE.welcome.title}
+          </h1>
+          <p className={`${TAP_HINT_CLASS} mb-8`}>{TAP_GUIDANCE.welcome.hint}</p>
+        </div>
+        <button
+          type="button"
+          onClick={handleDemoWelcomeStart}
+          className={`${TAP_BTN_PRIMARY} max-w-md mx-auto`}
+          aria-label={TAP_LABELS.start}
+        >
+          {TAP_LABELS.start}
+        </button>
+        <div role="status" aria-live="polite" className="sr-only">
+          {TAP_GUIDANCE.welcome.hint}
+        </div>
+      </div>
+    );
+  }
 
-  // Phase 0: Voice Prompt
+  // Phase 0: Voice Prompt (standard path — not LAN demo)
   if (phase === 'voicePrompt') {
     return (
       <div className="max-w-2xl mx-auto px-6 py-16 text-center" ref={mainContentRef} tabIndex={-1}>
@@ -708,9 +773,10 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
             handleImageCapture(imageDataUrl);
           }}
           onClose={() => setShowLiveCamera(false)}
-          onPrimeVoice={voiceCommandsEnabled ? primeVoiceListening : undefined}
+          tapOnlyHero={tapOnlyDemo}
+          tapHint={tapOnlyDemo ? TAP_GUIDANCE.camera.hint : undefined}
           promptText={promptText}
-          buttonLabel="Take Photo"
+          buttonLabel={TAP_LABELS.takePhoto}
         />
       );
     }
@@ -917,17 +983,25 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
             <button
               ref={retakeButtonRef}
               onClick={handleRetake}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full font-semibold focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
-              aria-label="Retake photo with the suggested fix"
+              className={
+                tapOnlyDemo
+                  ? `${TAP_BTN_PRIMARY} inline-flex items-center justify-center gap-2`
+                  : 'inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full font-semibold focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50'
+              }
+              aria-label={tapOnlyDemo ? TAP_LABELS.takeAnotherPhoto : 'Retake photo with the suggested fix'}
             >
-              <Camera className="w-4 h-4" />
-              <span>Retake with Fix</span>
+              <Camera className="w-5 h-5" />
+              <span>{tapOnlyDemo ? TAP_LABELS.takeAnotherPhoto : 'Retake with Fix'}</span>
             </button>
           )}
           <button
             ref={!analysis.readyToList ? undefined : retakeButtonRef}
             onClick={handleSkipToListing}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#F4ECDC] border-2 border-[#D8CDB8] hover:border-[#C06B45] text-[#241F18] rounded-full font-semibold focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
+            className={
+              tapOnlyDemo
+                ? `${TAP_BTN_SECONDARY} inline-flex items-center justify-center gap-2`
+                : 'inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#F4ECDC] border-2 border-[#D8CDB8] hover:border-[#C06B45] text-[#241F18] rounded-full font-semibold focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50'
+            }
             aria-label="Skip to listing generation"
           >
             <span>I'm happy with this</span>
@@ -935,8 +1009,12 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           </button>
         </div>
 
+        {tapOnlyDemo && !analysis.readyToList && (
+          <p className={`${TAP_HINT_CLASS} mt-6`}>{TAP_GUIDANCE.retake.hint}</p>
+        )}
+
         {/* Voice prompt hint */}
-        {voiceCommandsEnabled && !analysis.readyToList && (
+        {voiceCommandsEnabled && !tapOnlyDemo && !analysis.readyToList && (
           <p className="text-center text-sm text-[#3D362B] mt-4">
             <AudioLines className="inline w-4 h-4 mr-1" />
             Say "yes" to retake or tap the button above
@@ -1008,31 +1086,39 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           </p>
           <div className="flex flex-wrap gap-3">
             <button
-              onClick={() => {
-                setPhase('listing');
-                if (voiceEnabled) {
-                  speak('Generating your listing from the stronger photo.');
-                }
-              }}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full font-semibold focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
+              type="button"
+              onClick={handleContinueToListing}
+              className={
+                tapOnlyDemo
+                  ? `${TAP_BTN_PRIMARY} inline-flex items-center justify-center gap-2`
+                  : 'inline-flex items-center gap-2 px-6 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full font-semibold focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50'
+              }
+              aria-label={tapOnlyDemo ? TAP_LABELS.continueToListing : 'Generate listing from stronger photo'}
             >
-              <span>Generate Listing</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>{tapOnlyDemo ? TAP_LABELS.continueToListing : 'Generate Listing'}</span>
+              <ArrowRight className="w-5 h-5" />
             </button>
-            <button
-              onClick={() => {
-                setPhase('secondCapture');
-                if (voiceEnabled) {
-                  speak('Opening camera for another attempt.');
-                }
-              }}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#F4ECDC] border-2 border-[#D8CDB8] hover:border-[#C06B45] text-[#241F18] rounded-full font-semibold focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
-            >
-              <Camera className="w-4 h-4" />
-              <span>Try Another Photo</span>
-            </button>
+            {!tapOnlyDemo && (
+              <button
+                type="button"
+                onClick={() => {
+                  setPhase('secondCapture');
+                  if (coachingEnabled) {
+                    speak('Opening camera for another attempt.');
+                  }
+                }}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[#F4ECDC] border-2 border-[#D8CDB8] hover:border-[#C06B45] text-[#241F18] rounded-full font-semibold focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
+              >
+                <Camera className="w-4 h-4" />
+                <span>Try Another Photo</span>
+              </button>
+            )}
           </div>
         </div>
+
+        {tapOnlyDemo && (
+          <p className={`${TAP_HINT_CLASS} mt-6`}>{TAP_GUIDANCE.comparison.hint}</p>
+        )}
 
         <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
           {comparisonText || `Photo ${strongerAttemptIndex + 1} is stronger.`}
@@ -1186,15 +1272,29 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-3">
+        {tapOnlyDemo && (
+          <p className={`${TAP_HINT_CLASS} mb-6`}>{TAP_GUIDANCE.listing.hint}</p>
+        )}
+
+        <div className="flex flex-wrap gap-3 justify-center">
           <button
             ref={listingButtonRef}
             onClick={copyAllListingText}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full font-semibold focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
-            aria-label="Copy all listing text for Etsy"
+            className={
+              tapOnlyDemo
+                ? `${TAP_BTN_PRIMARY} inline-flex items-center justify-center gap-2`
+                : 'inline-flex items-center gap-2 px-6 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full font-semibold focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50'
+            }
+            aria-label={tapOnlyDemo ? TAP_LABELS.copyListing : 'Copy all listing text for Etsy'}
           >
-            <Copy className="w-4 h-4" />
-            <span>{copiedField === 'all' ? 'Copied!' : 'Copy listing for Etsy'}</span>
+            <Copy className="w-5 h-5" />
+            <span>
+              {copiedField === 'all'
+                ? 'Copied!'
+                : tapOnlyDemo
+                  ? TAP_LABELS.copyListing
+                  : 'Copy listing for Etsy'}
+            </span>
           </button>
           <button
             onClick={onExit}

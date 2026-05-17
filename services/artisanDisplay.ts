@@ -92,6 +92,8 @@ export interface ArtisanVoiceInput {
   readyToList?: boolean;
   confidenceNote?: string;
   includeRetakePrompt?: boolean;
+  /** Tap-only demo: spoken retake cue matches on-screen button label */
+  tapOnlyRetakeCue?: string;
 }
 
 export function buildArtisanVoiceScript(input: ArtisanVoiceInput): string {
@@ -119,7 +121,9 @@ export function buildArtisanVoiceScript(input: ArtisanVoiceInput): string {
     parts.push('This photo is ready to list.');
   } else if (input.primaryFix) {
     parts.push(`Your next step: ${input.primaryFix}`);
-    if (input.includeRetakePrompt) {
+    if (input.tapOnlyRetakeCue) {
+      parts.push(input.tapOnlyRetakeCue);
+    } else if (input.includeRetakePrompt) {
       parts.push('Say yes to try again, or no to continue.');
     }
   }

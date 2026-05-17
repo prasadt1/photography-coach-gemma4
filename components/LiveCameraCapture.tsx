@@ -1,18 +1,21 @@
 /**
- * LiveCameraCapture.tsx - getUserMedia-based voice-first camera
+ * LiveCameraCapture.tsx - getUserMedia-based camera for Artisan journey
  *
  * Accessible modal: dialog semantics, focus trap, live regions for status/errors.
  */
 
 import React, { useRef, useEffect, useState, useCallback, useId, useMemo } from 'react';
-import { Camera, Mic, X, Shield } from 'lucide-react';
+import { Camera, X, Shield } from 'lucide-react';
 import { getHttpsUpgradeUrl, OPEN_CAMERA_AFTER_HTTPS_KEY } from '../lib/devSecureUrl';
+import { TAP_BTN_PRIMARY, TAP_HINT_CLASS, TAP_LABELS } from '../lib/artisanTapGuidance';
 
 interface LiveCameraCaptureProps {
   onCapture: (imageDataUrl: string) => void;
   onClose?: () => void;
-  /** Call on pointer-down before capture — primes iOS speech recognition in the same gesture. */
-  onPrimeVoice?: () => void;
+  /** Tap-only demo: one hero Take Photo button, no voice-command UI */
+  tapOnlyHero?: boolean;
+  /** Visible hint (should match spoken guidance) */
+  tapHint?: string;
   promptText?: string;
   buttonLabel?: string;
 }
@@ -23,9 +26,10 @@ const FOCUSABLE =
 export const LiveCameraCapture: React.FC<LiveCameraCaptureProps> = ({
   onCapture,
   onClose,
-  onPrimeVoice,
+  tapOnlyHero = false,
+  tapHint,
   promptText = 'Position your craft in good light',
-  buttonLabel = 'Take Photo',
+  buttonLabel = TAP_LABELS.takePhoto,
 }) => {
   const titleId = useId();
   const statusId = useId();
@@ -38,9 +42,6 @@ export const LiveCameraCapture: React.FC<LiveCameraCaptureProps> = ({
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const voicePrimedRef = useRef(false);
-  /** First Take Photo tap arms the mic only; second tap captures (iOS gesture + voice path). */
-  const skipNextClickCaptureRef = useRef(false);
   const needsFilePicker =
     typeof window !== 'undefined' && !window.isSecureContext;
   const httpsUpgradeUrl = useMemo(
@@ -148,14 +149,6 @@ export const LiveCameraCapture: React.FC<LiveCameraCaptureProps> = ({
   }, [needsFilePicker]);
 
   useEffect(() => {
-    if (needsFilePicker) return;
-    (window as Window & { __artisanCameraCapture?: () => void }).__artisanCameraCapture = captureFrame;
-    return () => {
-      delete (window as Window & { __artisanCameraCapture?: () => void }).__artisanCameraCapture;
-    };
-  }, [captureFrame, needsFilePicker]);
-
-  useEffect(() => {
     previouslyFocusedRef.current = document.activeElement as HTMLElement;
     document.body.style.overflow = 'hidden';
 
@@ -176,7 +169,7 @@ export const LiveCameraCapture: React.FC<LiveCameraCaptureProps> = ({
       if (e.key !== 'Tab' || !dialogRef.current) return;
 
       const nodes = Array.from(
-        dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)
+        dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE),
       ).filter((el) => !el.hasAttribute('disabled'));
 
       if (nodes.length === 0) return;
@@ -202,27 +195,6 @@ export const LiveCameraCapture: React.FC<LiveCameraCaptureProps> = ({
       previouslyFocusedRef.current?.focus?.();
     };
   }, [error, onClose]);
-
-  const handlePrimeVoiceOnce = useCallback(() => {
-    voicePrimedRef.current = true;
-    onPrimeVoice?.();
-  }, [onPrimeVoice]);
-
-  const armVoiceCommand = useCallback(() => {
-    if (!onPrimeVoice) return;
-    handlePrimeVoiceOnce();
-    skipNextClickCaptureRef.current = true;
-    setStatusMessage('Listening. Say take photo, or tap Take Photo again.');
-  }, [onPrimeVoice, handlePrimeVoiceOnce]);
-
-  const handleTakePhotoClick = useCallback(() => {
-    if (skipNextClickCaptureRef.current) {
-      skipNextClickCaptureRef.current = false;
-      setStatusMessage('Say take photo, or tap Take Photo again to capture.');
-      return;
-    }
-    captureFrame();
-  }, [captureFrame]);
 
   const dialogProps = {
     ref: dialogRef,
@@ -332,6 +304,8 @@ export const LiveCameraCapture: React.FC<LiveCameraCaptureProps> = ({
     );
   }
 
+  const captureLabel = tapOnlyHero ? TAP_LABELS.takePhoto : buttonLabel;
+
   return (
     <div {...dialogProps}>
       <p id={titleId} className="sr-only">
@@ -374,37 +348,25 @@ export const LiveCameraCapture: React.FC<LiveCameraCaptureProps> = ({
         )}
       </div>
 
-      <div className="p-6 bg-black/50 flex flex-col items-center gap-2">
-        {onPrimeVoice ? (
-          <p className="text-white/80 text-xs text-center max-w-sm px-2">
-            1. Tap <strong className="font-semibold">Say command</strong> · 2. Say &quot;take photo&quot; — or tap Take Photo twice
-          </p>
+      <div className={`p-6 bg-black/50 flex flex-col items-center gap-4 ${tapOnlyHero ? 'pb-10' : ''}`}>
+        {tapHint ? (
+          <p className={`${TAP_HINT_CLASS} !text-white/95 px-4`}>{tapHint}</p>
         ) : null}
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          {onPrimeVoice ? (
-            <button
-              type="button"
-              onClick={armVoiceCommand}
-              disabled={!isStreaming}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-[#2F4858] hover:bg-[#243842] disabled:bg-gray-500 text-white rounded-full text-base font-bold focus:outline-none focus-visible:ring-4 focus-visible:ring-white/80"
-              aria-label="Say command — enables microphone for take photo"
-            >
-              <Mic className="w-5 h-5" aria-hidden="true" />
-              <span>Say command</span>
-            </button>
-          ) : null}
-          <button
-            ref={captureButtonRef}
-            type="button"
-            onClick={handleTakePhotoClick}
-            disabled={!isStreaming}
-            className="inline-flex items-center gap-3 px-8 py-4 bg-[#C06B45] hover:bg-[#A6552F] disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-full text-lg font-bold shadow-xl transition-colors focus:outline-none focus-visible:ring-4 focus-visible:ring-white/80"
-            aria-label={buttonLabel}
-          >
-            <Camera className="w-6 h-6" aria-hidden="true" />
-            <span>{buttonLabel}</span>
-          </button>
-        </div>
+        <button
+          ref={captureButtonRef}
+          type="button"
+          onClick={captureFrame}
+          disabled={!isStreaming}
+          className={
+            tapOnlyHero
+              ? `${TAP_BTN_PRIMARY} w-full max-w-md disabled:bg-gray-500 disabled:cursor-not-allowed`
+              : 'inline-flex items-center gap-3 px-8 py-4 bg-[#C06B45] hover:bg-[#A6552F] disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-full text-lg font-bold shadow-xl transition-colors focus:outline-none focus-visible:ring-4 focus-visible:ring-white/80'
+          }
+          aria-label={captureLabel}
+        >
+          <Camera className="w-6 h-6" aria-hidden="true" />
+          <span>{captureLabel}</span>
+        </button>
       </div>
 
       <canvas ref={canvasRef} className="hidden" aria-hidden="true" />

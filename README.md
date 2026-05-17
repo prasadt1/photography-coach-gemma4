@@ -138,13 +138,13 @@ npm run start:https
 
 Open the **Network** URL Vite prints (e.g. `https://192.168.x.x:3000`, or **3001** if 3000 is busy). Install the mkcert root on iPhone when prompted — see [scripts/setup-dev-https.sh](scripts/setup-dev-https.sh). The dev server proxies `/ollama` → `127.0.0.1:11434` so the phone never hits mixed-content errors.
 
-**Demo video on LAN:** HTTPS + a LAN IP **skips the voice-consent screen** and opens the in-app camera immediately. Force with `?skipConsent=1` on any host. Say **“take photo”** on the capture button (touch the button once first so iOS allows the mic), or tap **Take Photo**.
+**Demo video on LAN:** HTTPS on a LAN IP (or `?record=1` / `?skipConsent=1`) uses a **tap + voice-coaching** flow — welcome → **Start** → spoken hints, then large **Take Photo** / **Take another photo** / **Continue to listing** / **Copy listing** buttons (no speech recognition). Example: `https://192.168.x.x:3000/?record=1`.
 
 **Install (hosted deploy or LAN URL):**
 
 1. Open the URL in **Safari** on iPhone.
 2. Share → **Add to Home Screen**, then launch full-screen.
-3. Grant camera permission once. Use the **labelled capture button** on iPhone (reliable); voice commands are supported where the browser allows. **Voice coaching (TTS)** works after you interact with the page.
+3. Grant camera permission once. On the **LAN / `?record=1` demo path**, use the labelled buttons; **voice coaching (TTS)** guides each step. The standard journey still offers optional voice commands where the browser allows.
 
 On-device inference **on the phone itself** (LiteRT native) is Phase 2 — see [Spike 3](docs/spikes/spike-3-litert-ios.md). Judge deploy env vars: table under [Two public deployments](#two-public-deployments-one-repo).
 

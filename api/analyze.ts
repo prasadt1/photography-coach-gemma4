@@ -12,7 +12,50 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { ARTISAN_V3_OUTPUT_SCHEMA } from '../lib/artisanV3Schema';
+
+/** Inlined for Vercel serverless bundle (avoid cross-root import issues) */
+const ARTISAN_V3_OUTPUT_SCHEMA = {
+  type: 'object',
+  properties: {
+    subject: { type: 'string' },
+    critique: {
+      type: 'object',
+      properties: {
+        framing: { type: 'string' },
+        lighting: { type: 'string' },
+        primary_fix: { type: 'string' },
+      },
+      required: ['framing', 'lighting', 'primary_fix'],
+    },
+    ratings: {
+      type: 'object',
+      properties: {
+        lighting: { type: 'number' },
+        framing: { type: 'number' },
+        background: { type: 'number' },
+        focus: { type: 'number' },
+      },
+      required: ['lighting', 'framing', 'background', 'focus'],
+    },
+    primary_issue: { type: 'string' },
+    confidence_note: { type: 'string' },
+    alt_text: { type: 'string' },
+    listing_copy: { type: 'string' },
+    tags: { type: 'array', items: { type: 'string' } },
+    ready_to_list: { type: 'boolean' },
+  },
+  required: [
+    'subject',
+    'critique',
+    'ratings',
+    'primary_issue',
+    'confidence_note',
+    'alt_text',
+    'listing_copy',
+    'tags',
+    'ready_to_list',
+  ],
+};
 
 const OLLAMA_CLOUD_URL = 'https://ollama.com/api/chat';
 /** Local default — Gemma 4 E4B */
@@ -40,7 +83,9 @@ function resolveCloudModel(requested?: string): string {
 
 /** Vision-capable cloud model first — gemma4:31b may reject images on Ollama Cloud */
 function cloudModelsToTry(primary: string): string[] {
-  return [...new Set([CLOUD_VISION_FALLBACK, primary])];
+  return primary === CLOUD_VISION_FALLBACK
+    ? [CLOUD_VISION_FALLBACK]
+    : [CLOUD_VISION_FALLBACK, primary];
 }
 
 const TIMEOUT_MS = 120_000;
@@ -267,15 +312,17 @@ export default async function handler(
         });
       }
 
-      lastError = { status: result.status, details: result.details };
-      usedModel = tryModel;
+      if (!result.ok) {
+        lastError = { status: result.status, details: result.details };
+        usedModel = tryModel;
 
-      if (result.status === 401) {
-        return res.status(401).json({
-          error: 'Invalid Ollama API key',
-          code: 'INVALID_API_KEY',
-          details: result.details,
-        });
+        if (result.status === 401) {
+          return res.status(401).json({
+            error: 'Invalid Ollama API key',
+            code: 'INVALID_API_KEY',
+            details: result.details,
+          });
+        }
       }
     }
 

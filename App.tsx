@@ -27,6 +27,7 @@ import {
 import { SupportedLanguage, LANGUAGE_LABELS } from './services/promptService';
 import { setOperationalMode, exportAuditLog } from './services/auditService';
 import { speak, hardStopVoice, primeSpeechVoices } from './services/voiceCoach';
+import { judgeStop } from './lib/judgeSpeech';
 import { AppState } from './types';
 import { PhotoAnalysisV2, OperationalMode, SessionHistoryEntry } from './types.v2';
 import { getInitialAppRoute, showStudioModeEntry } from './lib/launchRoute';
@@ -124,7 +125,10 @@ function App() {
 
   const handleVoiceToggle = useCallback(() => {
     setVoiceEnabled((prev) => {
-      if (prev) hardStopVoice();
+      if (prev) {
+        if (isJudgeDemoBuild()) judgeStop();
+        else hardStopVoice();
+      }
       return !prev;
     });
   }, []);
@@ -235,7 +239,8 @@ function App() {
       setError(null);
       return;
     }
-    hardStopVoice();
+    if (isJudgeDemoBuild()) judgeStop();
+    else hardStopVoice();
     setShowHome(true);
     setAppState(AppState.IDLE);
     setCurrentImage(null);

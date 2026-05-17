@@ -6,6 +6,8 @@ import React from 'react';
 import {
   Camera, Tag, FileText, Layers, DollarSign, ExternalLink, Volume2, VolumeX, Copy, CheckCircle2,
 } from 'lucide-react';
+import { isJudgeDemoBuild } from '../lib/deploymentProfile';
+import { judgeSpeak, judgeStop } from '../lib/judgeSpeech';
 import { speakFromUserGesture, hardStopVoice } from '../services/voiceCoach';
 
 export interface MarketplaceListingDraft {
@@ -34,7 +36,8 @@ const MarketplaceListingPreview: React.FC<MarketplaceListingPreviewProps> = ({
 
   React.useEffect(() => {
     if (!voiceEnabled && listingPlayingRef.current) {
-      hardStopVoice();
+      if (isJudgeDemoBuild()) judgeStop();
+      else hardStopVoice();
       listingPlayingRef.current = false;
       setListingPlaying(false);
     }
@@ -63,17 +66,23 @@ const MarketplaceListingPreview: React.FC<MarketplaceListingPreviewProps> = ({
 
   const handleHearListing = () => {
     if (listingPlayingRef.current || listingPlaying) {
-      hardStopVoice();
+      if (isJudgeDemoBuild()) judgeStop();
+      else hardStopVoice();
       listingPlayingRef.current = false;
       setListingPlaying(false);
       return;
     }
     listingPlayingRef.current = true;
     setListingPlaying(true);
-    speakFromUserGesture(listingSpeech(), 0.95, () => {
+    const onDone = () => {
       listingPlayingRef.current = false;
       setListingPlaying(false);
-    });
+    };
+    if (isJudgeDemoBuild()) {
+      judgeSpeak(listingSpeech(), 0.95, onDone);
+    } else {
+      speakFromUserGesture(listingSpeech(), 0.95, onDone);
+    }
   };
 
   const rows: { icon: React.ReactNode; label: string; value: string; hint?: string }[] = [

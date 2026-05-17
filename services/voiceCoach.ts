@@ -644,9 +644,9 @@ export function speakNow(
       onEnd?.();
     };
     utterance.onerror = (e: SpeechSynthesisErrorEvent) => {
-      console.error('[voiceCoach] speakNow error:', e.error);
       isCurrentlySpeaking = false;
-      if (e.error === 'interrupted') return;
+      if (e.error === 'canceled' || e.error === 'interrupted') return;
+      console.warn('[voiceCoach] speakNow error:', e.error);
       onEnd?.();
     };
 
@@ -692,7 +692,6 @@ export function speakAfterUnlock(
 }
 
 export function stopSpeaking(): void {
-  console.log('[voiceCoach] stopSpeaking() called');
   isCancelled = true;
   isCurrentlySpeaking = false;
   if (pendingTimeout) {
@@ -703,11 +702,9 @@ export function stopSpeaking(): void {
     clearTimeout(speakQueueTimer);
     speakQueueTimer = null;
   }
-  speechSynthesis.cancel();
-  // Chrome/Safari: queued utterances may need a second cancel on the next tick
-  window.setTimeout(() => {
-    speechSynthesis.cancel();
-  }, 0);
+  if (typeof window !== 'undefined' && window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+  }
 }
 
 /** Stop speech and clear resume queue — use on navigation or mode changes */

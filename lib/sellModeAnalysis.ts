@@ -10,6 +10,8 @@ import {
   speakAfterUnlock,
   type ArtisanAnalysisV3,
 } from '../services/voiceCoach';
+import { isJudgeDemoBuild } from './deploymentProfile';
+import { judgeSpeak } from './judgeSpeech';
 
 export interface SellModeResult {
   subject: string;
@@ -109,6 +111,10 @@ export function buildSellModeVoiceScript(result: SellModeResult): string {
 export function speakSellModeResult(result: SellModeResult, fromUserGesture = false): void {
   const script = buildSellModeVoiceScript(result);
   if (!script.trim()) return;
+  if (isJudgeDemoBuild()) {
+    judgeSpeak(script);
+    return;
+  }
   if (fromUserGesture) {
     speakFromUserGesture(script);
   } else {

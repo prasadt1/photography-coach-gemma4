@@ -8,7 +8,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   AudioLines, Camera, WifiOff,
   ArrowRight, Sparkles, Shield, Loader2, Heart,
-  User, Wrench, Smartphone, Target, Plus, HelpCircle,
+  User, Wrench, Smartphone, Target, Plus,
 } from 'lucide-react';
 import { getHomeHeroBadgeText } from '../config';
 import { showStudioModeEntry } from '../lib/launchRoute';
@@ -24,7 +24,7 @@ import {
   getArtisanStudioWelcomeScript,
 } from '../lib/branding';
 import { OperationalMode } from '../types.v2';
-import { speakFromUserGesture } from '../services/voiceCoach';
+import { judgeSpeak } from '../lib/judgeSpeech';
 import { detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
 import Header from './Header';
 import Footer from './Footer';
@@ -45,8 +45,6 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
   const [connectionState, setConnectionState] = useState<'connecting' | 'ready'>('connecting');
   const [inferenceSource, setInferenceSource] = useState<InferenceSource>('demo');
   const judgeWelcomeSpoken = useRef(false);
-  const [welcomePlayed, setWelcomePlayed] = useState(false);
-  const [showVoicePrompt, setShowVoicePrompt] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -62,42 +60,24 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
   }, []);
 
   const playJudgeWelcome = useCallback(() => {
+    if (!voiceEnabled) return;
     judgeWelcomeSpoken.current = true;
-    setWelcomePlayed(true);
-    setShowVoicePrompt(false);
-    speakFromUserGesture(getJudgeHomeWelcomeScript(), 0.95);
-  }, []);
+    judgeSpeak(getJudgeHomeWelcomeScript());
+  }, [voiceEnabled]);
 
   const handleEnterArtisanStudio = useCallback(() => {
     judgeWelcomeSpoken.current = true;
-    setWelcomePlayed(true);
-    setShowVoicePrompt(false);
     sessionStorage.setItem(ARTISAN_GRID_WELCOME_KEY, '1');
     if (voiceEnabled && isJudgeDemoBuild()) {
       sessionStorage.setItem('lens-studio-welcomed-session', '1');
-      speakFromUserGesture(getArtisanStudioWelcomeScript());
+      judgeSpeak(getArtisanStudioWelcomeScript());
     }
     onSelectMode('sell');
   }, [voiceEnabled, onSelectMode]);
 
-  // Judge home: try autoplay; show tap prompt if the browser blocks speech.
-  useEffect(() => {
-    if (!isJudgeDemoBuild() || !voiceEnabled) {
-      setShowVoicePrompt(false);
-      return;
-    }
-
-    const promptTimer = window.setTimeout(() => {
-      if (!judgeWelcomeSpoken.current) setShowVoicePrompt(true);
-    }, 1200);
-
-    return () => {
-      window.clearTimeout(promptTimer);
-    };
-  }, [voiceEnabled, playJudgeWelcome]);
-
   const handleVoicePreview = () => {
-    speakFromUserGesture(
+    if (!voiceEnabled) return;
+    judgeSpeak(
       'Voice coaching activated. I will describe what I see in your photos and guide you to better shots.',
     );
   };
@@ -189,25 +169,14 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                     local quick start
                   </a>
                 </p>
-                {showVoicePrompt && !welcomePlayed && (
-                  <button
-                    type="button"
-                    data-skip-home-welcome
-                    onClick={playJudgeWelcome}
-                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#C06B45] text-white text-sm font-bold animate-pulse focus:outline-none focus:ring-2 focus:ring-[#2F4858]"
-                  >
-                    <AudioLines className="w-5 h-5" aria-hidden />
-                    Tap to play welcome guide
-                  </button>
-                )}
                 <button
                   type="button"
-                  data-skip-home-welcome
                   onClick={playJudgeWelcome}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#2F4858] hover:bg-[#1D3444] text-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#C06B45]"
+                  disabled={!voiceEnabled}
+                  className="inline-flex select-none items-center gap-2 px-4 py-2.5 rounded-full bg-[#2F4858] hover:bg-[#1D3444] text-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#C06B45] disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label="Hear short spoken intro for judges on this page"
                 >
-                  <HelpCircle className="w-4 h-4" aria-hidden />
+                  <AudioLines className="w-4 h-4" aria-hidden />
                   Hear demo guide
                 </button>
               </div>
@@ -215,7 +184,6 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
 
             <button
               type="button"
-              data-skip-home-welcome
               onClick={handleEnterArtisanStudio}
               className="group inline-flex items-center gap-3 px-8 py-4 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full text-lg font-bold shadow-xl transition-colors"
             >

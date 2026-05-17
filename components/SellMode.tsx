@@ -16,7 +16,8 @@ import {
   Upload, HelpCircle, AudioLines,
 } from 'lucide-react';
 import { analyzeForSellModeWithFallback, detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
-import { speak, speakFromUserGesture, stopSpeaking, hardStopVoice, resumeSpeech, hasPausedSpeech, clearPausedSpeech } from '../services/voiceCoach';
+import { speak, speakFromUserGesture, stopSpeaking, hardStopVoice, clearPausedSpeech } from '../services/voiceCoach';
+import { judgeSpeak, judgeStop } from '../lib/judgeSpeech';
 import {
   type SellModeResult,
   sellResultFromV3,
@@ -99,15 +100,15 @@ const SellMode: React.FC<SellModeProps> = ({
 
   useEffect(() => {
     if (!voiceEnabled) {
-      hardStopVoice();
-    } else if (hasPausedSpeech()) {
-      resumeSpeech();
+      if (isJudgeDemoBuild()) judgeStop();
+      else hardStopVoice();
     }
   }, [voiceEnabled]);
 
   const handleDemoSampleSelect = useCallback(async (sample: DemoResponse) => {
     if (voiceEnabled) {
-      speakFromUserGesture('Analyzing your sample. One moment.');
+      if (isJudgeDemoBuild()) judgeSpeak('Analyzing your sample. One moment.');
+      else speakFromUserGesture('Analyzing your sample. One moment.');
     }
     setError(null);
     setIsAnalyzing(true);
@@ -163,8 +164,11 @@ const SellMode: React.FC<SellModeProps> = ({
   }, [preloadedImage, processedPreload, isAnalyzing, voiceEnabled, onImageProcessed]);
 
   const handleCapture = () => {
-    stopSpeaking();
-    clearPausedSpeech();
+    if (isJudgeDemoBuild()) judgeStop();
+    else {
+      stopSpeaking();
+      clearPausedSpeech();
+    }
     fileInputRef.current?.click();
   };
 
@@ -172,7 +176,9 @@ const SellMode: React.FC<SellModeProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
-    if (voiceEnabled) {
+    if (voiceEnabled && isJudgeDemoBuild()) {
+      judgeSpeak('Analyzing your photo. One moment.');
+    } else if (voiceEnabled) {
       speakFromUserGesture('Analyzing your photo. One moment.');
     } else {
       stopSpeaking();
@@ -218,7 +224,8 @@ const SellMode: React.FC<SellModeProps> = ({
         stopSpeaking();
         clearPausedSpeech();
       } else {
-        hardStopVoice();
+        if (isJudgeDemoBuild()) judgeStop();
+        else hardStopVoice();
         onBack();
       }
     } else if (result || showCompare) {
@@ -226,10 +233,14 @@ const SellMode: React.FC<SellModeProps> = ({
       setShowCompare(false);
       setDemoCompareResult(null);
       setError(null);
-      stopSpeaking();
-      clearPausedSpeech();
+      if (isJudgeDemoBuild()) judgeStop();
+      else {
+        stopSpeaking();
+        clearPausedSpeech();
+      }
     } else {
-      hardStopVoice();
+      if (isJudgeDemoBuild()) judgeStop();
+      else hardStopVoice();
       onBack();
     }
   };
@@ -251,7 +262,7 @@ const SellMode: React.FC<SellModeProps> = ({
 
   const handleTutorial = () => {
     if (isJudgeDemoBuild()) {
-      speakFromUserGesture(getArtisanStudioWelcomeScript());
+      if (voiceEnabled) judgeSpeak(getArtisanStudioWelcomeScript());
       return;
     }
     const tutorialText = `Welcome to the Artisan Studio. Here's how to use this tool.

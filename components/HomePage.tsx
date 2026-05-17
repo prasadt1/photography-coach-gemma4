@@ -22,7 +22,7 @@ import {
   getJudgeHomeWelcomeScript,
 } from '../lib/branding';
 import { OperationalMode } from '../types.v2';
-import { speak, stopSpeaking } from '../services/voiceCoach';
+import { speak, stopSpeaking, clearPausedSpeech } from '../services/voiceCoach';
 import { detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
 import Header from './Header';
 import Footer from './Footer';
@@ -59,23 +59,37 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
 
   const playJudgeWelcome = useCallback(() => {
     stopSpeaking();
+    clearPausedSpeech();
+    judgeWelcomeSpoken.current = true;
     speak(getJudgeHomeWelcomeScript());
   }, []);
 
-  // Judge demo: spoken tour once per session (browsers may block until user taps “Hear demo guide”)
+  // Judge demo: welcome once per home visit. Auto after delay; first tap unlocks if browser blocks autoplay.
   useEffect(() => {
-    if (!isJudgeDemoBuild() || !voiceEnabled || judgeWelcomeSpoken.current) return;
-    if (sessionStorage.getItem('lens-judge-home-welcomed') === 'true') return;
+    if (!isJudgeDemoBuild() || !voiceEnabled) return;
 
-    const timer = window.setTimeout(() => {
-      judgeWelcomeSpoken.current = true;
-      sessionStorage.setItem('lens-judge-home-welcomed', 'true');
+    let cancelled = false;
+
+    const runWelcome = () => {
+      if (cancelled || judgeWelcomeSpoken.current) return;
       playJudgeWelcome();
-    }, 1200);
+    };
+
+    const timer = window.setTimeout(runWelcome, 1500);
+
+    const onFirstGesture = () => {
+      if (!judgeWelcomeSpoken.current && voiceEnabled) {
+        window.clearTimeout(timer);
+        runWelcome();
+      }
+    };
+
+    window.addEventListener('pointerdown', onFirstGesture, { once: true, capture: true });
 
     return () => {
+      cancelled = true;
       window.clearTimeout(timer);
-      stopSpeaking();
+      window.removeEventListener('pointerdown', onFirstGesture, { capture: true });
     };
   }, [voiceEnabled, playJudgeWelcome]);
 

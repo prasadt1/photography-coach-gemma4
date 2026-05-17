@@ -153,6 +153,8 @@ const SellMode: React.FC<SellModeProps> = ({
   }, [voiceEnabled, result]);
 
   const handleDemoSampleSelect = useCallback(async (sample: DemoResponse) => {
+    stopSpeaking();
+    clearPausedSpeech();
     setError(null);
     setIsAnalyzing(true);
     setResult(null);
@@ -263,12 +265,18 @@ const SellMode: React.FC<SellModeProps> = ({
     }
   }, [preloadedImage, processedPreload, isAnalyzing, voiceEnabled, onImageProcessed]);
 
-  const handleCapture = () => fileInputRef.current?.click();
+  const handleCapture = () => {
+    stopSpeaking();
+    clearPausedSpeech();
+    fileInputRef.current?.click();
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
+    stopSpeaking();
+    clearPausedSpeech();
     setError(null);
     setIsAnalyzing(true);
     setResult(null);
@@ -358,6 +366,8 @@ const SellMode: React.FC<SellModeProps> = ({
   };
 
   const handleRetry = () => {
+    stopSpeaking();
+    clearPausedSpeech();
     setResult(null);
     setError(null);
     setShowCompare(false);
@@ -525,6 +535,8 @@ const SellMode: React.FC<SellModeProps> = ({
               {/* Compare Option */}
               <button
                 onClick={() => {
+                  stopSpeaking();
+                  clearPausedSpeech();
                   setShowCompare(true);
                   setDemoCompareResult(DEMO_COMPARISON_RESULT);
                 }}

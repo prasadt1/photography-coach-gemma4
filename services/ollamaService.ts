@@ -800,10 +800,18 @@ async function analyzePhotoCloud(
       message?: string;
       details?: string;
       code?: string;
+      modelsTried?: string[];
     };
-    const detail = error.details || error.message || '';
+    const detail = (error.details || error.message || '').trim();
+    const label =
+      error.code === 'INVALID_API_KEY'
+        ? 'Invalid Ollama API key'
+        : (error.error ?? res.statusText ?? `HTTP ${res.status}`);
+    const suffix = detail ? ` — ${detail.slice(0, 280)}` : '';
+    const models = error.modelsTried;
+    const modelsNote = models?.length ? ` (tried: ${models.join(', ')})` : '';
     throw new OllamaError(
-      `Cloud analysis failed: ${error.error ?? res.statusText}${detail ? ` — ${detail.slice(0, 200)}` : ''}`,
+      `Cloud analysis failed: ${label}${suffix}${modelsNote}`,
       res.status,
     );
   }

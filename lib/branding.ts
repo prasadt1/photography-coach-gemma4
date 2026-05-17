@@ -26,15 +26,22 @@ export const GEMMA_4_E4B_DOCS_URL = GEMMA_4_MODEL_CARD_URL;
 /** Ollama Cloud tag for live uploads (E4B is local-only on ollama.com today). */
 export const OLLAMA_CLOUD_MODEL_TAG = 'gemma4:31b';
 
+export const ARTISAN_GRID_WELCOME_KEY = 'lens-artisan-grid-welcomed';
+
 export function getJudgeHomeWelcomeScript(): string {
   return (
-    `Welcome to L.E.N.S., Local Edge Native Studio. ` +
-    `A voice-guided photography coach for blind and low-vision artisans, powered by ${GEMMA_4_E4B} through Ollama. ` +
-    `This is the judge try-it demo. ` +
-    `On this page, tap Enter Artisan Studio. ` +
-    `Inside, try a sample photo first — those play recorded ${GEMMA_4_E4B} coaching from a local Mac. ` +
-    `Or upload your own photo for live coaching through ${OLLAMA_CLOUD}. ` +
-    `You can also open the full voice-guided listing journey from there. ` +
-    `Use the Voice button at the top right to turn spoken feedback on or off.`
+    `Welcome to the L.E.N.S. judge demo. ` +
+    `This page is for reviewers. ` +
+    `Tap Enter Artisan Studio to try the artisan coaching experience.`
+  );
+}
+
+export function getArtisanStudioWelcomeScript(): string {
+  return (
+    `Artisan Studio. ` +
+    `For this demo, tap a sample photo to hear recorded ${GEMMA_4_E4B} coaching from a local Mac, ` +
+    `or upload your own photo for live coaching through ${OLLAMA_CLOUD}. ` +
+    `When you are ready, open the voice-guided listing journey. ` +
+    `Use Hear page guide anytime to replay these instructions.`
   );
 }

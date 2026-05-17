@@ -19,6 +19,8 @@ import {
   OLLAMA_CLOUD,
   OLLAMA_MODEL_TAG,
   OLLAMA_CLOUD_MODEL_TAG,
+  ARTISAN_GRID_WELCOME_KEY,
+  getArtisanStudioWelcomeScript,
   getJudgeHomeWelcomeScript,
 } from '../lib/branding';
 import { OperationalMode } from '../types.v2';
@@ -64,33 +66,30 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
     speak(getJudgeHomeWelcomeScript());
   }, []);
 
-  // Judge demo: welcome once per home visit. Auto after delay; first tap unlocks if browser blocks autoplay.
+  const handleEnterArtisanStudio = useCallback(() => {
+    stopSpeaking();
+    clearPausedSpeech();
+    judgeWelcomeSpoken.current = true;
+    if (isJudgeDemoBuild() && voiceEnabled) {
+      sessionStorage.setItem(ARTISAN_GRID_WELCOME_KEY, '1');
+      speak(getArtisanStudioWelcomeScript());
+    }
+    onSelectMode('sell');
+  }, [voiceEnabled, onSelectMode]);
+
+  // Judge home: browsers block autoplay — short welcome on first tap (not on studio CTA).
   useEffect(() => {
     if (!isJudgeDemoBuild() || !voiceEnabled) return;
 
-    let cancelled = false;
-
-    const runWelcome = () => {
-      if (cancelled || judgeWelcomeSpoken.current) return;
+    const onFirstGesture = (e: PointerEvent) => {
+      if (judgeWelcomeSpoken.current) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('[data-skip-home-welcome]')) return;
       playJudgeWelcome();
     };
 
-    const timer = window.setTimeout(runWelcome, 1500);
-
-    const onFirstGesture = () => {
-      if (!judgeWelcomeSpoken.current && voiceEnabled) {
-        window.clearTimeout(timer);
-        runWelcome();
-      }
-    };
-
     window.addEventListener('pointerdown', onFirstGesture, { once: true, capture: true });
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-      window.removeEventListener('pointerdown', onFirstGesture, { capture: true });
-    };
+    return () => window.removeEventListener('pointerdown', onFirstGesture, { capture: true });
   }, [voiceEnabled, playJudgeWelcome]);
 
   const handleVoicePreview = () => {
@@ -156,10 +155,22 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                   className="text-sm text-[#2F4858] bg-[#F4ECDC] border border-[#D8CDB8] rounded-xl px-4 py-3 leading-relaxed"
                   aria-live="polite"
                 >
-                  <strong>Judge try-it:</strong> tap <strong>Enter Artisan Studio</strong> below. Samples =
-                  recorded <strong>{GEMMA_4_E4B}</strong> (local Mac, {OLLAMA_MODEL_TAG}); upload = live{' '}
-                  <strong>{OLLAMA_CLOUD}</strong> (<code className="text-xs">{OLLAMA_CLOUD_MODEL_TAG}</code>).
-                  Optional: full voice-guided journey inside.{' '}
+                  <strong>Judge try-it:</strong> tap <strong>Enter Artisan Studio</strong> for a spoken studio
+                  guide, then try a <strong>sample</strong> to see coaching plus an <strong>Etsy listing draft</strong>{' '}
+                  (title, tags, description — with &quot;Hear listing draft&quot;). Samples = recorded{' '}
+                  <strong>{GEMMA_4_E4B}</strong> ({OLLAMA_MODEL_TAG}); upload = live{' '}
+                  <strong>{OLLAMA_CLOUD}</strong> (<code className="text-xs">{OLLAMA_CLOUD_MODEL_TAG}</code>).{' '}
+                  {!voiceEnabled && (
+                    <span className="block mt-2 text-[#AB3B24] font-semibold">
+                      Turn <strong>Voice</strong> on (top right) for spoken guides.
+                    </span>
+                  )}
+                  {voiceEnabled && (
+                    <span className="block mt-2 text-[#524A3D]">
+                      Tap the page or <strong>Hear demo guide</strong> for a short home intro (browsers require a tap
+                      before speech).
+                    </span>
+                  )}{' '}
                   <a
                     href={GEMMA_4_E4B_DOCS_URL}
                     className="underline font-semibold"
@@ -180,9 +191,10 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                 </p>
                 <button
                   type="button"
+                  data-skip-home-welcome
                   onClick={playJudgeWelcome}
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#2F4858] hover:bg-[#1D3444] text-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#C06B45]"
-                  aria-label="Hear spoken guide to this judge demo"
+                  aria-label="Hear short spoken intro for judges on this page"
                 >
                   <HelpCircle className="w-4 h-4" aria-hidden />
                   Hear demo guide
@@ -191,7 +203,9 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
             )}
 
             <button
-              onClick={() => onSelectMode('sell')}
+              type="button"
+              data-skip-home-welcome
+              onClick={handleEnterArtisanStudio}
               className="group inline-flex items-center gap-3 px-8 py-4 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full text-lg font-bold shadow-xl transition-colors"
             >
               <Camera className="w-4 h-4" />

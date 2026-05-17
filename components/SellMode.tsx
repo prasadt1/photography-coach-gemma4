@@ -20,7 +20,13 @@ import { parseSellResponse, parseArtisanResponseV3, speak, stopSpeaking, resumeS
 import { getAnalyzingStatus, getUploadHint } from '../config';
 import { showStudioModeEntry } from '../lib/launchRoute';
 import { isJudgeDemoBuild } from '../lib/deploymentProfile';
-import { GEMMA_4_E4B, OLLAMA_CLOUD } from '../lib/branding';
+import {
+  ARTISAN_GRID_WELCOME_KEY,
+  GEMMA_4_E4B,
+  OLLAMA_CLOUD,
+  getArtisanStudioWelcomeScript,
+} from '../lib/branding';
+import MarketplaceListingPreview, { buildMarketplaceListingDraft } from './MarketplaceListingPreview';
 import { extractColourCheckFromSubject } from '../services/artisanDisplay';
 import { DEMO_RESPONSES, DemoResponse, simulateProcessing, getComparisonSamples, DEMO_COMPARISON_RESULT } from '../src/data/demoResponses';
 import { ComparisonResult } from '../services/ollamaService';
@@ -92,11 +98,20 @@ function sellResultFromV3(
 
 function cloudUnavailableMessage(cloudError?: string): string {
   const hint =
-    'Live upload uses Gemma 4 on Ollama Cloud (gemma4:31b). Local E4B (gemma4:e4b) is in the README quick start.';
-  if (!cloudError) {
-    return `Analysis unavailable. Try a sample photo, or check Ollama Cloud settings. ${hint}`;
+    'Live upload uses gemma4:31b on Ollama Cloud (vision fallback: gemma3:4b). Local E4B (gemma4:e4b) is in the README quick start.';
+  const raw = cloudError?.trim() ?? '';
+  const detail = raw.replace(/^Cloud analysis failed:\s*/i, '').trim();
+
+  if (/invalid.*api key|401/i.test(raw)) {
+    return `Analysis unavailable: ${detail || 'Invalid Ollama API key'}. Set OLLAMA_API_KEY on the Vercel project and redeploy.`;
   }
-  return `Analysis unavailable: ${cloudError} ${hint}`;
+  if (!detail) {
+    return `Analysis unavailable. Cloud could not analyze this image (check OLLAMA_API_KEY and redeploy). ${hint}`;
+  }
+  if (/gemma4:31b|README quick start/i.test(detail)) {
+    return `Analysis unavailable: ${detail}`;
+  }
+  return `Analysis unavailable: ${detail}. ${hint}`;
 }
 
 const SellMode: React.FC<SellModeProps> = ({
@@ -121,6 +136,51 @@ const SellMode: React.FC<SellModeProps> = ({
   );
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const listingPreviewRef = useRef<HTMLDivElement>(null);
+
+  const playArtisanStudioWelcome = useCallback(() => {
+    stopSpeaking();
+    clearPausedSpeech();
+    speak(getArtisanStudioWelcomeScript());
+  }, []);
+
+  // Deep-link fallback: studio welcome on first tap if user skipped home CTA
+  useEffect(() => {
+    if (
+      !isJudgeDemoBuild() ||
+      !voiceEnabled ||
+      !sourceDetected ||
+      showGuidedJourney ||
+      result ||
+      isAnalyzing ||
+      showCompare
+    ) {
+      return;
+    }
+    if (sessionStorage.getItem(ARTISAN_GRID_WELCOME_KEY)) return;
+
+    const onGesture = () => {
+      if (sessionStorage.getItem(ARTISAN_GRID_WELCOME_KEY)) return;
+      sessionStorage.setItem(ARTISAN_GRID_WELCOME_KEY, '1');
+      playArtisanStudioWelcome();
+    };
+    window.addEventListener('pointerdown', onGesture, { once: true, capture: true });
+    return () => window.removeEventListener('pointerdown', onGesture, { capture: true });
+  }, [
+    voiceEnabled,
+    sourceDetected,
+    showGuidedJourney,
+    result,
+    isAnalyzing,
+    showCompare,
+    playArtisanStudioWelcome,
+  ]);
+
+  useEffect(() => {
+    if (result && listingPreviewRef.current) {
+      listingPreviewRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [result]);
 
   useEffect(() => {
     return () => {
@@ -381,9 +441,11 @@ const SellMode: React.FC<SellModeProps> = ({
   };
 
   const handleTutorial = () => {
-    const tutorialText = isJudgeDemoBuild()
-      ? `Welcome to the Artisan Studio demo. Try a sample photo first — those play back real ${GEMMA_4_E4B} coaching recorded on a local Mac. Or upload your own photo to run live ${GEMMA_4_E4B} through ${OLLAMA_CLOUD}. You will hear framing, lighting, one fix at a time, alt-text, and listing copy. For fully private on-device coaching, follow the local quick start in the project README.`
-      : `Welcome to the Artisan Studio. Here's how to use this tool.
+    if (isJudgeDemoBuild()) {
+      playArtisanStudioWelcome();
+      return;
+    }
+    const tutorialText = `Welcome to the Artisan Studio. Here's how to use this tool.
     First, you can try one of our sample photos to see how ${GEMMA_4_E4B} analyzes your craft photography.
     Just tap or click on any of the sample images below.
     The analysis will tell you what's working in your photo, what needs improvement, and exactly how to fix it.
@@ -480,7 +542,9 @@ const SellMode: React.FC<SellModeProps> = ({
                 aria-label="Play audio guide: how to use this page"
               >
                 <HelpCircle className="w-4 h-4" />
-                <span className="text-sm font-semibold">Play audio guide</span>
+                <span className="text-sm font-semibold">
+                  {isJudgeDemoBuild() ? 'Hear page guide' : 'Play audio guide'}
+                </span>
               </button>
             </div>
           )}
@@ -488,6 +552,17 @@ const SellMode: React.FC<SellModeProps> = ({
           {/* HERO: Demo Samples Grid */}
           {sourceDetected && !result && !isAnalyzing && !showCompare && (
             <div className="space-y-10">
+              {isJudgeDemoBuild() && (
+                <div className="rounded-2xl border-2 border-[#C06B45] bg-gradient-to-br from-[#FFF8F0] to-[#F4ECDC] p-5">
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#C06B45] mb-1">Sell on Etsy</p>
+                  <p className="text-sm text-[#241F18] leading-relaxed">
+                    There is no separate listing page — after you <strong>try a sample</strong> below, scroll to the{' '}
+                    <strong>Etsy listing draft</strong> card (title, description, tags) and tap{' '}
+                    <strong>Hear listing draft</strong> so judges hear what artisans would paste into Etsy or Shopify.
+                  </p>
+                </div>
+              )}
+
               {/* Demo Samples - THE HERO */}
               <div>
                 <div className="flex items-center justify-between mb-6">
@@ -781,6 +856,22 @@ const SellMode: React.FC<SellModeProps> = ({
                       </div>
                     )}
                   </div>
+                </div>
+              )}
+
+              {(result.listingCopy || result.altText) && (
+                <div ref={listingPreviewRef} id="etsy-listing-draft">
+                <MarketplaceListingPreview
+                  draft={buildMarketplaceListingDraft({
+                    subject: result.subject,
+                    listingCopy: result.listingCopy,
+                    altText: result.altText,
+                    tags: result.tags,
+                    readyToList: result.readyToList,
+                    primaryFix: result.primaryFix,
+                  })}
+                  voiceEnabled={voiceEnabled}
+                />
                 </div>
               )}
 

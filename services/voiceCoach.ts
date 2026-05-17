@@ -118,11 +118,14 @@ export function speak(
   // If voices aren't loaded yet, wait for them
   if (voices.length === 0) {
     console.log('[voiceCoach] Voices not loaded, waiting...');
-    speechSynthesis.onvoiceschanged = () => {
+    isCurrentlySpeaking = false;
+    const onVoices = () => {
+      speechSynthesis.removeEventListener('voiceschanged', onVoices);
       if (!isCancelled) {
         speak(text, rate, onEnd, onStart);
       }
     };
+    speechSynthesis.addEventListener('voiceschanged', onVoices);
     return;
   }
 
@@ -559,22 +562,26 @@ export function speakMore(): void {
  */
 let speakQueueTimer: ReturnType<typeof setTimeout> | null = null;
 
-/** Set when the user has gestured; helps post-async speak on Chrome after unlock. */
+/** Set when the user has gestured; helps post-async speak on Chrome. */
 let speechSessionUnlocked = false;
 
-/** Call synchronously inside click/tap handlers so later speak() is not blocked. */
-export function unlockSpeechForSession(): void {
-  if (typeof window === 'undefined' || !window.speechSynthesis) return;
-  speechSessionUnlocked = true;
-  primeSpeechVoices();
+function prepareSpeechSynthesis(): SpeechSynthesis | null {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return null;
+  const synth = window.speechSynthesis;
   try {
-    const u = new SpeechSynthesisUtterance('\u200b');
-    u.volume = 0.01;
-    u.rate = 1;
-    window.speechSynthesis.speak(u);
+    if (synth.paused) synth.resume();
   } catch {
     /* ignore */
   }
+  primeSpeechVoices();
+  synth.getVoices();
+  return synth;
+}
+
+/** Call synchronously inside click/tap handlers so later speak() is not blocked. */
+export function unlockSpeechForSession(): void {
+  if (!prepareSpeechSynthesis()) return;
+  speechSessionUnlocked = true;
 }
 
 export function isSpeechSessionUnlocked(): boolean {
@@ -582,17 +589,20 @@ export function isSpeechSessionUnlocked(): boolean {
 }
 
 /**
- * Speak in the same turn as a user gesture (Chrome requires this).
- * Clears prior speech without leaving isCancelled=true.
+ * Single-utterance speak — reliable on Chrome when triggered from a user gesture.
+ * Do NOT call speechSynthesis.cancel() before speak (Chrome drops audio silently).
  */
-export function speakFromUserGesture(
+export function speakNow(
   text: string,
   rate = 0.95,
   onEnd?: () => void,
   onStart?: () => void,
 ): void {
   if (!text?.trim()) return;
-  unlockSpeechForSession();
+  const synth = prepareSpeechSynthesis();
+  if (!synth) return;
+
+  speechSessionUnlocked = true;
   if (speakQueueTimer) {
     clearTimeout(speakQueueTimer);
     speakQueueTimer = null;
@@ -602,9 +612,68 @@ export function speakFromUserGesture(
     pendingTimeout = null;
   }
   isCancelled = false;
-  isCurrentlySpeaking = false;
-  speechSynthesis.cancel();
-  speak(text, rate, onEnd, onStart);
+  pausedSentences = [];
+  pausedIndex = 0;
+
+  const run = () => {
+    const voices = synth.getVoices();
+    const preferredVoice =
+      voices.find((v) => v.name.includes('Samantha')) ||
+      voices.find((v) => v.name.includes('Google US')) ||
+      voices.find((v) => v.name.includes('Microsoft Zira')) ||
+      voices.find((v) => v.lang.startsWith('en') && v.localService) ||
+      voices.find((v) => v.lang.startsWith('en'));
+
+    lastSpokenText = text;
+    isCurrentlySpeaking = true;
+    speechCompleted = false;
+
+    const utterance = new SpeechSynthesisUtterance(text.trim());
+    utterance.rate = rate;
+    utterance.volume = 1;
+    if (preferredVoice) utterance.voice = preferredVoice;
+
+    utterance.onstart = () => {
+      console.log('[voiceCoach] speakNow started');
+      onStart?.();
+    };
+    utterance.onend = () => {
+      console.log('[voiceCoach] speakNow ended');
+      isCurrentlySpeaking = false;
+      speechCompleted = true;
+      onEnd?.();
+    };
+    utterance.onerror = (e: SpeechSynthesisErrorEvent) => {
+      console.error('[voiceCoach] speakNow error:', e.error);
+      isCurrentlySpeaking = false;
+      if (e.error === 'interrupted') return;
+      onEnd?.();
+    };
+
+    synth.speak(utterance);
+  };
+
+  if (synth.getVoices().length === 0) {
+    isCurrentlySpeaking = false;
+    const onVoices = () => {
+      synth.removeEventListener('voiceschanged', onVoices);
+      if (!isCancelled) run();
+    };
+    synth.addEventListener('voiceschanged', onVoices);
+    return;
+  }
+
+  run();
+}
+
+/** Speak in the same turn as a user gesture (Chrome requires this). */
+export function speakFromUserGesture(
+  text: string,
+  rate = 0.95,
+  onEnd?: () => void,
+  onStart?: () => void,
+): void {
+  speakNow(text, rate, onEnd, onStart);
 }
 
 /** After async work when the session was unlocked by an earlier gesture. */
@@ -616,12 +685,7 @@ export function speakAfterUnlock(
 ): void {
   if (!text?.trim()) return;
   if (speechSessionUnlocked) {
-    if (speakQueueTimer) {
-      clearTimeout(speakQueueTimer);
-      speakQueueTimer = null;
-    }
-    isCancelled = false;
-    speak(text, rate, onEnd, onStart);
+    speakNow(text, rate, onEnd, onStart);
     return;
   }
   speakQueued(text, 180, rate, onEnd, onStart);

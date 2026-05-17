@@ -67,8 +67,9 @@ function App() {
   // Global voice toggle for accessibility across all modes
   // Default ON for new users (accessibility-first), respects saved preference for returning users
   const [voiceEnabled, setVoiceEnabled] = useState(() => {
+    // Judge demo: voice is core accessibility — always on unless user turns off this session
+    if (isJudgeDemoBuild()) return true;
     const saved = localStorage.getItem('lens-voice-enabled');
-    // If no saved preference, default to ON (accessibility-first)
     if (saved === null) return true;
     return saved === 'true';
   });

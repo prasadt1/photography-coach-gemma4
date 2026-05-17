@@ -24,7 +24,7 @@ import {
   getArtisanStudioWelcomeScript,
 } from '../lib/branding';
 import { OperationalMode } from '../types.v2';
-import { speak, speakFromUserGesture } from '../services/voiceCoach';
+import { speakFromUserGesture } from '../services/voiceCoach';
 import { detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
 import Header from './Header';
 import Footer from './Footer';
@@ -62,11 +62,10 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
   }, []);
 
   const playJudgeWelcome = useCallback(() => {
-    speakFromUserGesture(getJudgeHomeWelcomeScript(), 0.95, () => {
-      judgeWelcomeSpoken.current = true;
-      setWelcomePlayed(true);
-      setShowVoicePrompt(false);
-    });
+    judgeWelcomeSpoken.current = true;
+    setWelcomePlayed(true);
+    setShowVoicePrompt(false);
+    speakFromUserGesture(getJudgeHomeWelcomeScript(), 0.95);
   }, []);
 
   const handleEnterArtisanStudio = useCallback(() => {
@@ -88,33 +87,19 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
       return;
     }
 
-    const tryWelcome = () => {
-      if (judgeWelcomeSpoken.current) return;
-      playJudgeWelcome();
-    };
-
-    const autoTimer = window.setTimeout(tryWelcome, 500);
     const promptTimer = window.setTimeout(() => {
       if (!judgeWelcomeSpoken.current) setShowVoicePrompt(true);
-    }, 1600);
+    }, 1200);
 
-    const onFirstGesture = (e: PointerEvent) => {
-      if (judgeWelcomeSpoken.current) return;
-      const target = e.target as HTMLElement | null;
-      if (target?.closest('[data-skip-home-welcome]')) return;
-      tryWelcome();
-    };
-
-    window.addEventListener('pointerdown', onFirstGesture, { once: true, capture: true });
     return () => {
-      window.clearTimeout(autoTimer);
       window.clearTimeout(promptTimer);
-      window.removeEventListener('pointerdown', onFirstGesture, { capture: true });
     };
   }, [voiceEnabled, playJudgeWelcome]);
 
   const handleVoicePreview = () => {
-    speak('Voice coaching activated. I will describe what I see in your photos and guide you to better shots.');
+    speakFromUserGesture(
+      'Voice coaching activated. I will describe what I see in your photos and guide you to better shots.',
+    );
   };
 
   return (
@@ -207,6 +192,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                 {showVoicePrompt && !welcomePlayed && (
                   <button
                     type="button"
+                    data-skip-home-welcome
                     onClick={playJudgeWelcome}
                     className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#C06B45] text-white text-sm font-bold animate-pulse focus:outline-none focus:ring-2 focus:ring-[#2F4858]"
                   >

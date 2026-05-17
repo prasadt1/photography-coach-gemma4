@@ -30,6 +30,7 @@ import { speak } from './services/voiceCoach';
 import { AppState } from './types';
 import { PhotoAnalysisV2, OperationalMode, SessionHistoryEntry } from './types.v2';
 import { getInitialAppRoute, showStudioModeEntry } from './lib/launchRoute';
+import { isJudgeDemoBuild } from './lib/deploymentProfile';
 
 // Note: isElectron and SessionSavingsBadge removed as part of header consolidation
 // Can be re-added to Header component if needed for vault mode or session stats
@@ -209,8 +210,8 @@ function App() {
   }, []);
 
   const handleGoHome = useCallback(() => {
-    // Submission build: stay in Artisan journey instead of marketing home / sample grid
-    if (!showStudioModeEntry()) {
+    // Judge demo and dev studio builds can return to the home / sample grid
+    if (!isJudgeDemoBuild() && !showStudioModeEntry()) {
       setMode('sell');
       setShowHome(false);
       setAppState(AppState.IDLE);

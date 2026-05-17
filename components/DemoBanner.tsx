@@ -1,23 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, X, ExternalLink } from 'lucide-react';
+import { isJudgeDemoBuild } from '../lib/deploymentProfile';
+
+const REPO_QUICKSTART =
+  'https://github.com/prasadt1/photography-coach-gemma4#-quick-start';
 
 /**
- * DemoBanner - Shows on deployed (non-localhost) environments
- * Explains to hackathon judges that Ollama must be running locally
+ * Top banner on deployed sites — copy differs for judge try-it vs artisan product deploy.
  */
 export const DemoBanner: React.FC = () => {
   const [dismissed, setDismissed] = useState(false);
-  const [isDemo, setIsDemo] = useState(false);
+  const [show, setShow] = useState(false);
 
   useEffect(() => {
-    // Show banner on non-localhost origins (deployed environments)
     const hostname = window.location.hostname;
-    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-    setIsDemo(!isLocalhost);
-
-    // Check if previously dismissed in this session
-    const wasDismissed = sessionStorage.getItem('lens-demo-banner-dismissed');
-    if (wasDismissed === 'true') {
+    const isLocalhost =
+      hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '';
+    setShow(!isLocalhost);
+    if (sessionStorage.getItem('lens-demo-banner-dismissed') === 'true') {
       setDismissed(true);
     }
   }, []);
@@ -27,22 +27,63 @@ export const DemoBanner: React.FC = () => {
     sessionStorage.setItem('lens-demo-banner-dismissed', 'true');
   };
 
-  if (!isDemo || dismissed) return null;
+  if (!show || dismissed) return null;
+
+  if (isJudgeDemoBuild()) {
+    return (
+      <div
+        className="bg-gradient-to-r from-[#2F4858] to-[#3d5a6e] border-b border-[#2F4858] px-4 py-3 relative"
+        role="region"
+        aria-label="How this demo works"
+      >
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <div className="flex items-center gap-2 text-[#ECE3D2] shrink-0">
+            <AlertCircle className="w-5 h-5" aria-hidden="true" />
+            <span className="font-semibold text-sm">Judge try-it demo</span>
+          </div>
+          <p className="text-[#ECE3D2]/95 text-sm flex-1 leading-relaxed">
+            <strong className="font-semibold">Sample photos</strong> play back real{' '}
+            <strong className="font-semibold">Gemma 4 E4B</strong> outputs recorded from a local Mac
+            (same prompts and JSON schema). <strong className="font-semibold">Upload your photo</strong>{' '}
+            uses <strong className="font-semibold">Ollama Cloud</strong> with{' '}
+            <code className="bg-black/20 px-1 rounded text-xs">gemma4:e4b</code> so you can test
+            without installing Ollama. Tap <strong>Enter Artisan Studio</strong> below, then try a
+            sample or upload. For fully on-device coaching, see the{' '}
+            <a
+              href={REPO_QUICKSTART}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-white font-medium"
+            >
+              local quick start
+            </a>
+            . Gemma is a trademark of Google LLC.
+          </p>
+          <button
+            type="button"
+            onClick={handleDismiss}
+            className="p-1.5 hover:bg-white/10 rounded-lg text-[#ECE3D2] shrink-0"
+            aria-label="Dismiss banner"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
       className="bg-gradient-to-r from-amber-900/90 to-orange-900/90 border-b border-amber-700/50 px-4 py-3 relative"
       role="alert"
-      aria-live="polite"
     >
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center gap-3">
-        <div className="flex items-center gap-2 text-amber-200">
-          <AlertCircle className="w-5 h-5 shrink-0" aria-hidden="true" />
-          <span className="font-semibold text-sm">Hackathon Demo</span>
+        <div className="flex items-center gap-2 text-amber-200 shrink-0">
+          <AlertCircle className="w-5 h-5" aria-hidden="true" />
+          <span className="font-semibold text-sm">Local-first product</span>
         </div>
-
         <p className="text-amber-100/90 text-sm flex-1">
-          This app requires{' '}
+          The full experience runs <strong>Gemma 4 E4B</strong> on your machine via{' '}
           <a
             href="https://ollama.com"
             target="_blank"
@@ -52,32 +93,25 @@ export const DemoBanner: React.FC = () => {
             Ollama
             <ExternalLink className="w-3 h-3" aria-hidden="true" />
           </a>
-          {' '}running locally with{' '}
-          <code className="bg-amber-950/50 px-1.5 py-0.5 rounded text-xs font-mono">
-            gemma4:latest
-          </code>
-          {' '}to function. See README for setup instructions.
-        </p>
-
-        <div className="flex items-center gap-3">
+          . See the{' '}
           <a
-            href="https://github.com/prasadt1/photography-coach-gemma4#quick-start"
+            href={REPO_QUICKSTART}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs font-semibold bg-amber-700/50 hover:bg-amber-700 px-3 py-1.5 rounded-lg text-amber-100 transition-colors whitespace-nowrap"
+            className="underline hover:text-white font-medium"
           >
-            Setup Guide
+            README quick start
           </a>
-
-          <button
-            type="button"
-            onClick={handleDismiss}
-            className="p-1.5 hover:bg-amber-800/50 rounded-lg text-amber-200 hover:text-white transition-colors"
-            aria-label="Dismiss banner"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+          .
+        </p>
+        <button
+          type="button"
+          onClick={handleDismiss}
+          className="p-1.5 hover:bg-amber-800/50 rounded-lg text-amber-200"
+          aria-label="Dismiss banner"
+        >
+          <X className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );

@@ -5,25 +5,30 @@
  *
  * Environment Variables:
  *   OLLAMA_API_KEY - Required when OLLAMA_TARGET=cloud (default)
- *   OLLAMA_CLOUD_MODEL - Optional cloud model (default: gemma4:31b-cloud)
+ *   OLLAMA_CLOUD_MODEL - Optional cloud model (default: gemma4:e4b)
  *   OLLAMA_TARGET - "cloud" (default) | "local"
  *   OLLAMA_LOCAL_URL - Optional (default: http://127.0.0.1:11434)
  *   OLLAMA_LOCAL_MODEL - Optional (default: gemma4:e4b)
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { ARTISAN_V3_OUTPUT_SCHEMA } from '../lib/artisanV3Schema';
 
 const OLLAMA_CLOUD_URL = 'https://ollama.com/api/chat';
-const DEFAULT_CLOUD_MODEL = 'gemma4:31b-cloud';
+const DEFAULT_CLOUD_MODEL = 'gemma4:e4b';
 const DEFAULT_LOCAL_URL = 'http://127.0.0.1:11434';
 const DEFAULT_LOCAL_MODEL = 'gemma4:e4b';
 const TIMEOUT_MS = 120_000;
 
 interface AnalyzeRequest {
-  base64Image: string;
-  systemPrompt: string;
-  userPrompt: string;
+  base64Image?: string;
+  systemPrompt?: string;
+  userPrompt?: string;
   healthCheck?: boolean;
+  warmUp?: boolean;
+  /** When true, applies ARTISAN_V3_OUTPUT_SCHEMA (Ollama format JSON schema). */
+  artisanSchema?: boolean;
+  jsonSchema?: object;
 }
 
 function getTarget(): 'local' | 'cloud' {
@@ -77,6 +82,50 @@ export default async function handler(
       });
     }
 
+    if (body?.warmUp) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 90_000);
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (!isLocal && apiKey) {
+        headers.Authorization = `Bearer ${apiKey}`;
+      }
+      try {
+        const warmRes = await fetch(endpoint, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            model,
+            messages: [{ role: 'user', content: '.' }],
+            stream: false,
+            options: { num_predict: 1 },
+            keep_alive: '30m',
+          }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        if (!warmRes.ok) {
+          const errorText = await warmRes.text();
+          return res.status(502).json({
+            error: 'Warm-up failed',
+            code: 'WARMUP_ERROR',
+            details: errorText.slice(0, 500),
+          });
+        }
+        return res.status(200).json({
+          status: 'ok',
+          warmed: true,
+          target,
+          model,
+        });
+      } catch (err) {
+        clearTimeout(timeoutId);
+        if (err instanceof Error && err.name === 'AbortError') {
+          return res.status(504).json({ error: 'Warm-up timeout', code: 'TIMEOUT' });
+        }
+        throw err;
+      }
+    }
+
     if (!body?.base64Image || !body.systemPrompt || !body.userPrompt) {
       return res.status(400).json({
         error: 'Missing required fields: base64Image, systemPrompt, userPrompt',
@@ -87,7 +136,11 @@ export default async function handler(
       ? body.base64Image.split('base64,')[1]
       : body.base64Image;
 
-    const ollamaRequest = {
+    const outputSchema =
+      body.jsonSchema ??
+      (body.artisanSchema ? ARTISAN_V3_OUTPUT_SCHEMA : undefined);
+
+    const ollamaRequest: Record<string, unknown> = {
       model,
       messages: [
         { role: 'system', content: body.systemPrompt },
@@ -99,6 +152,9 @@ export default async function handler(
         num_predict: 1024,
       },
     };
+    if (outputSchema) {
+      ollamaRequest.format = outputSchema;
+    }
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);

@@ -19,6 +19,7 @@ import { analyzeForSellModeWithFallback, detectInferenceSource, type InferenceSo
 import { parseSellResponse, parseArtisanResponseV3, speak, stopSpeaking, resumeSpeech, hasPausedSpeech, isSpeechCompleted, clearPausedSpeech } from '../services/voiceCoach';
 import { getAnalyzingStatus, getUploadHint } from '../config';
 import { showStudioModeEntry } from '../lib/launchRoute';
+import { isJudgeDemoBuild } from '../lib/deploymentProfile';
 import { DEMO_RESPONSES, DemoResponse, simulateProcessing, getComparisonSamples, DEMO_COMPARISON_RESULT } from '../src/data/demoResponses';
 import { ComparisonResult } from '../services/ollamaService';
 import Header from './Header';
@@ -81,7 +82,9 @@ const SellMode: React.FC<SellModeProps> = ({
   const [demoCompareResult, setDemoCompareResult] = useState<ComparisonResult | null>(null);
   const [inferenceSource, setInferenceSource] = useState<InferenceSource>('demo');
   const [sourceDetected, setSourceDetected] = useState(false);
-  const [showGuidedJourney, setShowGuidedJourney] = useState(() => !preloadedImage);
+  const [showGuidedJourney, setShowGuidedJourney] = useState(
+    () => !preloadedImage && !isJudgeDemoBuild(),
+  );
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -346,7 +349,9 @@ const SellMode: React.FC<SellModeProps> = ({
   };
 
   const handleTutorial = () => {
-    const tutorialText = `Welcome to the Artisan Studio. Here's how to use this tool.
+    const tutorialText = isJudgeDemoBuild()
+      ? `Welcome to the Artisan Studio demo. Try a sample photo first — those play back real Gemma 4 E4B coaching recorded on a local Mac. Or upload your own photo to run live Gemma 4 E4B through Ollama Cloud. You will hear framing, lighting, one fix at a time, alt-text, and listing copy. For fully private on-device coaching, follow the local quick start in the project README.`
+      : `Welcome to the Artisan Studio. Here's how to use this tool.
     First, you can try one of our sample photos to see how Gemma 4 analyzes your craft photography.
     Just tap or click on any of the sample images below.
     The analysis will tell you what's working in your photo, what needs improvement, and exactly how to fix it.

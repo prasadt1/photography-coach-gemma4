@@ -68,9 +68,20 @@ L.E.N.S. runs Gemma 4 through **Ollama**, and is honest about where inference ha
 | **Ollama Cloud** | Powers the hosted web app and iPhone PWA so anyone — including judges — can try L.E.N.S. without a local install. Real Gemma 4 inference, hosted. | Requires a connection |
 | **Demo Mode** | Offline playback of real, previously recorded E4B responses — a no-setup walkthrough. | None |
 
-**On-device is the product; the hosted path is how you try it quickly.** The deployed demo is a convenience layer, labelled as such — it does not run on-device. Every mode produces the **same strict JSON contract**, validated on the client so a malformed response fails loudly instead of degrading silently.
+**On-device is the product; the hosted path is how you try it quickly.** The public demo is labelled honestly: **sample photos** play back real E4B runs recorded on a local Mac; **uploads** use **Ollama Cloud** with `gemma4:e4b`. Every mode produces the **same strict JSON contract**, validated on the client so a malformed response fails loudly instead of degrading silently.
+
+### Two public deployments (one repo)
+
+| URL | Build profile | Experience |
+|-----|---------------|------------|
+| **[lens-app-gemma4.vercel.app](https://lens-app-gemma4.vercel.app)** | `VITE_DEPLOYMENT_PROFILE=judge` | Home → **Enter Artisan Studio** → sample grid or upload (cloud E4B) → optional voice-guided journey |
+| **[photography-coach-gemma4.vercel.app](https://photography-coach-gemma4.vercel.app)** | `artisan` (default) | Boots into the **voice-guided Artisan journey** (submission / video story) |
+
+**Vercel env — judge project (`lens-app-gemma4`):** `VITE_DEPLOYMENT_PROFILE=judge` · `OLLAMA_API_KEY` · `OLLAMA_TARGET=cloud` · `OLLAMA_CLOUD_MODEL=gemma4:e4b` — then redeploy.
 
 > **Why E4B?** Gemma 4's E4B variant is small enough to run on a maker's own laptop through Ollama — and that on-device capability is the whole point: private, offline, free coaching. Larger Gemma 4 variants give sharper critique but cannot run locally on modest hardware.
+
+Gemma is a trademark of Google LLC.
 
 ---
 
@@ -98,7 +109,7 @@ npm start
 
 Open **http://localhost:5173**, capture or upload a photo, and L.E.N.S. coaches you through it.
 
-> Prefer to skip setup? Open the **[live demo](https://lens-app-gemma4.vercel.app)** — it runs on Ollama Cloud, no install required.
+> Prefer to skip setup? Open the **[judge try-it demo](https://lens-app-gemma4.vercel.app)** — samples (recorded local E4B) + upload (Ollama Cloud E4B), no install required.
 
 ---
 
@@ -110,7 +121,7 @@ The hosted app is an installable PWA:
 2. Share → **Add to Home Screen**, then launch it full-screen.
 3. Grant camera permission once. L.E.N.S. uses a live `getUserMedia` preview, so capture is voice-driven — say *"take photo"* and it grabs the frame; a labelled capture button is always available as an equal alternative.
 
-Phone inference runs on **Ollama Cloud** (on-device phone inference is on the roadmap — see below). To deploy your own copy, set `OLLAMA_API_KEY` in your Vercel project's environment variables; the `/api/analyze` serverless function reads it server-side.
+Phone uploads on the hosted PWA use **Ollama Cloud E4B** (on-device phone inference is on the roadmap — see below). To deploy your own judge copy, set the env vars in the table above on the **lens-app** Vercel project; `/api/analyze` reads them server-side.
 
 ---
 
@@ -239,7 +250,7 @@ ollama pull gemma4:e4b                # pull it if missing
 ollama run gemma4:e4b "ready"
 ```
 
-**Hosted demo returns no analysis** — confirm `OLLAMA_API_KEY` is set in your Vercel project's environment variables (not just a local `.env`), then redeploy. See `TROUBLESHOOTING.md` for more.
+**Hosted demo returns no analysis** — confirm `OLLAMA_API_KEY`, `OLLAMA_TARGET=cloud`, and `OLLAMA_CLOUD_MODEL=gemma4:e4b` are set on the **lens-app** Vercel project (not just a local `.env`), then redeploy. For local dev with real inference: `OLLAMA_TARGET=local vercel dev` after `ollama pull gemma4:e4b`. See `TROUBLESHOOTING.md` for more.
 
 ---
 
@@ -268,6 +279,6 @@ Apache License 2.0 — see [LICENSE](LICENSE).
 
 **The competence the maker already brings to the craft — extended to the one step that used to require another pair of eyes.**
 
-*L.E.N.S. — Local Edge Native Studio · Gemma 4 via Ollama*
+*L.E.N.S. — Local Edge Native Studio · Gemma 4 E4B via Ollama*
 
 </div>

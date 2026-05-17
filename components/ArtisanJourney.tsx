@@ -12,7 +12,11 @@ import {
   Lightbulb, Grid3X3, Sun, Copy, FileText, Accessibility,
   AudioLines, Sparkles,
 } from 'lucide-react';
-import { analyzeForSellModeWithFallback, type InferenceSource } from '../services/analysisOrchestrator';
+import {
+  analyzeForSellModeWithFallback,
+  warmUpModelViaApi,
+  type InferenceSource,
+} from '../services/analysisOrchestrator';
 import {
   parseArtisanResponseV3,
   speak,
@@ -27,6 +31,8 @@ import { getArtisanInferenceBadge } from '../config';
 import {
   extractColourCheckFromSubject,
   buildArtisanVoiceScript,
+  getAnalysisStatusCopy,
+  type ArtisanCaptureKind,
 } from '../services/artisanDisplay';
 
 type JourneyPhase =
@@ -105,13 +111,27 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   const mainContentRef = useRef<HTMLDivElement>(null);
   const retakeButtonRef = useRef<HTMLButtonElement>(null);
   const listingButtonRef = useRef<HTMLButtonElement>(null);
+  const analysisStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearAnalysisStatusTimer = useCallback(() => {
+    if (analysisStatusTimerRef.current) {
+      clearTimeout(analysisStatusTimerRef.current);
+      analysisStatusTimerRef.current = null;
+    }
+  }, []);
 
   // Cleanup speech and recognition on unmount
   useEffect(() => {
     return () => {
+      clearAnalysisStatusTimer();
       stopSpeaking();
       stopListening();
     };
+  }, [clearAnalysisStatusTimer]);
+
+  // Preload Gemma while the user reads prompts (reduces cold-start + TTS chop on first photo)
+  useEffect(() => {
+    void warmUpModelViaApi();
   }, []);
 
   // ========== Comparison Logic (App-Side, Deterministic) ==========
@@ -167,6 +187,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
   const goToFirstCapture = useCallback((withVoiceCommands: boolean) => {
     if (withVoiceCommands) setVoiceCommandsEnabled(true);
+    void warmUpModelViaApi();
     setPhase('firstCapture');
     setShowLiveCamera(true);
     speak(
@@ -185,10 +206,17 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     setIsProcessing(true);
 
     try {
-      const isFirstPhoto = phase === 'firstCapture';
+      const captureKind: ArtisanCaptureKind =
+        phase === 'firstCapture' ? 'first' : attempts.length >= 2 ? 'replace' : 'compare';
+      const isFirstPhoto = captureKind === 'first';
+      const analysisStatus = getAnalysisStatusCopy(captureKind);
 
+      clearAnalysisStatusTimer();
       if (voiceEnabled) {
-        speak('Got your photo. Analysing with Gemma 4 now. This takes a moment.');
+        stopSpeaking();
+        analysisStatusTimerRef.current = setTimeout(() => {
+          speak(analysisStatus.voiceAfterDelay);
+        }, 5000);
       }
 
       // Move to analysis phase
@@ -203,7 +231,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
       const { content: response, source } = await analyzeForSellModeWithFallback(
         imageDataUrl,
         'image/jpeg', // getUserMedia canvas captures as JPEG
-        voiceEnabled
+        true, // Always use blind/low-vision artisan prompts (colour analogies, inches, JSON)
       );
 
       // Store inference source for badge display
@@ -299,14 +327,11 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           );
         }
       } else {
-        // Second attempt
-        const updatedAttempts = [...attempts, attempt];
+        // Second photo, or third+ replaces photo 2 (journey stays two-shot compare)
+        const updatedAttempts =
+          captureKind === 'replace' ? [attempts[0], attempt] : [...attempts, attempt];
         setAttempts(updatedAttempts);
         setPhase('comparison');
-
-        if (voiceEnabled) {
-          speak('Got your second photo. Comparing both shots now.');
-        }
 
         // App-side deterministic comparison (non-blocking)
         try {
@@ -336,9 +361,10 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     } catch (err) {
       console.error('[ArtisanJourney] Analysis failed:', err);
       setError('Failed to analyze photo. Please try again.');
+    } finally {
+      clearAnalysisStatusTimer();
+      setIsProcessing(false);
     }
-
-    setIsProcessing(false);
   };
 
   // ========== Phase 4: Retry Choice ==========
@@ -588,6 +614,13 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   // Camera capture (live view opens right after voice prompt)
   if (phase === 'firstCapture' || phase === 'secondCapture') {
     const isSecond = phase === 'secondCapture';
+    const isReplaceShot = isSecond && attempts.length >= 2;
+    const processingKind: ArtisanCaptureKind = isSecond
+      ? isReplaceShot
+        ? 'replace'
+        : 'compare'
+      : 'first';
+    const processingStatus = getAnalysisStatusCopy(processingKind);
     const promptText = isSecond && attempts[0]?.analysisJSON?.primaryFix
       ? `Remember: ${attempts[0].analysisJSON.primaryFix}`
       : 'Position your craft in good light';
@@ -619,11 +652,9 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           >
             <Loader2 className="w-12 h-12 text-[#C06B45] animate-spin mx-auto mb-4" />
             <p className="text-xl font-bold text-[#241F18] mb-2">
-              Analysing with Gemma 4
+              {processingStatus.screenTitle}
             </p>
-            <p className="text-[#3D362B]">
-              Comparing both photos to find the stronger shot...
-            </p>
+            <p className="text-[#3D362B]">{processingStatus.screenDetail}</p>
           </div>
         </div>
       );
@@ -635,7 +666,11 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
         <div className="rounded-2xl bg-[#F4ECDC] border-2 border-[#D8CDB8] p-12 text-center">
           <Camera className="w-16 h-16 text-[#C06B45] mx-auto mb-6" />
           <h2 className="text-2xl font-bold text-[#241F18] mb-3">
-            {isSecond ? 'Take your second photo' : 'Take your first photo'}
+            {isSecond
+              ? isReplaceShot
+                ? 'Take another photo'
+                : 'Take your second photo'
+              : 'Take your first photo'}
           </h2>
           <p className="text-[#3D362B] mb-6">{promptText}</p>
 
@@ -665,6 +700,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
   // Phase 3: First Analysis (processing)
   if (phase === 'firstAnalysis' && isProcessing) {
+    const firstStatus = getAnalysisStatusCopy('first');
     return (
       <div className="max-w-2xl mx-auto px-6 py-12" ref={mainContentRef} tabIndex={-1}>
         <div
@@ -674,12 +710,8 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           aria-busy="true"
         >
           <Loader2 className="w-12 h-12 text-[#C06B45] animate-spin mx-auto mb-4" />
-          <p className="text-xl font-bold text-[#241F18] mb-2">
-            Analysing with Gemma 4
-          </p>
-          <p className="text-[#3D362B]">
-            This takes a moment...
-          </p>
+          <p className="text-xl font-bold text-[#241F18] mb-2">{firstStatus.screenTitle}</p>
+          <p className="text-[#3D362B]">{firstStatus.screenDetail}</p>
         </div>
       </div>
     );
@@ -746,7 +778,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
                 </p>
                 <p className="text-lg font-semibold text-[#241F18]">{analysis.colourCheck}</p>
                 <p className="text-sm text-[#3D362B] mt-1">
-                  Confirm this matches your yarn, glaze, or material.
+                  Confirm this matches how your product looks in person.
                 </p>
               </div>
             )}
@@ -1037,10 +1069,12 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
               </div>
             )}
 
-            {analysis.tags && analysis.tags.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-semibold text-[#3D362B] uppercase tracking-wider">Tags</p>
+                        <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-semibold text-[#3D362B] uppercase tracking-wider">
+                  Marketplace tags
+                </p>
+                {analysis.tags && analysis.tags.length > 0 && (
                   <button
                     onClick={handleReadAllTags}
                     className="text-xs font-semibold text-[#C06B45] hover:text-[#A6552F] underline"
@@ -1048,13 +1082,34 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
                   >
                     Read aloud
                   </button>
-                </div>
-                <p className="text-[#241F18] text-sm">
-                  {showAllTags ? analysis.tags.join(', ') : analysis.tags.slice(0, 8).join(', ')}
-                  {!showAllTags && analysis.tags.length > 8 && '…'}
-                </p>
+                )}
               </div>
-            )}
+              {analysis.tags && analysis.tags.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {(showAllTags ? analysis.tags : analysis.tags.slice(0, 12)).map((tag) => (
+                    <span
+                      key={tag}
+                      className="px-3 py-1 rounded-full bg-[#ECE3D2] border border-[#D8CDB8] text-sm text-[#241F18]"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                  {!showAllTags && analysis.tags.length > 12 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllTags(true)}
+                      className="px-3 py-1 text-sm font-semibold text-[#C06B45] underline"
+                    >
+                      +{analysis.tags.length - 12} more
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-[#3D362B] bg-[#ECE3D2] rounded-xl p-4">
+                  No tags returned — add 5–8 Etsy search terms from your description.
+                </p>
+              )}
+            </div>
           </div>
         </div>
 

@@ -3,11 +3,11 @@
  * Network-first for HTML/shell; cache-first for hashed assets only.
  */
 
-const CACHE_NAME = 'photography-coach-v5-network-first-shell';
+const CACHE_NAME = 'photography-coach-v6-network-first-shell';
 const ASSETS_TO_PRECACHE = ['/manifest.json'];
 
 self.addEventListener('install', (event) => {
-  if (self.location.hostname.includes('ngrok')) {
+  if (self.location.hostname.includes('ngrok') || self.location.hostname.includes('trycloudflare')) {
     self.skipWaiting();
     return;
   }
@@ -51,7 +51,8 @@ self.addEventListener('fetch', (event) => {
     event.request.method !== 'GET' ||
     url.origin !== self.location.origin ||
     url.pathname.startsWith('/demo-samples/') ||
-    self.location.hostname.includes('ngrok')
+    self.location.hostname.includes('ngrok') ||
+    self.location.hostname.includes('trycloudflare')
   ) {
     return;
   }

@@ -7,7 +7,8 @@
  * Day 2: full UI integration with AnalysisResults v2 component.
  */
 
-import { analyzePhoto, analyzePhotoCull, checkOllamaHealth, warmUpModel, analyzePhotoWithFallback, detectInferenceSource } from './ollamaService';
+import { analyzePhoto, analyzePhotoCull, checkOllamaHealth, warmUpModel, warmUpModelViaApi, analyzePhotoWithFallback, detectInferenceSource } from './ollamaService';
+import { ARTISAN_V3_OUTPUT_SCHEMA } from '../lib/artisanV3Schema';
 import type { InferenceSource } from '../config';
 import { analyzeImageCV } from './cvService';
 import { logAnalysis } from './auditService';
@@ -50,7 +51,7 @@ export type ProgressCallback = (p: AnalysisProgress) => void;
 
 // ─── Health check ─────────────────────────────────────────────────────────────
 
-export { checkOllamaHealth, warmUpModel };
+export { checkOllamaHealth, warmUpModel, warmUpModelViaApi };
 
 // ─── Main orchestration ───────────────────────────────────────────────────────
 
@@ -345,6 +346,8 @@ export async function analyzeForSellMode(
     mimeType,
     systemPrompt,
     userPrompt,
+    undefined,
+    accessibilityMode ? ARTISAN_V3_OUTPUT_SCHEMA : undefined,
   );
 
   return response;
@@ -378,6 +381,8 @@ export async function analyzeForSellModeWithFallback(
     mimeType,
     systemPrompt,
     userPrompt,
+    undefined,
+    { artisanSchema: accessibilityMode },
   );
 }
 

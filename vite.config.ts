@@ -10,8 +10,9 @@ export default defineConfig(({ mode }) => {
         port: 3000,
         host: '0.0.0.0',
         allowedHosts: [
-          '.ngrok-free.dev',  // Allow all ngrok domains
-          '.ngrok.io',        // Alternative ngrok domain
+          '.ngrok-free.dev',
+          '.ngrok.io',
+          '.trycloudflare.com',
         ],
         headers: {
           'Cache-Control': 'no-store',  // Prevent caching during development

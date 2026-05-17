@@ -10,6 +10,7 @@
  */
 
 import { OLLAMA_CONFIG, SCHEMA_VERSION, OLLAMA_CLOUD_CONFIG, type InferenceSource } from '../config';
+import { ARTISAN_V3_OUTPUT_SCHEMA } from '../lib/artisanV3Schema';
 import { PhotoAnalysisV2, CVData, TokenUsage } from '../types.v2';
 import {
   buildSystemPrompt,
@@ -605,6 +606,7 @@ export async function analyzePhotoRaw(
   systemPrompt: string,
   userPrompt: string,
   signal?: AbortSignal,
+  jsonSchema?: object,
 ): Promise<string> {
   const cleanBase64 = base64Image.includes('base64,')
     ? base64Image.split('base64,')[1]
@@ -615,15 +617,16 @@ export async function analyzePhotoRaw(
     { role: 'user', content: userPrompt, images: [cleanBase64] },
   ];
 
-  // Raw text mode: no JSON schema, generous token budget for full feedback
+  const useArtisanSchema = jsonSchema != null;
   const { content } = await callOllamaChat(
     messages,
-    false,           // useJsonSchema = false for raw text
-    undefined,       // no streaming callback
+    useArtisanSchema,
+    undefined,
     signal,
     OLLAMA_CONFIG.timeoutMs,
-    1024,            // num_predict: enough for full artisan/quest feedback
-    4096,            // num_ctx: standard context window
+    1024,
+    4096,
+    jsonSchema,
   );
 
   console.log('[analyzePhotoRaw] Response:', content.substring(0, 500));
@@ -776,6 +779,7 @@ async function analyzePhotoCloud(
   systemPrompt: string,
   userPrompt: string,
   signal?: AbortSignal,
+  jsonSchema?: object,
 ): Promise<{ content: string; source: InferenceSource }> {
   const res = await fetch(OLLAMA_CLOUD_CONFIG.apiRoute, {
     method: 'POST',
@@ -784,6 +788,7 @@ async function analyzePhotoCloud(
       base64Image,
       systemPrompt,
       userPrompt,
+      jsonSchema: jsonSchema ?? undefined,
     }),
     signal: signal ?? AbortSignal.timeout(120_000),
   });
@@ -817,7 +822,10 @@ export async function analyzePhotoWithFallback(
   systemPrompt: string,
   userPrompt: string,
   signal?: AbortSignal,
+  options?: { artisanSchema?: boolean },
 ): Promise<{ content: string; source: InferenceSource }> {
+  const jsonSchema = options?.artisanSchema ? ARTISAN_V3_OUTPUT_SCHEMA : undefined;
+
   // On deployed sites, skip local Ollama entirely (would cause Mixed Content error)
   if (!OLLAMA_CLOUD_CONFIG.enabled) {
     // Step 1: Try local Ollama first (only on localhost)
@@ -831,6 +839,7 @@ export async function analyzePhotoWithFallback(
           systemPrompt,
           userPrompt,
           signal,
+          jsonSchema,
         );
         return { content, source: 'local' };
       }
@@ -843,7 +852,13 @@ export async function analyzePhotoWithFallback(
   if (OLLAMA_CLOUD_CONFIG.enabled) {
     try {
       console.log('[analyzePhotoWithFallback] Trying Ollama Cloud');
-      return await analyzePhotoCloud(base64Image, systemPrompt, userPrompt, signal);
+      return await analyzePhotoCloud(
+        base64Image,
+        systemPrompt,
+        userPrompt,
+        signal,
+        jsonSchema,
+      );
     } catch (err) {
       console.warn('[analyzePhotoWithFallback] Cloud failed:', err);
     }
@@ -887,6 +902,24 @@ export async function detectInferenceSource(): Promise<InferenceSource> {
  * Call this on app mount (fire-and-forget) to eliminate the ~40s cold-start
  * penalty that users would otherwise experience on their first photo upload.
  */
+/**
+ * Preload the model via /api/analyze (works with vercel dev + OLLAMA_TARGET=local).
+ * Fire-and-forget on journey start so the first photo does not evict TTS mid-sentence.
+ */
+export async function warmUpModelViaApi(): Promise<void> {
+  if (!OLLAMA_CLOUD_CONFIG.enabled) return;
+  try {
+    await fetch(OLLAMA_CLOUD_CONFIG.apiRoute, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ warmUp: true }),
+      signal: AbortSignal.timeout(90_000),
+    });
+  } catch {
+    // Silent — real errors surface on first analysis
+  }
+}
+
 export async function warmUpModel(): Promise<void> {
   try {
     await fetch(`${OLLAMA_CONFIG.baseUrl}/api/chat`, {

@@ -385,7 +385,7 @@ export const ARTISAN_ACCESSIBILITY_SYSTEM_PROMPT = `You are the local analysis e
   "confidence_note": "Empty string, or an explicit statement of what could not be judged.",
   "alt_text": "15-25 word descriptive alt-text for the marketplace listing.",
   "listing_copy": "2-3 sentence marketplace description: product, materials, key qualities.",
-  "tags": ["array", "of", "5-8", "marketplace", "tags", "without", "hashtags"],
+  "tags": ["REQUIRED: 5-8 marketplace search tags, lowercase, no hash symbols, e.g. handmade mug, copper bottle, floral design"],
   "ready_to_list": true or false
 }`;
 

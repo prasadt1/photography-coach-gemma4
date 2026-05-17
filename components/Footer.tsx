@@ -72,6 +72,9 @@ const Footer: React.FC = () => {
             <span className="font-semibold text-[#241F18]">Web Speech API</span>
           </div>
         </div>
+        <p className="text-xs text-[#524A3D] max-w-2xl mx-auto">
+          Gemma is a trademark of Google LLC.
+        </p>
       </div>
     </footer>
   );

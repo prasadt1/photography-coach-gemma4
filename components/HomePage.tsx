@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { getHomeHeroBadgeText } from '../config';
 import { showStudioModeEntry } from '../lib/launchRoute';
+import { isJudgeDemoBuild } from '../lib/deploymentProfile';
 import { OperationalMode } from '../types.v2';
 import { speak } from '../services/voiceCoach';
 import { detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
@@ -103,6 +104,23 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                 </div>
               )}
             </div>
+
+            {isJudgeDemoBuild() && (
+              <p className="mb-4 text-sm text-[#2F4858] bg-[#F4ECDC] border border-[#D8CDB8] rounded-xl px-4 py-3 leading-relaxed max-w-xl">
+                <strong>Try it:</strong> sample photos use recorded <strong>Gemma 4 E4B</strong> runs from a
+                local Mac; uploads use <strong>Ollama Cloud</strong> (<code className="text-xs">gemma4:e4b</code>).
+                For the private on-device path, see the{' '}
+                <a
+                  href="https://github.com/prasadt1/photography-coach-gemma4#-quick-start"
+                  className="underline font-semibold"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  README quick start
+                </a>
+                .
+              </p>
+            )}
 
             <button
               onClick={() => onSelectMode('sell')}

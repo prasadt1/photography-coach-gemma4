@@ -8,7 +8,7 @@
       "destination": "/api/$1"
     },
     {
-      "source": "/((?!api).*)",
+      "source": "/((?!api/)(?!@vite)(?!@fs/)(?!@id/)(?!@react-refresh)(?!node_modules/)(?!.*\\.[^/]+$).*)",
       "destination": "/index.html"
     }
   ],

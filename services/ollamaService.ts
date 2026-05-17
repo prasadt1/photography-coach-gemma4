@@ -795,13 +795,19 @@ async function analyzePhotoCloud(
   });
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({})) as {
+    const rawText = await res.text();
+    let error: {
       error?: string;
       message?: string;
       details?: string;
       code?: string;
       modelsTried?: string[];
-    };
+    } = {};
+    try {
+      error = JSON.parse(rawText) as typeof error;
+    } catch {
+      error = { details: rawText.slice(0, 280) };
+    }
     const detail = (error.details || error.message || '').trim();
     const label =
       error.code === 'INVALID_API_KEY'

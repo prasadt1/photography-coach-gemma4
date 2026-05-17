@@ -6,7 +6,7 @@ import React from 'react';
 import {
   Camera, Tag, FileText, Layers, DollarSign, ExternalLink, Volume2, VolumeX, Copy, CheckCircle2,
 } from 'lucide-react';
-import { speak, stopSpeaking } from '../services/voiceCoach';
+import { speak, hardStopVoice } from '../services/voiceCoach';
 
 export interface MarketplaceListingDraft {
   title: string;
@@ -34,7 +34,7 @@ const MarketplaceListingPreview: React.FC<MarketplaceListingPreviewProps> = ({
 
   React.useEffect(() => {
     if (!voiceEnabled && listingPlayingRef.current) {
-      stopSpeaking();
+      hardStopVoice();
       listingPlayingRef.current = false;
       setListingPlaying(false);
     }
@@ -63,12 +63,12 @@ const MarketplaceListingPreview: React.FC<MarketplaceListingPreviewProps> = ({
 
   const handleHearListing = () => {
     if (listingPlayingRef.current || listingPlaying) {
-      stopSpeaking();
+      hardStopVoice();
       listingPlayingRef.current = false;
       setListingPlaying(false);
       return;
     }
-    stopSpeaking();
+    hardStopVoice();
     listingPlayingRef.current = true;
     setListingPlaying(true);
     speak(listingSpeech(), 0.95, () => {

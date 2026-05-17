@@ -16,12 +16,12 @@ import {
   Upload, HelpCircle, AudioLines,
 } from 'lucide-react';
 import { analyzeForSellModeWithFallback, detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
-import { parseSellResponse, parseArtisanResponseV3, speak, stopSpeaking, resumeSpeech, hasPausedSpeech, isSpeechCompleted, clearPausedSpeech } from '../services/voiceCoach';
+import { parseSellResponse, parseArtisanResponseV3, speak, stopSpeaking, hardStopVoice, resumeSpeech, hasPausedSpeech, isSpeechCompleted, clearPausedSpeech } from '../services/voiceCoach';
 import { getAnalyzingStatus, getUploadHint } from '../config';
 import { showStudioModeEntry } from '../lib/launchRoute';
 import { isJudgeDemoBuild } from '../lib/deploymentProfile';
 import {
-  ARTISAN_GRID_WELCOME_KEY,
+  PENDING_STUDIO_WELCOME_KEY,
   GEMMA_4_E4B,
   OLLAMA_CLOUD,
   getArtisanStudioWelcomeScript,
@@ -105,8 +105,8 @@ function cloudUnavailableMessage(cloudError?: string): string {
   if (/invalid.*api key|401/i.test(raw)) {
     return `Analysis unavailable: ${detail || 'Invalid Ollama API key'}. Set OLLAMA_API_KEY on the Vercel project and redeploy.`;
   }
-  if (!detail) {
-    return `Analysis unavailable. Cloud could not analyze this image (check OLLAMA_API_KEY and redeploy). ${hint}`;
+  if (!detail || /FUNCTION_INVOCATION_FAILED|server error has occurred/i.test(detail)) {
+    return `Analysis unavailable. The /api/analyze serverless function failed to start (redeploy after latest push; ensure OLLAMA_API_KEY is set). ${hint}`;
   }
   if (/gemma4:31b|README quick start/i.test(detail)) {
     return `Analysis unavailable: ${detail}`;
@@ -137,47 +137,25 @@ const SellMode: React.FC<SellModeProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const playArtisanStudioWelcome = useCallback(() => {
-    stopSpeaking();
-    clearPausedSpeech();
+    hardStopVoice();
     speak(getArtisanStudioWelcomeScript());
   }, []);
 
-  // Deep-link fallback: studio welcome on first tap if user skipped home CTA
+  // Cut home audio on mount; play studio welcome after Enter Artisan Studio (gesture-safe delay).
   useEffect(() => {
-    if (
-      !isJudgeDemoBuild() ||
-      !voiceEnabled ||
-      !sourceDetected ||
-      showGuidedJourney ||
-      result ||
-      isAnalyzing ||
-      showCompare
-    ) {
-      return;
+    hardStopVoice();
+    const pending = sessionStorage.getItem(PENDING_STUDIO_WELCOME_KEY);
+    if (pending && isJudgeDemoBuild() && voiceEnabled && !showGuidedJourney) {
+      sessionStorage.removeItem(PENDING_STUDIO_WELCOME_KEY);
+      const t = window.setTimeout(() => playArtisanStudioWelcome(), 200);
+      return () => window.clearTimeout(t);
     }
-    if (sessionStorage.getItem(ARTISAN_GRID_WELCOME_KEY)) return;
-
-    const onGesture = () => {
-      if (sessionStorage.getItem(ARTISAN_GRID_WELCOME_KEY)) return;
-      sessionStorage.setItem(ARTISAN_GRID_WELCOME_KEY, '1');
-      playArtisanStudioWelcome();
-    };
-    window.addEventListener('pointerdown', onGesture, { once: true, capture: true });
-    return () => window.removeEventListener('pointerdown', onGesture, { capture: true });
-  }, [
-    voiceEnabled,
-    sourceDetected,
-    showGuidedJourney,
-    result,
-    isAnalyzing,
-    showCompare,
-    playArtisanStudioWelcome,
-  ]);
+    return undefined;
+  }, [voiceEnabled, showGuidedJourney, playArtisanStudioWelcome]);
 
   useEffect(() => {
     return () => {
-      stopSpeaking();
-      clearPausedSpeech();
+      hardStopVoice();
     };
   }, []);
 
@@ -205,8 +183,7 @@ const SellMode: React.FC<SellModeProps> = ({
   }, [voiceEnabled, result]);
 
   const handleDemoSampleSelect = useCallback(async (sample: DemoResponse) => {
-    stopSpeaking();
-    clearPausedSpeech();
+    hardStopVoice();
     setError(null);
     setIsAnalyzing(true);
     setResult(null);

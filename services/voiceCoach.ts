@@ -551,6 +551,17 @@ export function stopSpeaking(): void {
     pendingTimeout = null;
   }
   speechSynthesis.cancel();
+  // Chrome/Safari: queued utterances may need a second cancel on the next tick
+  window.setTimeout(() => {
+    speechSynthesis.cancel();
+  }, 0);
+}
+
+/** Stop speech and clear resume queue — use on navigation or mode changes */
+export function hardStopVoice(): void {
+  stopSpeaking();
+  clearPausedSpeech();
+  lastSpokenText = '';
 }
 
 // ─── Voice Input (Speech Recognition) ──────────────────────────────────────────

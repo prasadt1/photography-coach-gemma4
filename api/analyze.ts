@@ -38,10 +38,9 @@ function resolveCloudModel(requested?: string): string {
   return CLOUD_MODEL_ALIASES[raw] ?? raw;
 }
 
+/** Vision-capable cloud model first — gemma4:31b may reject images on Ollama Cloud */
 function cloudModelsToTry(primary: string): string[] {
-  const list = [primary];
-  if (primary !== CLOUD_VISION_FALLBACK) list.push(CLOUD_VISION_FALLBACK);
-  return [...new Set(list)];
+  return [...new Set([CLOUD_VISION_FALLBACK, primary])];
 }
 
 const TIMEOUT_MS = 120_000;
@@ -63,7 +62,7 @@ async function attemptOllamaChat(params: {
         { role: 'user', content: params.userPrompt, images: [params.cleanBase64] },
       ],
       stream: false,
-      options: { temperature: 0.1, num_predict: 1024 },
+      options: { temperature: 0.1, num_predict: 2048 },
     };
     if (withSchema && params.outputSchema) {
       req.format = params.outputSchema;

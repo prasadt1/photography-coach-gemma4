@@ -26,12 +26,12 @@ import {
 } from './services/analysisOrchestrator';
 import { SupportedLanguage, LANGUAGE_LABELS } from './services/promptService';
 import { setOperationalMode, exportAuditLog } from './services/auditService';
-import { speak, stopSpeaking } from './services/voiceCoach';
+import { speak, hardStopVoice } from './services/voiceCoach';
 import { AppState } from './types';
 import { PhotoAnalysisV2, OperationalMode, SessionHistoryEntry } from './types.v2';
 import { getInitialAppRoute, showStudioModeEntry } from './lib/launchRoute';
 import { isJudgeDemoBuild } from './lib/deploymentProfile';
-import { ARTISAN_GRID_WELCOME_KEY } from './lib/branding';
+import { ARTISAN_GRID_WELCOME_KEY, PENDING_STUDIO_WELCOME_KEY } from './lib/branding';
 
 // Note: isElectron and SessionSavingsBadge removed as part of header consolidation
 // Can be re-added to Header component if needed for vault mode or session stats
@@ -119,7 +119,7 @@ function App() {
 
   const handleVoiceToggle = useCallback(() => {
     setVoiceEnabled((prev) => {
-      if (prev) stopSpeaking();
+      if (prev) hardStopVoice();
       return !prev;
     });
   }, []);
@@ -212,6 +212,7 @@ function App() {
   }, []);
 
   const handleModeChange = useCallback((newMode: OperationalMode) => {
+    hardStopVoice();
     setMode(newMode);
     setOperationalMode(newMode);
     setShowHome(false); // Leave home page when mode is selected
@@ -226,6 +227,7 @@ function App() {
       setError(null);
       return;
     }
+    hardStopVoice();
     setShowHome(true);
     setAppState(AppState.IDLE);
     setCurrentImage(null);
@@ -234,6 +236,7 @@ function App() {
     setError(null);
     if (isJudgeDemoBuild()) {
       sessionStorage.removeItem(ARTISAN_GRID_WELCOME_KEY);
+      sessionStorage.removeItem(PENDING_STUDIO_WELCOME_KEY);
     }
   }, []);
 

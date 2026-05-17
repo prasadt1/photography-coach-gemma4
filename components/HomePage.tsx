@@ -20,11 +20,11 @@ import {
   OLLAMA_MODEL_TAG,
   OLLAMA_CLOUD_MODEL_TAG,
   ARTISAN_GRID_WELCOME_KEY,
-  getArtisanStudioWelcomeScript,
+  PENDING_STUDIO_WELCOME_KEY,
   getJudgeHomeWelcomeScript,
 } from '../lib/branding';
 import { OperationalMode } from '../types.v2';
-import { speak, stopSpeaking, clearPausedSpeech } from '../services/voiceCoach';
+import { speak, hardStopVoice } from '../services/voiceCoach';
 import { detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
 import Header from './Header';
 import Footer from './Footer';
@@ -45,6 +45,8 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
   const [connectionState, setConnectionState] = useState<'connecting' | 'ready'>('connecting');
   const [inferenceSource, setInferenceSource] = useState<InferenceSource>('demo');
   const judgeWelcomeSpoken = useRef(false);
+  const [welcomePlayed, setWelcomePlayed] = useState(false);
+  const [showVoicePrompt, setShowVoicePrompt] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -60,39 +62,54 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
   }, []);
 
   const playJudgeWelcome = useCallback(() => {
-    stopSpeaking();
-    clearPausedSpeech();
+    hardStopVoice();
     speak(
       getJudgeHomeWelcomeScript(),
       0.95,
       undefined,
       () => {
         judgeWelcomeSpoken.current = true;
+        setWelcomePlayed(true);
+        setShowVoicePrompt(false);
       },
     );
   }, []);
 
   const handleEnterArtisanStudio = useCallback(() => {
-    stopSpeaking();
-    clearPausedSpeech();
+    hardStopVoice();
     judgeWelcomeSpoken.current = true;
+    setShowVoicePrompt(false);
+    sessionStorage.setItem(ARTISAN_GRID_WELCOME_KEY, '1');
     if (isJudgeDemoBuild() && voiceEnabled) {
-      sessionStorage.setItem(ARTISAN_GRID_WELCOME_KEY, '1');
-      speak(getArtisanStudioWelcomeScript());
+      sessionStorage.setItem(PENDING_STUDIO_WELCOME_KEY, '1');
+    } else {
+      sessionStorage.removeItem(PENDING_STUDIO_WELCOME_KEY);
     }
     onSelectMode('sell');
   }, [voiceEnabled, onSelectMode]);
 
-  // Judge home: auto-play welcome when voice is on; retry on first tap if the browser blocked autoplay.
   useEffect(() => {
-    if (!isJudgeDemoBuild() || !voiceEnabled) return;
+    return () => {
+      hardStopVoice();
+    };
+  }, []);
+
+  // Judge home: try autoplay; show tap prompt if the browser blocks speech.
+  useEffect(() => {
+    if (!isJudgeDemoBuild() || !voiceEnabled) {
+      setShowVoicePrompt(false);
+      return;
+    }
 
     const tryWelcome = () => {
       if (judgeWelcomeSpoken.current) return;
       playJudgeWelcome();
     };
 
-    const autoTimer = window.setTimeout(tryWelcome, 700);
+    const autoTimer = window.setTimeout(tryWelcome, 500);
+    const promptTimer = window.setTimeout(() => {
+      if (!judgeWelcomeSpoken.current) setShowVoicePrompt(true);
+    }, 1600);
 
     const onFirstGesture = (e: PointerEvent) => {
       if (judgeWelcomeSpoken.current) return;
@@ -104,6 +121,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
     window.addEventListener('pointerdown', onFirstGesture, { once: true, capture: true });
     return () => {
       window.clearTimeout(autoTimer);
+      window.clearTimeout(promptTimer);
       window.removeEventListener('pointerdown', onFirstGesture, { capture: true });
     };
   }, [voiceEnabled, playJudgeWelcome]);
@@ -199,6 +217,16 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                     local quick start
                   </a>
                 </p>
+                {showVoicePrompt && !welcomePlayed && (
+                  <button
+                    type="button"
+                    onClick={playJudgeWelcome}
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#C06B45] text-white text-sm font-bold animate-pulse focus:outline-none focus:ring-2 focus:ring-[#2F4858]"
+                  >
+                    <AudioLines className="w-5 h-5" aria-hidden />
+                    Tap to play welcome guide
+                  </button>
+                )}
                 <button
                   type="button"
                   data-skip-home-welcome

@@ -2,7 +2,7 @@
 
 > *The one step between a finished piece and a sale shouldn't depend on someone else's eyes.*
 
-**A private, on-device, voice-guided photography coach for blind and low-vision artisans.**
+**A private, voice-guided photography coach for blind and low-vision artisans.**
 
 [![Gemma 4 E4B](https://img.shields.io/badge/Powered%20by-Gemma%204%20E4B-4285F4?style=flat-square&logo=google)](https://ollama.com/library)
 [![Ollama](https://img.shields.io/badge/Runtime-Ollama-000000?style=flat-square)](https://ollama.com)
@@ -20,7 +20,7 @@
 
 Mohan has low vision. He hand-knits sweaters and can finish a flawless cable pattern by touch. He can shape, price, and list a piece on his own — until the one step he cannot finish alone: photographing it well enough to sell online.
 
-**L.E.N.S. closes that gap.** It is a voice-guided photography coach that helps blind and low-vision artisans *verify and improve their product photos before listing their work*. It runs Gemma 4 on the maker's own device through Ollama, describes the photo in plain language, names the single most useful thing to fix, and returns alt-text and listing copy ready to paste.
+**L.E.N.S. closes that gap.** It is a voice-guided photography coach that helps blind and low-vision artisans *verify and improve their product photos before listing their work*. It runs Gemma 4 through Ollama, describes the photo in plain language, names the single most useful thing to fix, and returns alt-text and listing copy ready to paste.
 
 The point isn't a sharper critique than a sighted friend would give — it's that Mohan no longer has to ask. The villain here is **dependence**, not blindness. Today a low-vision maker hires a photographer, waits for a sighted relative, or sends the image to a remote describer. L.E.N.S. removes the intermediary.
 
@@ -65,7 +65,7 @@ L.E.N.S. runs Gemma 4 through **Ollama**, and is honest about where inference ha
 | Mode | What it is | Network |
 |------|-----------|---------|
 | **Local — Gemma 4 E4B via Ollama** | The actual product. Runs on the maker's own machine; the image never leaves the device. | Fully offline |
-| **Hosted Gemma 4** | Powers the live web app and iPhone PWA so anyone — including judges — can try L.E.N.S. without installing Ollama. Same coaching, Gemma 4 inference. | Requires a connection |
+| **Ollama Cloud** | Powers the hosted web app and iPhone PWA so anyone — including judges — can try L.E.N.S. without a local install. Real Gemma 4 inference, hosted. | Requires a connection |
 | **Demo Mode** | Offline playback of real, previously recorded E4B responses — a no-setup walkthrough. | None |
 
 **On-device is the product; the hosted path is how you try it quickly.** The deployed demo is a convenience layer, labelled as such — it does not run on-device. Every mode produces the **same strict JSON contract**, validated on the client so a malformed response fails loudly instead of degrading silently.
@@ -98,7 +98,7 @@ npm start
 
 Open **http://localhost:5173**, capture or upload a photo, and L.E.N.S. coaches you through it.
 
-> Prefer to skip setup? Open the **[live demo](https://photography-coach-gemma4.vercel.app)** — hosted Gemma 4 coaching, no install required.
+> Prefer to skip setup? Open the **[live demo](https://lens-app-gemma4.vercel.app)** — it runs on Ollama Cloud, no install required.
 
 ---
 
@@ -106,11 +106,11 @@ Open **http://localhost:5173**, capture or upload a photo, and L.E.N.S. coaches 
 
 The hosted app is an installable PWA:
 
-1. On iPhone, open **https://photography-coach-gemma4.vercel.app** in Safari.
+1. On iPhone, open **https://lens-app-gemma4.vercel.app** in Safari.
 2. Share → **Add to Home Screen**, then launch it full-screen.
 3. Grant camera permission once. L.E.N.S. uses a live `getUserMedia` preview, so capture is voice-driven — say *"take photo"* and it grabs the frame; a labelled capture button is always available as an equal alternative.
 
-The hosted PWA uses the same Gemma 4 coaching pipeline via a server-side API (on-device phone inference is on the roadmap — see below). To deploy your own copy, set `OLLAMA_API_KEY` in your Vercel environment variables.
+Phone inference runs on **Ollama Cloud** (on-device phone inference is on the roadmap — see below). To deploy your own copy, set `OLLAMA_API_KEY` in your Vercel project's environment variables; the `/api/analyze` serverless function reads it server-side.
 
 ---
 
@@ -124,8 +124,8 @@ The hosted PWA uses the same Gemma 4 coaching pipeline via a server-side API (on
                                 ▼
 ┌──────────────────────────────────────────────────────────────┐
 │  INFERENCE — Gemma 4 via Ollama                              │
-│  Local E4B (on-device)  ·  Hosted Gemma 4  ·  Demo Mode      │
-│  Priority chain: local → hosted → demo                       │
+│  Local E4B (on-device)  ·  Ollama Cloud  ·  Demo Mode        │
+│  Priority chain: local → cloud → demo                        │
 └───────────────────────────────┬──────────────────────────────┘
                                 ▼
 ┌──────────────────────────────────────────────────────────────┐

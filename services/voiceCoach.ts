@@ -286,6 +286,16 @@ export function isSpeechCompleted(): boolean {
 
 // ─── Speech Recognition Functions ─────────────────────────────────────────────
 
+/** iPhone/iPad Safari — continuous recognition is unreliable; we restart on `onend`. */
+export function isIosLikeDevice(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent;
+  return (
+    /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  );
+}
+
 /**
  * Start listening for voice commands
  * @param onCommand - Callback when a command is recognized
@@ -308,8 +318,12 @@ export function startListening(
   }
 
   try {
+    stopSpeaking();
+    const keepListening = continuous;
+    const useContinuous = continuous && !isIosLikeDevice();
+
     recognition = new SpeechRecognitionAPI();
-    recognition.continuous = continuous;
+    recognition.continuous = useContinuous;
     recognition.interimResults = false;
     recognition.lang = 'en-US';
     recognition.maxAlternatives = 1;
@@ -356,9 +370,9 @@ export function startListening(
     recognition.onend = () => {
       console.log('[voiceCoach] Recognition ended');
 
-      // Auto-restart if continuous mode and still supposed to be listening
-      if (continuous && isListening) {
-        console.log('[voiceCoach] Restarting continuous recognition');
+      // Auto-restart (iOS needs manual restart even when continuous=false)
+      if (keepListening && isListening) {
+        console.log('[voiceCoach] Restarting recognition');
         setTimeout(() => {
           if (recognition && isListening) {
             try {
@@ -367,7 +381,7 @@ export function startListening(
               console.warn('[voiceCoach] Could not restart recognition:', e);
             }
           }
-        }, 500);
+        }, isIosLikeDevice() ? 200 : 500);
       } else {
         isListening = false;
       }

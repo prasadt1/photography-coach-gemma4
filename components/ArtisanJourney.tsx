@@ -123,8 +123,12 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   const primeVoiceListening = useCallback(() => {
     if (!voiceCommandsEnabled) return;
     unlockSpeechForSession();
+    stopSpeaking();
     setVoiceListeningPrimed(true);
-    startListening((transcript) => handleVoiceCommandRef.current(transcript), true);
+    const started = startListening((transcript) => handleVoiceCommandRef.current(transcript), true);
+    if (!started) {
+      speak('Voice commands are not available in this browser. Use the Take Photo button.');
+    }
   }, [voiceCommandsEnabled]);
 
   // Refs for accessibility

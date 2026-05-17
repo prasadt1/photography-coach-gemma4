@@ -219,9 +219,12 @@
     <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
   <script>
-    if ('serviceWorker' in navigator) {
+    // Skip SW on LAN/dev hosts — stale caches served old bundles that hit http://:11434 (demo fallback).
+    var _h = location.hostname;
+    var _isLanDev = /^(localhost|127\.0\.0\.1|192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)/.test(_h);
+    if ('serviceWorker' in navigator && !_isLanDev) {
       window.addEventListener('load', () => {
-        const swUrl = '/sw.js?v=7';
+        const swUrl = '/sw.js?v=8';
         navigator.serviceWorker.register(swUrl).then((reg) => {
           reg.update();
         }).catch(() => {});

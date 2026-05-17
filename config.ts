@@ -16,6 +16,17 @@ const _ollamaHost = (() => {
   return h; // LAN IP — phone/tablet accessing via network
 })();
 
+/** Browser → Ollama base URL (see vite /ollama proxy for HTTPS LAN dev). */
+const _ollamaBaseUrl = (() => {
+  if (typeof window === 'undefined') return 'http://localhost:11434';
+  // Phone on https://192.168.x.x:3000 cannot fetch http://192.168.x.x:11434 (mixed content).
+  // Vite proxies /ollama → 127.0.0.1:11434 on the Mac.
+  if (import.meta.env.DEV && window.isSecureContext) {
+    return '/ollama';
+  }
+  return `http://${_ollamaHost}:11434`;
+})();
+
 // Detect if we're running in a deployed environment (Vercel, Netlify, GitHub Pages, etc.)
 // If so, default to Demo Mode or Gemini API for judges to test without local Ollama
 const _isDeployedEnvironment = (() => {
@@ -31,7 +42,7 @@ const _isDeployedEnvironment = (() => {
 
 export const OLLAMA_CONFIG = {
   // Local Ollama configuration (not used when cloud is enabled)
-  baseUrl: `http://${_ollamaHost}:11434`,
+  baseUrl: _ollamaBaseUrl,
   model: 'gemma4:e4b',
   modelId: 'gemma-4-e4b',           // Canonical ID written to v2 schema
   quantization: 'Q4_K_M',
@@ -64,9 +75,8 @@ export const OLLAMA_CLOUD_CONFIG = {
   // Model identifier on Ollama Cloud (gemma4 has vision support)
   model: 'gemma4',
   modelId: 'gemma4-cloud',
-  // Whether cloud fallback is enabled (requires OLLAMA_API_KEY env var)
-  // Enabled for ngrok to use Ollama Cloud from iPhone
-  enabled: true,
+  // Hosted sites only: browser → /api/analyze (Vercel). LAN/dev uses direct :11434.
+  enabled: _isDeployedEnvironment,
 } as const;
 
 // Inference source tracking for UI badges
@@ -81,6 +91,18 @@ export const getInferenceSourceLabel = (source: InferenceSource): string => {
       return `${GEMMA_4_E4B} · ${OLLAMA_CLOUD}`;
     case 'demo':
       return `Demo · Recorded ${GEMMA_4_E4B}`;
+  }
+};
+
+/** Compact badge copy for narrow phone headers */
+export const getInferenceSourceShortLabel = (source: InferenceSource): string => {
+  switch (source) {
+    case 'local':
+      return 'Local · Private';
+    case 'cloud':
+      return 'Cloud';
+    case 'demo':
+      return 'Demo';
   }
 };
 

@@ -10,6 +10,7 @@
  */
 
 import { OLLAMA_CONFIG, SCHEMA_VERSION, OLLAMA_CLOUD_CONFIG, type InferenceSource } from '../config';
+import { combineAbortSignals, timeoutAbortSignal } from '../lib/abortUtils';
 import { ARTISAN_V3_OUTPUT_SCHEMA } from '../lib/artisanV3Schema';
 import { PhotoAnalysisV2, CVData, TokenUsage } from '../types.v2';
 import {
@@ -34,7 +35,7 @@ interface OllamaMessage {
 
 interface OllamaResponse {
   model: string;
-  message: { role: string; content: string };
+  message: { role: string; content: string; thinking?: string };
   done: boolean;
   prompt_eval_count?: number;
   eval_count?: number;
@@ -212,10 +213,9 @@ async function callOllamaChat(
     keep_alive: '30m', // Keep model loaded for 30 minutes to avoid cold starts between batch photos
   };
 
-  // Combine caller's cancel signal with the (possibly extended) timeout so either can abort.
   const combinedSignal = signal
-    ? AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)])
-    : AbortSignal.timeout(timeoutMs);
+    ? combineAbortSignals([signal, timeoutAbortSignal(timeoutMs)])
+    : timeoutAbortSignal(timeoutMs);
 
   const response = await fetch(`${OLLAMA_CONFIG.baseUrl}/api/chat`, {
     method: 'POST',
@@ -271,8 +271,11 @@ async function callOllamaChat(
   // ── Non-streaming path (fallback / mentor chat) ───────────────────────────
   const data: OllamaResponse = await response.json();
   const latencyMs = Date.now() - startMs;
+  const rawContent = (data.message?.content ?? '').trim();
+  const content =
+    rawContent || (data.message?.thinking ?? '').trim();
   return {
-    content: data.message?.content ?? '',
+    content,
     tokenUsage: {
       promptTokens: data.prompt_eval_count,
       completionTokens: data.eval_count,
@@ -629,8 +632,12 @@ export async function analyzePhotoRaw(
     jsonSchema,
   );
 
-  console.log('[analyzePhotoRaw] Response:', content.substring(0, 500));
-  return content.trim();
+  const trimmed = content.trim();
+  if (!trimmed) {
+    throw new OllamaError('Empty response from Gemma 4 (check Ollama logs)', 500);
+  }
+  console.log('[analyzePhotoRaw] Response:', trimmed.substring(0, 500));
+  return trimmed;
 }
 
 /**
@@ -710,8 +717,9 @@ export async function checkOllamaHealth(): Promise<{
   }
 
   try {
+    const timeoutMs = OLLAMA_CONFIG.baseUrl.startsWith('/ollama') ? 10_000 : 3000;
     const res = await fetch(`${OLLAMA_CONFIG.baseUrl}/api/tags`, {
-      signal: AbortSignal.timeout(3000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) return { running: false, modelAvailable: false };
 
@@ -844,28 +852,35 @@ export async function analyzePhotoWithFallback(
   userPrompt: string,
   signal?: AbortSignal,
   options?: { artisanSchema?: boolean },
-): Promise<{ content: string; source: InferenceSource; cloudError?: string }> {
+): Promise<{ content: string; source: InferenceSource; cloudError?: string; localError?: string }> {
   const jsonSchema = options?.artisanSchema ? ARTISAN_V3_OUTPUT_SCHEMA : undefined;
   let cloudError: string | undefined;
+  let localError: string | undefined;
 
   // On deployed sites, skip local Ollama entirely (would cause Mixed Content error)
   if (!OLLAMA_CLOUD_CONFIG.enabled) {
-    // Step 1: Try local Ollama first (only on localhost)
     try {
       const health = await checkOllamaHealth();
-      if (health.running && health.modelAvailable) {
-        console.log('[analyzePhotoWithFallback] Using local Ollama');
-        const content = await analyzePhotoRaw(
-          base64Image,
-          mimeType,
-          systemPrompt,
-          userPrompt,
-          signal,
-          jsonSchema,
-        );
-        return { content, source: 'local' };
+      if (import.meta.env.DEV) {
+        console.log('[analyzePhotoWithFallback] local baseUrl=', OLLAMA_CONFIG.baseUrl, 'health=', health);
       }
+      if (!health.running || !health.modelAvailable) {
+        console.warn(
+          '[analyzePhotoWithFallback] Health check failed; trying inference anyway',
+          health,
+        );
+      }
+      const content = await analyzePhotoRaw(
+        base64Image,
+        mimeType,
+        systemPrompt,
+        userPrompt,
+        signal,
+        jsonSchema,
+      );
+      return { content, source: 'local' };
     } catch (err) {
+      localError = err instanceof Error ? err.message : String(err);
       console.warn('[analyzePhotoWithFallback] Local Ollama failed:', err);
     }
   }
@@ -893,6 +908,7 @@ export async function analyzePhotoWithFallback(
     content: '', // Empty signals Demo Mode — caller handles canned responses
     source: 'demo',
     cloudError,
+    localError,
   };
 }
 

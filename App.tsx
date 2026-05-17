@@ -31,7 +31,7 @@ import { AppState } from './types';
 import { PhotoAnalysisV2, OperationalMode, SessionHistoryEntry } from './types.v2';
 import { getInitialAppRoute, showStudioModeEntry } from './lib/launchRoute';
 import { isJudgeDemoBuild } from './lib/deploymentProfile';
-import { ARTISAN_GRID_WELCOME_KEY, PENDING_STUDIO_WELCOME_KEY } from './lib/branding';
+import { ARTISAN_GRID_WELCOME_KEY } from './lib/branding';
 
 // Note: isElectron and SessionSavingsBadge removed as part of header consolidation
 // Can be re-added to Header component if needed for vault mode or session stats
@@ -236,7 +236,6 @@ function App() {
     setError(null);
     if (isJudgeDemoBuild()) {
       sessionStorage.removeItem(ARTISAN_GRID_WELCOME_KEY);
-      sessionStorage.removeItem(PENDING_STUDIO_WELCOME_KEY);
     }
   }, []);
 

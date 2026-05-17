@@ -27,7 +27,6 @@ export const GEMMA_4_E4B_DOCS_URL = GEMMA_4_MODEL_CARD_URL;
 export const OLLAMA_CLOUD_MODEL_TAG = 'gemma4:31b';
 
 export const ARTISAN_GRID_WELCOME_KEY = 'lens-artisan-grid-welcomed';
-export const PENDING_STUDIO_WELCOME_KEY = 'lens-pending-studio-welcome';
 
 export function getJudgeHomeWelcomeScript(): string {
   return (

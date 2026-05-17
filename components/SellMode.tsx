@@ -16,18 +16,19 @@ import {
   Upload, HelpCircle, AudioLines,
 } from 'lucide-react';
 import { analyzeForSellModeWithFallback, detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
-import { parseSellResponse, parseArtisanResponseV3, speak, stopSpeaking, hardStopVoice, resumeSpeech, hasPausedSpeech, isSpeechCompleted, clearPausedSpeech } from '../services/voiceCoach';
+import { speak, speakQueued, stopSpeaking, hardStopVoice, resumeSpeech, hasPausedSpeech, clearPausedSpeech } from '../services/voiceCoach';
+import {
+  type SellModeResult,
+  sellResultFromV3,
+  parseAnalysisToSellResult,
+  speakSellModeResult,
+} from '../lib/sellModeAnalysis';
+import type { ArtisanAnalysisV3 } from '../services/voiceCoach';
 import { getAnalyzingStatus, getUploadHint } from '../config';
 import { showStudioModeEntry } from '../lib/launchRoute';
 import { isJudgeDemoBuild } from '../lib/deploymentProfile';
-import {
-  PENDING_STUDIO_WELCOME_KEY,
-  GEMMA_4_E4B,
-  OLLAMA_CLOUD,
-  getArtisanStudioWelcomeScript,
-} from '../lib/branding';
+import { GEMMA_4_E4B, OLLAMA_CLOUD, getArtisanStudioWelcomeScript } from '../lib/branding';
 import MarketplaceListingPreview, { buildMarketplaceListingDraft } from './MarketplaceListingPreview';
-import { extractColourCheckFromSubject } from '../services/artisanDisplay';
 import { DEMO_RESPONSES, DemoResponse, simulateProcessing, getComparisonSamples, DEMO_COMPARISON_RESULT } from '../src/data/demoResponses';
 import { ComparisonResult } from '../services/ollamaService';
 import Header from './Header';
@@ -43,58 +44,7 @@ interface SellModeProps {
   onImageProcessed?: () => void;
 }
 
-interface SellResult {
-  subject: string;
-  framing: string;
-  lighting: string;
-  primaryFix: string;
-  confidenceNote: string;
-  altText: string;
-  listingCopy: string;
-  readyToList: boolean;
-  imageBase64: string;
-  rawResponse?: string;
-  score?: number;
-  verdict?: string;
-  productType?: string;
-  material?: string;
-  topIssue?: string;
-  fix?: string;
-  background?: string;
-  productFocus?: string;
-  compositionTip?: string;
-  lightingTip?: string;
-  scaleSuggestion?: string;
-  stylingIdea?: string;
-  descriptionIdea?: string;
-  suggestedTags?: string[];
-  whatISee?: string;
-  colorCheck?: string;
-  nextAction?: string;
-  tags?: string[];
-}
-
-function sellResultFromV3(
-  v3: NonNullable<ReturnType<typeof parseArtisanResponseV3>>,
-  imageBase64: string,
-  rawResponse: string,
-): SellResult {
-  const { sceneDescription, colourCheck } = extractColourCheckFromSubject(v3.subject);
-  return {
-    subject: sceneDescription || v3.subject,
-    colorCheck: colourCheck ?? undefined,
-    framing: v3.critique.framing,
-    lighting: v3.critique.lighting,
-    primaryFix: v3.critique.primary_fix,
-    confidenceNote: v3.confidence_note,
-    altText: v3.alt_text,
-    listingCopy: v3.listing_copy,
-    tags: v3.tags,
-    readyToList: v3.ready_to_list,
-    imageBase64,
-    rawResponse,
-  };
-}
+type SellResult = SellModeResult;
 
 function cloudUnavailableMessage(cloudError?: string): string {
   const hint =
@@ -137,21 +87,8 @@ const SellMode: React.FC<SellModeProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const playArtisanStudioWelcome = useCallback(() => {
-    hardStopVoice();
-    speak(getArtisanStudioWelcomeScript());
+    speakQueued(getArtisanStudioWelcomeScript());
   }, []);
-
-  // Cut home audio on mount; play studio welcome after Enter Artisan Studio (gesture-safe delay).
-  useEffect(() => {
-    hardStopVoice();
-    const pending = sessionStorage.getItem(PENDING_STUDIO_WELCOME_KEY);
-    if (pending && isJudgeDemoBuild() && voiceEnabled && !showGuidedJourney) {
-      sessionStorage.removeItem(PENDING_STUDIO_WELCOME_KEY);
-      const t = window.setTimeout(() => playArtisanStudioWelcome(), 200);
-      return () => window.clearTimeout(t);
-    }
-    return undefined;
-  }, [voiceEnabled, showGuidedJourney, playArtisanStudioWelcome]);
 
   useEffect(() => {
     return () => {
@@ -172,50 +109,32 @@ const SellMode: React.FC<SellModeProps> = ({
 
   useEffect(() => {
     if (!voiceEnabled) {
-      stopSpeaking();
-    } else {
-      if (hasPausedSpeech()) {
-        resumeSpeech();
-      } else if (result && isSpeechCompleted()) {
-        speak('Voice mode on.');
-      }
+      hardStopVoice();
+    } else if (hasPausedSpeech()) {
+      resumeSpeech();
     }
-  }, [voiceEnabled, result]);
+  }, [voiceEnabled]);
 
   const handleDemoSampleSelect = useCallback(async (sample: DemoResponse) => {
-    hardStopVoice();
+    stopSpeaking();
+    clearPausedSpeech();
     setError(null);
     setIsAnalyzing(true);
     setResult(null);
     await simulateProcessing();
     const r = sample.response;
-    const { sceneDescription, colourCheck } = extractColourCheckFromSubject(r.subject);
-    setResult({
-      subject: sceneDescription || r.subject,
-      colorCheck: colourCheck ?? undefined,
-      framing: r.critique.framing,
-      lighting: r.critique.lighting,
-      primaryFix: r.critique.primary_fix,
-      confidenceNote: r.confidence_note,
-      altText: r.alt_text,
-      listingCopy: r.listing_copy,
-      readyToList: r.ready_to_list,
-      imageBase64: sample.imagePath,
-      rawResponse: JSON.stringify(r),
-    });
-    if (voiceEnabled) {
-      const voiceText = [
-        r.subject,
-        `Framing: ${r.critique.framing}`,
-        `Lighting: ${r.critique.lighting}`,
-        r.ready_to_list ? 'This photo is ready to list.' : `Your next step: ${r.critique.primary_fix}`,
-        r.confidence_note || '',
-        r.alt_text ? `Alt text: ${r.alt_text}` : '',
-        r.listing_copy ? `Product description: ${r.listing_copy}` : '',
-      ].filter(Boolean).join(' ');
-      speak(voiceText);
-    }
+    const v3Payload = {
+      ...r,
+      ratings: { lighting: 0, framing: 0, background: 0, focus: 0 },
+      primary_issue: '',
+      tags: [] as string[],
+    } as ArtisanAnalysisV3;
+    const sellRes = sellResultFromV3(v3Payload, sample.imagePath, JSON.stringify(r));
+    setResult(sellRes);
     setIsAnalyzing(false);
+    if (voiceEnabled) {
+      speakSellModeResult(sellRes);
+    }
   }, [voiceEnabled]);
 
   useEffect(() => {
@@ -238,52 +157,10 @@ const SellMode: React.FC<SellModeProps> = ({
             setIsAnalyzing(false);
             return;
           }
-          const v3Parsed = parseArtisanResponseV3(response);
-          if (v3Parsed) {
-            setResult(sellResultFromV3(v3Parsed, preloadedImage, response));
-            if (voiceEnabled) {
-              const voiceText = [
-                v3Parsed.subject,
-                `Framing: ${v3Parsed.critique.framing}`,
-                `Lighting: ${v3Parsed.critique.lighting}`,
-                v3Parsed.ready_to_list ? 'Ready to list.' : `Next step: ${v3Parsed.critique.primary_fix}`,
-              ].filter(Boolean).join(' ');
-              speak(voiceText);
-            }
-          } else {
-            const parsed = parseSellResponse(response);
-            if (parsed) {
-              setResult({
-                // Spread legacy fields first, then override required fields
-                ...parsed,
-                subject: parsed.whatISee || parsed.productType || 'Product photo',
-                framing: parsed.compositionTip || '',
-                lighting: parsed.lighting || parsed.lightingTip || '',
-                primaryFix: parsed.fix || parsed.topIssue || '',
-                confidenceNote: '',
-                altText: parsed.altText || '',
-                listingCopy: parsed.descriptionIdea || '',
-                readyToList: (parsed.score ?? 0) >= 8,
-                imageBase64: preloadedImage,
-                rawResponse: response,
-              });
-              if (voiceEnabled && parsed.whatISee) {
-                speak(parsed.whatISee);
-              }
-            } else {
-              setResult({
-                subject: response.slice(0, 200),
-                framing: '',
-                lighting: '',
-                primaryFix: '',
-                confidenceNote: '',
-                altText: '',
-                listingCopy: '',
-                readyToList: false,
-                imageBase64: preloadedImage,
-                rawResponse: response,
-              });
-            }
+          const sellRes = parseAnalysisToSellResult(response, preloadedImage);
+          setResult(sellRes);
+          if (voiceEnabled) {
+            speakSellModeResult(sellRes);
           }
         } catch (err) {
           setError('Analysis failed. Please try again.');
@@ -327,44 +204,10 @@ const SellMode: React.FC<SellModeProps> = ({
         setIsAnalyzing(false);
         return;
       }
-      const v3Parsed = parseArtisanResponseV3(response);
-      if (v3Parsed) {
-        setResult(sellResultFromV3(v3Parsed, base64, response));
-        if (voiceEnabled) {
-          const voiceText = [
-            v3Parsed.subject,
-            `Framing: ${v3Parsed.critique.framing}`,
-            `Lighting: ${v3Parsed.critique.lighting}`,
-            v3Parsed.ready_to_list ? 'Ready to list.' : `Next step: ${v3Parsed.critique.primary_fix}`,
-          ].filter(Boolean).join(' ');
-          speak(voiceText);
-        }
-      } else {
-        const parsed = parseSellResponse(response);
-        if (parsed) {
-          setResult({
-            // Spread legacy fields first, then override required fields
-            ...parsed,
-            subject: parsed.whatISee || parsed.productType || 'Product photo',
-            framing: parsed.compositionTip || '',
-            lighting: parsed.lighting || parsed.lightingTip || '',
-            primaryFix: parsed.fix || parsed.topIssue || '',
-            confidenceNote: '',
-            altText: parsed.altText || '',
-            listingCopy: parsed.descriptionIdea || '',
-            readyToList: (parsed.score ?? 0) >= 8,
-            imageBase64: base64,
-            rawResponse: response,
-          });
-          if (voiceEnabled && parsed.whatISee) speak(parsed.whatISee);
-        } else {
-          setResult({
-            subject: response.slice(0, 200),
-            framing: '', lighting: '', primaryFix: '', confidenceNote: '',
-            altText: '', listingCopy: '', readyToList: false,
-            imageBase64: base64, rawResponse: response,
-          });
-        }
+      const sellRes = parseAnalysisToSellResult(response, base64);
+      setResult(sellRes);
+      if (voiceEnabled) {
+        speakSellModeResult(sellRes);
       }
     } catch (err) {
       console.error('[SellMode] Analysis failed:', err);
@@ -718,9 +561,21 @@ const SellMode: React.FC<SellModeProps> = ({
                     <span className="text-sm font-bold">{result.readyToList ? 'Ready to List' : 'Needs One Fix'}</span>
                   </div>
 
-                  <div>
-                    <p className="text-xs font-semibold text-[#524A3D] uppercase tracking-wider mb-2">What I See</p>
-                    <p className="text-xl font-semibold text-[#241F18]">{result.subject}</p>
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold text-[#524A3D] uppercase tracking-wider mb-2">What I See</p>
+                      <p className="text-xl font-semibold text-[#241F18]">{result.subject}</p>
+                    </div>
+                    {voiceEnabled && (
+                      <button
+                        type="button"
+                        onClick={() => speakSellModeResult(result)}
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-[#2F4858] text-white text-xs font-semibold shrink-0"
+                      >
+                        <AudioLines className="w-4 h-4" />
+                        Hear analysis
+                      </button>
+                    )}
                   </div>
 
                   {result.colorCheck && (

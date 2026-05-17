@@ -542,6 +542,8 @@ export function speakMore(): void {
 /**
  * Stop speaking - cancels current speech and prevents queued sentences
  */
+let speakQueueTimer: ReturnType<typeof setTimeout> | null = null;
+
 export function stopSpeaking(): void {
   console.log('[voiceCoach] stopSpeaking() called');
   isCancelled = true;
@@ -549,6 +551,10 @@ export function stopSpeaking(): void {
   if (pendingTimeout) {
     clearTimeout(pendingTimeout);
     pendingTimeout = null;
+  }
+  if (speakQueueTimer) {
+    clearTimeout(speakQueueTimer);
+    speakQueueTimer = null;
   }
   speechSynthesis.cancel();
   // Chrome/Safari: queued utterances may need a second cancel on the next tick
@@ -562,6 +568,19 @@ export function hardStopVoice(): void {
   stopSpeaking();
   clearPausedSpeech();
   lastSpokenText = '';
+}
+
+/** After hardStop/cancel, wait briefly so Chrome can start the next utterance */
+export function speakQueued(text: string, delayMs = 120, rate = 0.95, onEnd?: () => void, onStart?: () => void): void {
+  if (speakQueueTimer) {
+    clearTimeout(speakQueueTimer);
+    speakQueueTimer = null;
+  }
+  isCancelled = false;
+  speakQueueTimer = setTimeout(() => {
+    speakQueueTimer = null;
+    speak(text, rate, onEnd, onStart);
+  }, delayMs);
 }
 
 // ─── Voice Input (Speech Recognition) ──────────────────────────────────────────
@@ -626,15 +645,33 @@ export function parseArtisanResponseV3(response: string): ArtisanAnalysisV3 | nu
     }
     cleaned = cleaned.trim();
 
-    const parsed = JSON.parse(cleaned) as ArtisanAnalysisV3;
+    const parsed = JSON.parse(cleaned) as Partial<ArtisanAnalysisV3>;
 
-    // Validate required fields exist
-    if (!parsed.subject || !parsed.critique || !parsed.alt_text) {
-      console.warn('[parseArtisanResponseV3] Missing required fields');
+    if (!parsed.subject || !parsed.critique) {
+      console.warn('[parseArtisanResponseV3] Missing subject or critique');
       return null;
     }
 
-    return parsed;
+    return {
+      subject: parsed.subject,
+      critique: {
+        framing: parsed.critique.framing ?? '',
+        lighting: parsed.critique.lighting ?? '',
+        primary_fix: parsed.critique.primary_fix ?? '',
+      },
+      ratings: parsed.ratings ?? {
+        lighting: 0,
+        framing: 0,
+        background: 0,
+        focus: 0,
+      },
+      primary_issue: parsed.primary_issue ?? '',
+      confidence_note: parsed.confidence_note ?? '',
+      alt_text: parsed.alt_text ?? '',
+      listing_copy: parsed.listing_copy ?? '',
+      tags: Array.isArray(parsed.tags) ? parsed.tags : [],
+      ready_to_list: Boolean(parsed.ready_to_list),
+    };
   } catch (err) {
     console.warn('[parseArtisanResponseV3] JSON parse failed:', err);
     return null;

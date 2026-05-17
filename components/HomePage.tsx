@@ -20,11 +20,11 @@ import {
   OLLAMA_MODEL_TAG,
   OLLAMA_CLOUD_MODEL_TAG,
   ARTISAN_GRID_WELCOME_KEY,
-  PENDING_STUDIO_WELCOME_KEY,
+  getArtisanStudioWelcomeScript,
   getJudgeHomeWelcomeScript,
 } from '../lib/branding';
 import { OperationalMode } from '../types.v2';
-import { speak, hardStopVoice } from '../services/voiceCoach';
+import { speak, hardStopVoice, speakQueued } from '../services/voiceCoach';
 import { detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
 import Header from './Header';
 import Footer from './Footer';
@@ -78,21 +78,15 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
   const handleEnterArtisanStudio = useCallback(() => {
     hardStopVoice();
     judgeWelcomeSpoken.current = true;
+    setWelcomePlayed(true);
     setShowVoicePrompt(false);
     sessionStorage.setItem(ARTISAN_GRID_WELCOME_KEY, '1');
-    if (isJudgeDemoBuild() && voiceEnabled) {
-      sessionStorage.setItem(PENDING_STUDIO_WELCOME_KEY, '1');
-    } else {
-      sessionStorage.removeItem(PENDING_STUDIO_WELCOME_KEY);
-    }
     onSelectMode('sell');
+    // Same click gesture — play studio welcome immediately (do not wait for SellMode mount)
+    if (isJudgeDemoBuild() && voiceEnabled) {
+      speakQueued(getArtisanStudioWelcomeScript(), 150);
+    }
   }, [voiceEnabled, onSelectMode]);
-
-  useEffect(() => {
-    return () => {
-      hardStopVoice();
-    };
-  }, []);
 
   // Judge home: try autoplay; show tap prompt if the browser blocks speech.
   useEffect(() => {

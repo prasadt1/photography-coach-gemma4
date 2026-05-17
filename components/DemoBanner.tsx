@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, X, ExternalLink } from 'lucide-react';
 import { isJudgeDemoBuild } from '../lib/deploymentProfile';
+import { GEMMA_4_E4B, GEMMA_TRADEMARK, OLLAMA_CLOUD, OLLAMA_MODEL_TAG } from '../lib/branding';
 
 const REPO_QUICKSTART =
   'https://github.com/prasadt1/photography-coach-gemma4#-quick-start';
@@ -43,10 +44,10 @@ export const DemoBanner: React.FC = () => {
           </div>
           <p className="text-[#ECE3D2]/95 text-sm flex-1 leading-relaxed">
             <strong className="font-semibold">Sample photos</strong> play back real{' '}
-            <strong className="font-semibold">Gemma 4 E4B</strong> outputs recorded from a local Mac
+            <strong className="font-semibold">{GEMMA_4_E4B}</strong> outputs recorded from a local Mac
             (same prompts and JSON schema). <strong className="font-semibold">Upload your photo</strong>{' '}
-            uses <strong className="font-semibold">Ollama Cloud</strong> with{' '}
-            <code className="bg-black/20 px-1 rounded text-xs">gemma4:e4b</code> so you can test
+            uses <strong className="font-semibold">{OLLAMA_CLOUD}</strong> with{' '}
+            <code className="bg-black/20 px-1 rounded text-xs">{OLLAMA_MODEL_TAG}</code> so you can test
             without installing Ollama. Tap <strong>Enter Artisan Studio</strong> below, then try a
             sample or upload. For fully on-device coaching, see the{' '}
             <a
@@ -57,7 +58,7 @@ export const DemoBanner: React.FC = () => {
             >
               local quick start
             </a>
-            . Gemma is a trademark of Google LLC.
+            . {GEMMA_TRADEMARK}
           </p>
           <button
             type="button"
@@ -83,7 +84,7 @@ export const DemoBanner: React.FC = () => {
           <span className="font-semibold text-sm">Local-first product</span>
         </div>
         <p className="text-amber-100/90 text-sm flex-1">
-          The full experience runs <strong>Gemma 4 E4B</strong> on your machine via{' '}
+          The full experience runs <strong>{GEMMA_4_E4B}</strong> on your machine via{' '}
           <a
             href="https://ollama.com"
             target="_blank"

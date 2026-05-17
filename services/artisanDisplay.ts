@@ -3,9 +3,11 @@
  * Does not change the model JSON schema.
  */
 
+import { GEMMA_4_E4B } from '../lib/branding';
+
 export type ArtisanCaptureKind = 'first' | 'compare' | 'replace';
 
-/** Screen + delayed voice copy while Gemma runs (first / 2nd photo / 3rd+ retake). */
+/** Screen + delayed voice copy while Gemma 4 E4B runs (first / 2nd photo / 3rd+ retake). */
 export function getAnalysisStatusCopy(kind: ArtisanCaptureKind): {
   screenTitle: string;
   screenDetail: string;
@@ -14,22 +16,22 @@ export function getAnalysisStatusCopy(kind: ArtisanCaptureKind): {
   switch (kind) {
     case 'first':
       return {
-        screenTitle: 'Analysing with Gemma 4',
+        screenTitle: `Analysing with ${GEMMA_4_E4B}`,
         screenDetail:
-          'Gemma is studying your photo. The first run can take up to a minute while the model loads in memory.',
+          `${GEMMA_4_E4B} is studying your photo. The first run can take up to a minute while the model loads in memory.`,
         voiceAfterDelay:
-          'Gemma is analysing your photo. This can take up to a minute on the first run.',
+          `${GEMMA_4_E4B} is analysing your photo. This can take up to a minute on the first run.`,
       };
     case 'compare':
       return {
-        screenTitle: 'Analysing with Gemma 4',
+        screenTitle: `Analysing with ${GEMMA_4_E4B}`,
         screenDetail: 'Comparing both photos to find the stronger shot...',
         voiceAfterDelay:
-          'Comparing both photos with Gemma 4 to find the stronger shot. This may take up to a minute.',
+          `Comparing both photos with ${GEMMA_4_E4B} to find the stronger shot. This may take up to a minute.`,
       };
     case 'replace':
       return {
-        screenTitle: 'Analysing with Gemma 4',
+        screenTitle: `Analysing with ${GEMMA_4_E4B}`,
         screenDetail: 'Analysing your new photo and comparing it to your first shot...',
         voiceAfterDelay:
           'Analysing your new photo and comparing it to your first shot. This may take up to a minute.',

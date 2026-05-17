@@ -10,7 +10,7 @@ interface EvidencePanelProps {
 const SOURCE_CONFIG: Record<EvidenceItem['source'], { label: string; icon: React.ReactNode; color: string }> = {
   EXIF:  { label: 'EXIF Metadata',    icon: <Camera className="w-3.5 h-3.5" />, color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
   CV:    { label: 'CV Analysis',       icon: <Cpu className="w-3.5 h-3.5" />,    color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
-  model: { label: 'Gemma 4 Inference', icon: <Database className="w-3.5 h-3.5" />, color: 'text-purple-400 bg-purple-500/10 border-purple-500/20' },
+  model: { label: 'Gemma 4 E4B inference', icon: <Database className="w-3.5 h-3.5" />, color: 'text-purple-400 bg-purple-500/10 border-purple-500/20' },
 };
 
 const EvidencePanel: React.FC<EvidencePanelProps> = ({ evidence, className = '' }) => {

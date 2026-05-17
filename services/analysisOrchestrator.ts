@@ -129,16 +129,16 @@ export async function runAnalysisPipeline(
     report('inference', 'Gemma 2B inference complete', 85);
   } else {
     // Tier 1: Gemma 4 E4B via Ollama (with full vision input)
-    report('inference', 'Preparing image for Gemma 4…', 33);
+    report('inference', 'Preparing image for Gemma 4 E4B…', 33);
     const targetResolution = useCullPath ? 512 : fastMode ? 768 : 1024;
     const modelBase64 = await resizeForModel(base64Image, targetResolution);
     report('inference', useCullPath
-      ? '⚡ Gemma 4 cull pass… (target ~45–90s warm; cold start can be slower)'
+      ? '⚡ Gemma 4 E4B cull pass… (target ~45–90s warm; cold start can be slower)'
       : fastMode
-        ? '⚡ Gemma 4 fast analysis… (target ~60–90s warm; cold start can be slower)'
+        ? '⚡ Gemma 4 E4B fast analysis… (target ~60–90s warm; cold start can be slower)'
         : deepMode
-          ? 'Gemma 4 is doing a deep critique… (60-90s, richer rationale)'
-          : 'Gemma 4 is analyzing your photo…', 35);
+          ? 'Gemma 4 E4B is doing a deep critique… (60-90s, richer rationale)'
+          : 'Gemma 4 E4B is analyzing your photo…', 35);
     let tokenCount = 0;
     const tokenCap = useCullPath ? 450 : deepMode ? 1000 : 600;
 
@@ -166,8 +166,8 @@ export async function runAnalysisPipeline(
           report('inference', fastMode
             ? `⚡ Fast analysis… (${tokenCount} tokens)`
             : deepMode
-              ? `Gemma 4 deep-thinking… (${tokenCount} tokens)`
-              : `Gemma 4 thinking… (${tokenCount} tokens)`, pct);
+              ? `Gemma 4 E4B deep-thinking… (${tokenCount} tokens)`
+              : `Gemma 4 E4B thinking… (${tokenCount} tokens)`, pct);
         },
         2,
         signal,
@@ -177,7 +177,7 @@ export async function runAnalysisPipeline(
         runtimeProfile,
       );
     }
-    report('inference', 'Gemma 4 inference complete', 85);
+    report('inference', 'Gemma 4 E4B inference complete', 85);
   }
 
   // Stage 3: Audit log (Vault Mode only)

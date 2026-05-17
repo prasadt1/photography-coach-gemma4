@@ -126,7 +126,7 @@ const ComparePanel: React.FC<ComparePanelProps> = ({ onClose, onSendToSell }) =>
           </div>
           <div>
             <h2 className="text-2xl font-bold text-white mb-1">Compare Two Photos</h2>
-            <p className="text-sm text-slate-400">Drop two near-duplicates. Gemma 4 picks the keeper and tells you why.</p>
+            <p className="text-sm text-slate-400">Drop two near-duplicates. Gemma 4 E4B picks the keeper and tells you why.</p>
           </div>
         </div>
         <div className="flex gap-2 shrink-0">
@@ -167,7 +167,7 @@ const ComparePanel: React.FC<ComparePanelProps> = ({ onClose, onSendToSell }) =>
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Gemma 4 is comparing…
+              Gemma 4 E4B is comparing…
             </>
           ) : result ? (
             <>

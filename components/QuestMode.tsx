@@ -419,7 +419,7 @@ const QuestMode: React.FC<QuestModeProps> = ({ onBack, ollamaReady, voiceEnabled
             <Loader2 className="w-12 h-12 text-emerald-400 animate-spin" />
             <div className="text-center">
               <p className="text-xl font-bold text-white mb-1">Judging Your Photo...</p>
-              <p className="text-slate-400">Gemma 4 is evaluating against the criteria</p>
+              <p className="text-slate-400">Gemma 4 E4B is evaluating against the criteria</p>
             </div>
           </div>
         )}

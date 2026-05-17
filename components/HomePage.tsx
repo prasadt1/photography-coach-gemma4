@@ -13,6 +13,7 @@ import {
 import { getHomeHeroBadgeText } from '../config';
 import { showStudioModeEntry } from '../lib/launchRoute';
 import { isJudgeDemoBuild } from '../lib/deploymentProfile';
+import { GEMMA_4_E4B, OLLAMA_CLOUD, OLLAMA_MODEL_TAG } from '../lib/branding';
 import { OperationalMode } from '../types.v2';
 import { speak } from '../services/voiceCoach';
 import { detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
@@ -83,7 +84,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
               {connectionState === 'connecting' ? (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F4ECDC] border border-[#D8CDB8] text-[#524A3D] text-xs">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Detecting AI...</span>
+                  <span>Checking {GEMMA_4_E4B}…</span>
                 </div>
                             ) : (
                 <div
@@ -107,8 +108,9 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
 
             {isJudgeDemoBuild() && (
               <p className="mb-4 text-sm text-[#2F4858] bg-[#F4ECDC] border border-[#D8CDB8] rounded-xl px-4 py-3 leading-relaxed max-w-xl">
-                <strong>Try it:</strong> sample photos use recorded <strong>Gemma 4 E4B</strong> runs from a
-                local Mac; uploads use <strong>Ollama Cloud</strong> (<code className="text-xs">gemma4:e4b</code>).
+                <strong>Try it:</strong> sample photos use recorded <strong>{GEMMA_4_E4B}</strong> runs from a
+                local Mac; uploads use <strong>{OLLAMA_CLOUD}</strong> (
+                <code className="text-xs">{OLLAMA_MODEL_TAG}</code>).
                 For the private on-device path, see the{' '}
                 <a
                   href="https://github.com/prasadt1/photography-coach-gemma4#-quick-start"

@@ -1,7 +1,9 @@
 /**
- * Photography Coach v2 — Runtime Configuration
+ * L.E.N.S. — Runtime Configuration
  * All environment-specific values in one place.
  */
+
+import { GEMMA_4_E4B, OLLAMA_CLOUD } from './lib/branding';
 
 // Derive Ollama host from the page origin so LAN devices (phone, tablet)
 // automatically reach the Mac running Ollama instead of their own localhost.
@@ -74,22 +76,22 @@ export type InferenceSource = 'local' | 'cloud' | 'demo';
 export const getInferenceSourceLabel = (source: InferenceSource): string => {
   switch (source) {
     case 'local':
-      return 'Local Gemma 4 · Private';
+      return `Local ${GEMMA_4_E4B} · Private`;
     case 'cloud':
-      return 'Gemma 4 · Voice-guided coaching';
+      return `${GEMMA_4_E4B} · ${OLLAMA_CLOUD}`;
     case 'demo':
-      return 'Demo Mode · Sample coaching';
+      return `Demo · Recorded ${GEMMA_4_E4B}`;
   }
 };
 
 export const getHomeHeroBadgeText = (source: InferenceSource): string => {
   switch (source) {
     case 'local':
-      return 'Runs on your device · Private · Works offline';
+      return `${GEMMA_4_E4B} on your device · Private · Offline`;
     case 'cloud':
-      return 'Gemma 4 ready · Voice-guided coaching';
+      return `${GEMMA_4_E4B} ready · Voice-guided coaching`;
     case 'demo':
-      return 'Demo mode · Sample Gemma 4 responses';
+      return `Demo · Recorded ${GEMMA_4_E4B} samples`;
   }
 };
 
@@ -100,17 +102,17 @@ export const getAnalyzingStatus = (
     case 'local':
       return {
         title: 'Analyzing locally...',
-        subtitle: 'Gemma 4 E4B · Nothing leaves your device',
+        subtitle: `${GEMMA_4_E4B} · Nothing leaves your device`,
       };
     case 'cloud':
       return {
-        title: 'Analyzing with Gemma 4...',
-        subtitle: 'Voice-guided product coaching',
+        title: `Analyzing with ${GEMMA_4_E4B}...`,
+        subtitle: `Voice-guided coaching · ${OLLAMA_CLOUD}`,
       };
     case 'demo':
       return {
         title: 'Preparing analysis...',
-        subtitle: 'Sample coaching response',
+        subtitle: `Recorded ${GEMMA_4_E4B} sample`,
       };
   }
 };
@@ -120,7 +122,7 @@ export const getUploadHint = (source: InferenceSource): string => {
     case 'local':
       return '100% private, on your device';
     case 'cloud':
-      return 'Analyzed with Gemma 4';
+      return `Live ${GEMMA_4_E4B} via ${OLLAMA_CLOUD}`;
     case 'demo':
       return 'Try a sample or upload a photo';
   }
@@ -129,11 +131,11 @@ export const getUploadHint = (source: InferenceSource): string => {
 export const getArtisanInferenceBadge = (source: InferenceSource): string => {
   switch (source) {
     case 'local':
-      return 'Local Gemma 4';
+      return `Local ${GEMMA_4_E4B}`;
     case 'cloud':
-      return 'Gemma 4';
+      return GEMMA_4_E4B;
     case 'demo':
-      return 'Demo Mode';
+      return `Demo · ${GEMMA_4_E4B}`;
   }
 };
 

@@ -7,6 +7,7 @@
 import React from 'react';
 import { ChevronLeft, Volume2, VolumeX, Sparkles } from 'lucide-react';
 import { type InferenceSource, getInferenceSourceLabel } from '../config';
+import { GEMMA_4_E4B } from '../lib/branding';
 
 export type { InferenceSource };
 
@@ -46,6 +47,9 @@ const Header: React.FC<HeaderProps> = ({
             <h1 className="text-xl font-bold font-serif text-[#241F18]">L.E.N.S.</h1>
             <p className="text-xs text-[#C06B45] font-bold tracking-wider uppercase">
               Local Edge Native Studio
+            </p>
+            <p className="text-[10px] text-[#524A3D] font-medium mt-0.5">
+              {GEMMA_4_E4B} · via Ollama
             </p>
           </div>
 

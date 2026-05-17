@@ -35,7 +35,7 @@ const RefusalMessage: React.FC<RefusalMessageProps> = ({ reason, category, class
           <p className="text-slate-300 text-sm leading-relaxed">
             {reason
               ? reason
-              : 'Gemma 4 declined to analyze this image based on content safety guidelines.'}
+              : 'Gemma 4 E4B declined to analyze this image based on content safety guidelines.'}
           </p>
           <div className="mt-4 flex items-start gap-2 text-xs text-slate-400">
             <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />

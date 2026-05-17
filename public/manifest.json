@@ -1,7 +1,7 @@
 {
   "name": "LENS - Photography Coach",
   "short_name": "LENS",
-  "description": "Local Edge-Native Studio for photography coaching with Gemma 4 — private, offline-capable",
+  "description": "Voice-guided product photography coaching with Gemma 4 E4B via Ollama — private, offline-capable",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

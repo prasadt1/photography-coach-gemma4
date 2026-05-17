@@ -116,7 +116,7 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({ onImageSelected, isAnalyz
                 <Loader2 className="w-16 h-16 text-[#C06B45] animate-spin relative z-10" aria-hidden="true" />
               </div>
 
-              <h3 className="text-xl md:text-2xl font-bold text-[#241F18] mb-2">Gemma 4 is thinking...</h3>
+              <h3 className="text-xl md:text-2xl font-bold text-[#241F18] mb-2">Gemma 4 E4B is thinking…</h3>
 
               {/* Live progress bar (streaming) */}
               {analysisProgress && (

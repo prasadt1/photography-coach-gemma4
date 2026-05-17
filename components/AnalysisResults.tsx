@@ -232,7 +232,7 @@ const MentorChatWidget: React.FC<MentorChatWidgetProps> = ({ analysis, chatState
           <div>
             <h3 className="text-[#241F18] font-bold text-sm md:text-base">Ask Your Photography Mentor</h3>
             <p className="text-xs text-[#524A3D]">
-              {isVault ? '🔒 Vault Mode · Gemma 4 local' : 'Powered by Gemma 4 · Local inference'}
+              {isVault ? '🔒 Vault Mode · Gemma 4 E4B local' : 'Powered by Gemma 4 E4B · Local inference'}
             </p>
           </div>
         </div>
@@ -314,7 +314,7 @@ const MentorChatWidget: React.FC<MentorChatWidgetProps> = ({ analysis, chatState
               <Loader2 className="w-4 h-4 animate-spin" />
             </div>
             <div className="p-3 rounded-2xl rounded-tl-none bg-white border border-[#D8CDB8] text-sm text-[#524A3D] italic">
-              Gemma 4 is thinking locally…
+              Gemma 4 E4B is thinking locally…
             </div>
           </div>
         )}
@@ -504,7 +504,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
         <div className="mb-4 px-4 py-2.5 rounded-xl bg-[#F4ECDC] border border-[#D8CDB8] flex items-center gap-3 text-xs text-[#524A3D]">
           <span className="text-base shrink-0">🌐</span>
           <span>
-            Gemma 4's critique and mentor responses below are in your selected language. The app interface labels (tab names, buttons) stay in English.
+            Gemma 4 E4B's critique and mentor responses below are in your selected language. The app interface labels (tab names, buttons) stay in English.
           </span>
         </div>
       )}
@@ -970,7 +970,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                           <Brain className="w-5 h-5" />
                         </div>
                         <div className="text-left">
-                          <h3 className="text-[#241F18] font-bold text-sm md:text-base">Gemma 4 Reasoning Process</h3>
+                          <h3 className="text-[#241F18] font-bold text-sm md:text-base">Gemma 4 E4B reasoning</h3>
                           <div className="flex items-center gap-2">
                             <p className="text-xs text-[#524A3D] font-mono mt-0.5">Local structured rationale</p>
                             <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 rounded font-mono">
@@ -1194,7 +1194,7 @@ const AnalysisResults: React.FC<AnalysisResultsProps> = ({
                       ))}
                     </div>
                     <div className="mt-3 text-center text-xs text-slate-500 font-mono">
-                      Cost: $0.00 (local inference · Gemma 4 Q4_K_M)
+                      Cost: $0.00 (local inference · Gemma 4 E4B Q4_K_M)
                     </div>
                   </div>
                 )}

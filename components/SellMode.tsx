@@ -20,6 +20,7 @@ import { parseSellResponse, parseArtisanResponseV3, speak, stopSpeaking, resumeS
 import { getAnalyzingStatus, getUploadHint } from '../config';
 import { showStudioModeEntry } from '../lib/launchRoute';
 import { isJudgeDemoBuild } from '../lib/deploymentProfile';
+import { GEMMA_4_E4B, OLLAMA_CLOUD } from '../lib/branding';
 import { DEMO_RESPONSES, DemoResponse, simulateProcessing, getComparisonSamples, DEMO_COMPARISON_RESULT } from '../src/data/demoResponses';
 import { ComparisonResult } from '../services/ollamaService';
 import Header from './Header';
@@ -350,9 +351,9 @@ const SellMode: React.FC<SellModeProps> = ({
 
   const handleTutorial = () => {
     const tutorialText = isJudgeDemoBuild()
-      ? `Welcome to the Artisan Studio demo. Try a sample photo first — those play back real Gemma 4 E4B coaching recorded on a local Mac. Or upload your own photo to run live Gemma 4 E4B through Ollama Cloud. You will hear framing, lighting, one fix at a time, alt-text, and listing copy. For fully private on-device coaching, follow the local quick start in the project README.`
+      ? `Welcome to the Artisan Studio demo. Try a sample photo first — those play back real ${GEMMA_4_E4B} coaching recorded on a local Mac. Or upload your own photo to run live ${GEMMA_4_E4B} through ${OLLAMA_CLOUD}. You will hear framing, lighting, one fix at a time, alt-text, and listing copy. For fully private on-device coaching, follow the local quick start in the project README.`
       : `Welcome to the Artisan Studio. Here's how to use this tool.
-    First, you can try one of our sample photos to see how Gemma 4 analyzes your craft photography.
+    First, you can try one of our sample photos to see how ${GEMMA_4_E4B} analyzes your craft photography.
     Just tap or click on any of the sample images below.
     The analysis will tell you what's working in your photo, what needs improvement, and exactly how to fix it.
     You'll hear feedback about framing, lighting, and composition.
@@ -461,7 +462,11 @@ const SellMode: React.FC<SellModeProps> = ({
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h2 className="text-xl font-bold text-[#241F18] mb-1">Try a Sample</h2>
-                    <p className="text-sm text-[#524A3D]">Real Gemma 4 E4B responses, generated locally via Ollama</p>
+                    <p className="text-sm text-[#524A3D]">
+                      {isJudgeDemoBuild()
+                        ? `Recorded ${GEMMA_4_E4B} (local Mac) — upload uses live ${OLLAMA_CLOUD}`
+                        : `Real ${GEMMA_4_E4B} responses via Ollama on your device`}
+                    </p>
                   </div>
                 </div>
 

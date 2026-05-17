@@ -640,7 +640,7 @@ function App() {
                 {/* Header */}
                 <div className="text-center mb-6">
                   <h2 className="text-2xl font-bold text-[#241F18] mb-2">Compare Two Photos</h2>
-                  <p className="text-sm text-[#524A3D]">Upload two photos to compare. Gemma 4 will pick the winner.</p>
+                  <p className="text-sm text-[#524A3D]">Upload two photos to compare. Gemma 4 E4B will pick the winner.</p>
                 </div>
 
                 {/* 50/50 Split Layout */}
@@ -808,11 +808,11 @@ function App() {
                   </div>
                   <h3 className="text-xl font-bold text-[#241F18] mb-2">Ollama Not Running</h3>
                   <p className="text-[#524A3D] mb-4 text-sm leading-relaxed">
-                    Gemma 4 runs locally via Ollama. Start Ollama and pull the model.
+                    Gemma 4 E4B runs locally via Ollama. Start Ollama and pull the model.
                   </p>
                   <div className="bg-[#241F18] rounded-lg p-3 text-left font-mono text-xs text-emerald-400 mb-6 space-y-1">
                     <div>$ ollama serve</div>
-                    <div>$ ollama pull gemma4:latest</div>
+                    <div>$ ollama pull gemma4:e4b</div>
                   </div>
                   <button type="button" onClick={handleReset} className="px-8 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-lg font-medium">
                     Try Again

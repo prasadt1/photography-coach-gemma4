@@ -1,4 +1,7 @@
 # Spike 1 Results: Gemma 4 E4B via Ollama
+
+> **Note (May 2026):** This spike was run during the project's *Photography Coach v2* phase, before the pivot to **L.E.N.S.** — the blind-and-low-vision-first product. The runtime findings below (model, runtime, quantisation, latency) carried over to L.E.N.S. unchanged. Some product terminology (Studio/Vault modes, five-axis scoring, "destination photographers") reflects the earlier scope.
+
 **Date:** 2026-05-06  
 **Tester:** Agent (Cursor)  
 **Machine:** MacBook, Apple M-series, 16 GB RAM  

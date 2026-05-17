@@ -1,5 +1,7 @@
 # Why We Chose Q4_K_M (and Ollama) for Production
 
+> **Note (May 2026):** This spike was run during the project's *Photography Coach v2* phase, before the pivot to **L.E.N.S.** — the blind-and-low-vision-first product. The runtime findings below (model, runtime, quantisation, latency) carried over to L.E.N.S. unchanged. Some product terminology (Studio/Vault modes, five-axis scoring, "destination photographers") reflects the earlier scope.
+
 **Purpose:** Document the architectural reasoning behind selecting Gemma 4 E4B Q4_K_M served via Ollama as the production runtime for Photography Coach.
 **Tester:** Prasad
 **Hardware:** MacBook (Apple Silicon, 16 GB unified memory)

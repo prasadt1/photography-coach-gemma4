@@ -1,17 +1,20 @@
 # Spike 3: LiteRT iOS for Gemma 4 E4B
 
-**Date:** May 7, 2026
-**Duration:** 2 hours (4-hour time box)
-**Status:** ⚠️ CONDITIONAL FAIL - Viable but exceeds time budget
-**Verdict:** Fallback to iOS PWA + Ollama.js vision
+> **Note (May 2026):** This spike was run during the project's *Photography Coach v2* phase, before the pivot to **L.E.N.S.** — the blind-and-low-vision-first product. The runtime findings below (model, runtime, quantisation, latency) carried over to L.E.N.S. unchanged. Some product terminology (Studio/Vault modes, five-axis scoring, "destination photographers") reflects the earlier scope.
+
+**Date:** May 7, 2026  
+**Duration:** 2 hours (4-hour time box)  
+**Status:** Viable — not shipped in this submission  
+
+## Verdict
+
+On-device iOS via LiteRT is **technically viable** (pre-converted Gemma 4 E4B model, ~25 tok/s on a recent iPhone GPU, proven by Google's AI Edge Gallery app). It is **not shipped in this submission** because C++/Swift integration exceeds the hackathon timeline. The phone ships as a **PWA**; native on-device iOS is **Phase-2 roadmap**.
 
 ---
 
 ## Executive Summary
 
-**LiteRT native iOS with Gemma 4 E4B is technically viable** but requires C++ API integration with estimated 4-6 hour implementation time, exceeding the spike's 4-hour budget. **Alternative path discovered:** Enhance existing iOS PWA with vision capabilities via ollama-js (30-minute implementation).
-
-**Recommendation:** Accept PWA + Ollama.js as iOS mobile solution, document LiteRT as Phase 2.
+LiteRT native iOS with Gemma 4 E4B works on paper and in Google's reference app, but integrating the C++ API into a Swift app was estimated at **4–6 hours** — above the spike time box and above what remained for the hackathon slice. For this submission, **iOS is covered by the installable PWA** (same coaching contract as desktop; see [iOS PWA setup](../ios-pwa-setup.md)). LiteRT remains the right long-term path for true offline inference on the phone itself.
 
 ---
 
@@ -68,33 +71,14 @@ Gemma 4 E4B can run on iPhone or iPad via LiteRT (TensorFlow Lite for iOS), prod
 
 **Note:** Benchmarks are from iPhone 17 Pro. iPhone 12 performance will be lower (estimated 15-20 tokens/sec GPU, 5-8 tokens/sec CPU).
 
-### ❌ Integration Challenges
+### ❌ Integration Effort (why we did not ship native iOS)
 
-**Critical Blockers:**
+**Blockers for this submission:**
 
-1. **No Swift SDK**
-   - Must use C++ API for iOS integration
-   - No native Swift bindings available as of May 2026
-   - MediaPipe iOS SDK marked as **deprecated** (not recommended)
-
-2. **No Swift Code Examples**
-   - Google AI Edge Gallery iOS source code not in public repo
-   - Only Android implementation available on GitHub
-   - Official docs show C++ examples only
-
-3. **Estimated Integration Time: 4-6 hours**
-   - Xcode project setup: 30min
-   - C++ to Swift bridging: 2-3 hours
-   - Vision input integration: 1-2 hours
-   - v2 schema JSON parsing in Swift: 1 hour
-   - Testing + debugging: 1 hour
-   - **Total:** Exceeds 4-hour spike budget
-
-4. **Technical Complexity**
-   - Bridging header setup for C++ API
-   - Memory management between C++ and Swift
-   - Async/await integration for inference
-   - Image preprocessing (base64 encoding, resize, EXIF extraction)
+1. **No Swift SDK** — C++ API only; MediaPipe iOS SDK deprecated
+2. **No public Swift examples** — AI Edge Gallery iOS source not in repo
+3. **Estimated integration: 4-6 hours** — bridging, vision input, JSON parsing, test (exceeds spike + hackathon slice for native app)
+4. **Complexity** — bridging headers, memory across C++/Swift, image preprocessing
 
 **Documentation Sources:**
 - [LiteRT-LM C++ API](https://ai.google.dev/edge/litert-lm/cpp)
@@ -103,145 +87,49 @@ Gemma 4 E4B can run on iPhone or iPad via LiteRT (TensorFlow Lite for iOS), prod
 
 ---
 
-## Alternative Path: iOS PWA + Ollama.js Vision
+## What we ship instead: iOS PWA
 
-### ✅ Discovered During Spike
+Vision coaching on iPhone uses the **installable PWA** plus inference on the maker's **Mac** (Gemma 4 E4B via Ollama), not LiteRT on the phone:
 
-**Ollama.js supports vision/multimodal inputs in browser environments.**
+- Same Wi‑Fi: `OLLAMA_HOST=0.0.0.0:11434 ollama serve` — see [ios-pwa-setup.md](../ios-pwa-setup.md)
+- Off-LAN demo recording: expose Ollama with e.g. `cloudflared tunnel --url http://127.0.0.1:11434` while the Mac runs E4B locally
 
-**Key Capabilities:**
-- ollama-js library accepts images as Uint8Array or base64 strings
-- Automated encoding pipeline for browser
-- Supports Gemma 4 E4B multimodal (same model as desktop Ollama)
-- Works in iOS Safari (PWA mode)
+**Existing web path (Spike 1):** `ollamaService.ts` already sends `images: [base64]` to Ollama; PWA manifest supports Add to Home Screen. No separate native binary in this repo.
 
-**Implementation Estimate: 30 minutes**
+**Trade-off vs LiteRT native:**
 
-```javascript
-// Add to existing ollamaService.ts
-async function analyzePhotoVision(imageFile: File): Promise<PhotoAnalysisV2> {
-  const base64Image = await fileToBase64(imageFile);
-
-  const response = await ollama.chat({
-    model: 'gemma4:e4b',
-    messages: [{
-      role: 'user',
-      content: photographyCritiquePrompt,
-      images: [base64Image] // ← Vision input
-    }],
-    format: 'json',
-    options: { temperature: 0.3 }
-  });
-
-  return JSON.parse(response.message.content);
-}
-```
-
-**Advantages:**
-- ✅ Reuses existing Ollama integration (proven in Spike 1)
-- ✅ Same v2 schema output as desktop
-- ✅ Works today with existing PWA infrastructure
-- ✅ 30-minute implementation vs 4-6 hours for LiteRT
-- ✅ No App Store submission required
-
-**Limitations:**
-- ❌ Requires network to Ollama server (WiFi to Mac/PC on same network)
-- ❌ Not truly offline (airplane mode won't work)
-- ❌ Adds 50-200ms network latency vs on-device inference
-
-**Documentation:**
-- [Ollama Vision Capabilities](https://docs.ollama.com/capabilities/vision)
-- [ollama-js Multimodal Inputs](https://deepwiki.com/ollama/ollama-js/5.1-multimodal-inputs)
+| Dimension | LiteRT native iOS | iOS PWA → Mac Ollama (E4B) |
+|-----------|-------------------|----------------------------|
+| **True on-phone offline** | ✅ | ❌ (inference on Mac) |
+| **Shipped in submission** | ❌ | ✅ |
+| **Implementation time** | 4-6+ hours | Already integrated |
+| **Latency** | ~20s on-device GPU | E4B on Mac + network hop |
 
 ---
 
 ## Pass/Fail Assessment
 
-### Against Original Pass Criteria
+### Technical feasibility
 
 | Criterion | Status | Notes |
 |-----------|--------|-------|
 | End-to-end photo → JSON → display | ✅ **VIABLE** | Proven by Google AI Edge Gallery app |
-| Schema valid (v2 JSON) | ✅ **EXPECTED PASS** | Same Gemma 4 E4B model, same schema |
-| Latency < 30s (iPhone 12+) | ⚠️ **MARGINAL** | iPhone 17 Pro: 20s; iPhone 12: likely 25-35s |
-| Memory < 4GB | ✅ **PASS** | 3.38GB GPU mode, 0.96GB CPU mode |
-| No crashes (10 photos) | ✅ **EXPECTED PASS** | Google app demonstrates stability |
+| Schema valid (v2 JSON) | ✅ **EXPECTED PASS** | Same Gemma 4 E4B model |
+| Latency < 30s (iPhone 12+) | ⚠️ **MARGINAL** | iPhone 17 Pro: ~20s GPU |
+| Memory < 4GB | ✅ **PASS** | 3.38GB GPU, 0.96GB CPU |
 
-### Against Time Budget
+### Hackathon scope
 
-| Criterion | Status | Impact |
-|-----------|--------|--------|
-| Spike completes in 4 hours | ❌ **FAIL** | 4-6 hour implementation estimate exceeds budget |
-| Model conversion required | ✅ **PASS** | Pre-converted model available |
-| Documentation available | ⚠️ **PARTIAL** | C++ docs exist, Swift examples missing |
+| Criterion | Status | Notes |
+|-----------|--------|-------|
+| Native iOS app in submission | ❌ **OUT OF SCOPE** | C++/Swift effort exceeds timeline |
+| PWA floor | ✅ **SHIPPED** | Installable; coaching contract unchanged |
 
 ---
 
-## Decision
+## Writeup / roadmap wording
 
-**SPIKE 3 VERDICT: ✅ PROCEED WITH LITERT NATIVE iOS**
-
-**Reasoning:**
-1. LiteRT iOS is **technically viable** AND **implementation path is clear**
-2. Pre-converted model exists, performance meets targets (25 tokens/sec GPU)
-3. **Clean C API discovered** with full vision/multimodal support
-4. **Pre-built iOS binaries available** (no custom compilation needed)
-5. **Time constraint clarified:** 12 days to deadline allows 1-2 days for proper iOS implementation
-6. **Best solution principle:** No compromise on quality
-
-**Implementation Path (1-2 days):**
-1. **C API Integration:** Use `/tmp/LiteRT-LM/c/engine.h` with Objective-C++ bridge
-2. **Pre-built Dylibs:** Link `/tmp/LiteRT-LM/prebuilt/ios_arm64/` libraries (Metal GPU support)
-3. **Vision Support:** `LiteRtLmInputData` struct accepts raw image bytes + text
-4. **Model Bundling:** Download `gemma-4-E4B-it-litert-lm` (3.66GB) from Hugging Face
-5. **Swift UI:** Native iOS app with photo picker, inference, results display
-
-**Recommended Path:**
-- **Proceed:** LiteRT native iOS implementation (Task #2 created)
-- **Timeline:** 1-2 days for complete iOS app with Share Sheet, native UI, on-device inference
-- **Deliver:** Three-platform submission (Web, Desktop, iOS Native) with best-in-class UX
-- **Invest remaining 10 days in:** Demo polish, XMP export, batch keywords, writeup finalization
-
----
-
-## Fallback Implementation - COMPLETED ✅
-
-### iOS PWA + Ollama Vision (Status: Already Implemented)
-
-**DISCOVERY:** Vision support was already fully implemented during Spike 1!
-
-**Existing Implementation:**
-1. ✅ `ollamaService.ts` line 224: `{ role: 'user', content: userPrompt, images: [cleanBase64] }`
-2. ✅ `PhotoUploader.tsx` lines 68-76: File → base64 DataURL conversion
-3. ✅ `analysisOrchestrator.ts` lines 70-80: Wires base64 image to ollamaService
-4. ✅ `public/manifest.json`: PWA config for standalone mode
-5. ✅ Spike 1 validation: "Vision Input (base64)" - PASS
-
-**No code changes required** — vision already works end-to-end!
-
-**Documentation Added:**
-- `docs/ios-pwa-setup.md` - Complete iOS setup guide (Ollama network config, troubleshooting, performance tips)
-
-**Network Setup:**
-- User connects iPhone to same WiFi as Mac/PC running Ollama
-- User configures Ollama server IP in app settings (e.g., `http://192.168.1.100:11434`)
-- Fallback: Show connection status indicator, guide user to Ollama setup
-
-**Vault Mode:**
-- ❌ Not recommended on iOS PWA (no cryptographic network isolation)
-- Desktop Electron remains primary Vault Mode platform
-
----
-
-## Writeup Impact
-
-### If LiteRT Native (Attempted but Cut)
-
-> "I evaluated LiteRT for on-device iOS inference with Gemma 4 E4B. While technically viable—proven by Google's AI Edge Gallery app—the C++ API integration complexity exceeded the hackathon timeline. I delivered iOS via progressive web app with full vision capabilities through the Ollama API instead, maintaining the three-platform submission (Web, Desktop, iOS) while focusing remaining time on integration polish and demo quality."
-
-### Phase 2 Roadmap Note
-
-> "**Post-Hackathon:** Native iOS app with on-device Gemma 4 E4B via LiteRT remains a compelling Phase 2 enhancement. The 3.66GB model runs at 25 tokens/sec on iPhone 17 Pro with true offline capability—ideal for destination photographers. The technical path is proven; implementation requires dedicated iOS development sprint."
+> LiteRT on iOS is **proven viable** (~25 tok/s decode on recent iPhone GPU with the pre-built Gemma 4 E4B LiteRT model). It is **not in this repo as a native app** because integration is a Phase-2 engineering sprint, not a missing proof point.
 
 ---
 
@@ -252,36 +140,14 @@ async function analyzePhotoVision(imageFile: File): Promise<PhotoAnalysisV2> {
 - [LiteRT-LM GitHub](https://github.com/google-ai-edge/LiteRT-LM)
 - [Google AI Edge Documentation](https://ai.google.dev/edge/litert-lm/overview)
 
-**Proof of iOS Capability:**
+**Proof of iOS capability:**
 - [Google AI Edge Gallery (iOS App Store)](https://apps.apple.com/us/app/google-ai-edge-gallery/id6749645337)
 - [Gemma 4 Edge Deployment Blog](https://developers.googleblog.com/bring-state-of-the-art-agentic-skills-to-the-edge-with-gemma-4/)
 
-**Alternative Path (Ollama.js):**
+**PWA path (what we ship):**
 - [Ollama Vision Capabilities](https://docs.ollama.com/capabilities/vision)
-- [ollama-js GitHub](https://github.com/ollama/ollama-js)
-- [Multimodal Inputs Documentation](https://deepwiki.com/ollama/ollama-js/5.1-multimodal-inputs)
-
----
-
-## Appendix: Comparison Table
-
-| Dimension | LiteRT Native iOS | iOS PWA + Ollama.js | Winner |
-|-----------|-------------------|---------------------|--------|
-| **True Offline** | ✅ Works in airplane mode | ❌ Requires WiFi to Ollama | LiteRT |
-| **Implementation Time** | ❌ 4-6 hours | ✅ 30 minutes | PWA |
-| **App Store Presence** | ✅ Native app, searchable | ❌ Manual URL entry | LiteRT |
-| **Setup Complexity** | ❌ 3.66GB model download | ✅ Instant access (Ollama on network) | PWA |
-| **Latency** | ✅ 20s (on-device) | ⚠️ 14-20s + network (50-200ms) | LiteRT (marginal) |
-| **Battery Drain** | ❌ High (on-device inference) | ✅ Low (network + UI only) | PWA |
-| **Storage Footprint** | ❌ 3.66GB | ✅ ~1.5MB | PWA |
-| **Vault Mode Viable** | ❌ No (iOS can't enforce network isolation) | ❌ No (same limitation) | TIE |
-| **Hackathon Timeline Risk** | ❌ HIGH (exceeds time budget) | ✅ ZERO (already working) | PWA |
-
-**Verdict:** PWA + Ollama.js wins for hackathon timeline and UX simplicity. LiteRT native remains superior for true offline use case (Phase 2).
+- [ios-pwa-setup.md](../ios-pwa-setup.md)
 
 ---
 
 **End of Spike 3 Results**
-**Date:** May 7, 2026
-**Spike Duration:** 2 hours
-**Recommendation:** Fallback to iOS PWA + Ollama.js vision (30min implementation)

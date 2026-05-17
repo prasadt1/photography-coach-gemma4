@@ -1,4 +1,7 @@
 # Spike 2 Results: Cactus Evaluation
+
+> **Note (May 2026):** This spike was run during the project's *Photography Coach v2* phase, before the pivot to **L.E.N.S.** — the blind-and-low-vision-first product. The runtime findings below (model, runtime, quantisation, latency) carried over to L.E.N.S. unchanged. Some product terminology (Studio/Vault modes, five-axis scoring, "destination photographers") reflects the earlier scope.
+
 **Date:** 2026-05-07  
 **Time spent:** ~35 min (hard cap: 2 hours)  
 **Source:** https://cactuscompute.com/docs · https://github.com/cactus-compute/cactus · https://github.com/cactus-compute/cactus-gemma

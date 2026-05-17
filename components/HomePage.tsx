@@ -4,18 +4,24 @@
  * Studio sage palette, local-first framing, accessibility-first.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   AudioLines, Camera, WifiOff,
   ArrowRight, Sparkles, Shield, Loader2, Heart,
-  User, Wrench, Smartphone, Target, Plus,
+  User, Wrench, Smartphone, Target, Plus, HelpCircle,
 } from 'lucide-react';
 import { getHomeHeroBadgeText } from '../config';
 import { showStudioModeEntry } from '../lib/launchRoute';
 import { isJudgeDemoBuild } from '../lib/deploymentProfile';
-import { GEMMA_4_E4B, OLLAMA_CLOUD, OLLAMA_MODEL_TAG } from '../lib/branding';
+import {
+  GEMMA_4_E4B,
+  GEMMA_4_E4B_DOCS_URL,
+  OLLAMA_CLOUD,
+  OLLAMA_MODEL_TAG,
+  getJudgeHomeWelcomeScript,
+} from '../lib/branding';
 import { OperationalMode } from '../types.v2';
-import { speak } from '../services/voiceCoach';
+import { speak, stopSpeaking } from '../services/voiceCoach';
 import { detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
 import Header from './Header';
 import Footer from './Footer';
@@ -35,6 +41,7 @@ interface HomePageProps {
 const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaReady, stats: _stats, voiceEnabled = false, onVoiceToggle }) => {
   const [connectionState, setConnectionState] = useState<'connecting' | 'ready'>('connecting');
   const [inferenceSource, setInferenceSource] = useState<InferenceSource>('demo');
+  const judgeWelcomeSpoken = useRef(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -48,6 +55,28 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
       setInferenceSource(source);
     });
   }, []);
+
+  const playJudgeWelcome = useCallback(() => {
+    stopSpeaking();
+    speak(getJudgeHomeWelcomeScript());
+  }, []);
+
+  // Judge demo: spoken tour once per session (browsers may block until user taps “Hear demo guide”)
+  useEffect(() => {
+    if (!isJudgeDemoBuild() || !voiceEnabled || judgeWelcomeSpoken.current) return;
+    if (sessionStorage.getItem('lens-judge-home-welcomed') === 'true') return;
+
+    const timer = window.setTimeout(() => {
+      judgeWelcomeSpoken.current = true;
+      sessionStorage.setItem('lens-judge-home-welcomed', 'true');
+      playJudgeWelcome();
+    }, 1200);
+
+    return () => {
+      window.clearTimeout(timer);
+      stopSpeaking();
+    };
+  }, [voiceEnabled, playJudgeWelcome]);
 
   const handleVoicePreview = () => {
     speak('Voice coaching activated. I will describe what I see in your photos and guide you to better shots.');
@@ -107,21 +136,43 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
             </div>
 
             {isJudgeDemoBuild() && (
-              <p className="mb-4 text-sm text-[#2F4858] bg-[#F4ECDC] border border-[#D8CDB8] rounded-xl px-4 py-3 leading-relaxed max-w-xl">
-                <strong>Try it:</strong> sample photos use recorded <strong>{GEMMA_4_E4B}</strong> runs from a
-                local Mac; uploads use <strong>{OLLAMA_CLOUD}</strong> (
-                <code className="text-xs">{OLLAMA_MODEL_TAG}</code>).
-                For the private on-device path, see the{' '}
-                <a
-                  href="https://github.com/prasadt1/photography-coach-gemma4#-quick-start"
-                  className="underline font-semibold"
-                  target="_blank"
-                  rel="noopener noreferrer"
+              <div className="mb-4 space-y-3 max-w-xl">
+                <p
+                  className="text-sm text-[#2F4858] bg-[#F4ECDC] border border-[#D8CDB8] rounded-xl px-4 py-3 leading-relaxed"
+                  aria-live="polite"
                 >
-                  README quick start
-                </a>
-                .
-              </p>
+                  <strong>Judge try-it:</strong> tap <strong>Enter Artisan Studio</strong> below. Samples =
+                  recorded <strong>{GEMMA_4_E4B}</strong> (local Mac); upload = live{' '}
+                  <strong>{OLLAMA_CLOUD}</strong> (<code className="text-xs">{OLLAMA_MODEL_TAG}</code>).
+                  Optional: full voice-guided journey inside.{' '}
+                  <a
+                    href={GEMMA_4_E4B_DOCS_URL}
+                    className="underline font-semibold"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Gemma 4 model card
+                  </a>
+                  {' '}·{' '}
+                  <a
+                    href="https://github.com/prasadt1/photography-coach-gemma4#-quick-start"
+                    className="underline font-semibold"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    local quick start
+                  </a>
+                </p>
+                <button
+                  type="button"
+                  onClick={playJudgeWelcome}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#2F4858] hover:bg-[#1D3444] text-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#C06B45]"
+                  aria-label="Hear spoken guide to this judge demo"
+                >
+                  <HelpCircle className="w-4 h-4" aria-hidden />
+                  Hear demo guide
+                </button>
+              </div>
             )}
 
             <button

@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { GemmaMark, OllamaMark } from './BrandMarks';
-import { GEMMA_4_E4B, GEMMA_TRADEMARK } from '../lib/branding';
+import { GEMMA_4_E4B, GEMMA_4_E4B_DOCS_URL, GEMMA_TRADEMARK } from '../lib/branding';
 
 const Footer: React.FC = () => {
   return (
@@ -27,7 +27,8 @@ const Footer: React.FC = () => {
           <div className="flex items-center gap-2">
             <span className="font-medium">Powered by</span>
             <a
-              href="https://ai.google.dev/gemma"
+              href={GEMMA_4_E4B_DOCS_URL}
+              title="Gemma 4 model card (includes E4B variant)"
               target="_blank"
               rel="noopener noreferrer"
               className="font-bold text-[#C06B45] hover:text-[#A6552F] underline inline-flex items-center gap-1.5"

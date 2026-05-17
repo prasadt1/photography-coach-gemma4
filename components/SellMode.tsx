@@ -95,6 +95,25 @@ const SellMode: React.FC<SellModeProps> = ({
   );
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  /** Invalidates in-flight upload/sample analysis so VO does not restart after back/retry. */
+  const analysisSessionRef = useRef(0);
+
+  const cancelAnalysisSession = useCallback(() => {
+    analysisSessionRef.current += 1;
+    if (isJudgeDemoBuild()) judgeStop();
+    else {
+      stopSpeaking();
+      clearPausedSpeech();
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      analysisSessionRef.current += 1;
+      judgeStop();
+    };
+  }, []);
+
   useEffect(() => {
     detectInferenceSource().then((source) => {
       setInferenceSource(source);
@@ -114,8 +133,9 @@ const SellMode: React.FC<SellModeProps> = ({
   }, [voiceEnabled]);
 
   const handleDemoSampleSelect = useCallback(async (sample: DemoResponse) => {
+    const session = ++analysisSessionRef.current;
+    judgeStop();
     if (voiceEnabled) {
-      judgeStop();
       if (isJudgeDemoBuild()) void judgeSpeakDynamic('Analyzing your sample. One moment.');
       else speakFromUserGesture('Analyzing your sample. One moment.');
     }
@@ -123,6 +143,7 @@ const SellMode: React.FC<SellModeProps> = ({
     setIsAnalyzing(true);
     setResult(null);
     await simulateProcessing();
+    if (session !== analysisSessionRef.current) return;
     const r = sample.response;
     const v3Payload = {
       ...r,
@@ -133,7 +154,7 @@ const SellMode: React.FC<SellModeProps> = ({
     const sellRes = sellResultFromV3(v3Payload, sample.imagePath, JSON.stringify(r));
     setResult(sellRes);
     setIsAnalyzing(false);
-    if (voiceEnabled) {
+    if (voiceEnabled && session === analysisSessionRef.current) {
       speakSellModeResult(sellRes);
     }
   }, [voiceEnabled]);
@@ -142,6 +163,8 @@ const SellMode: React.FC<SellModeProps> = ({
     if (preloadedImage && !processedPreload && !isAnalyzing) {
       setProcessedPreload(true);
       onImageProcessed?.();
+      const session = ++analysisSessionRef.current;
+      judgeStop();
       const analyzePreloaded = async () => {
         setError(null);
         setIsAnalyzing(true);
@@ -152,6 +175,7 @@ const SellMode: React.FC<SellModeProps> = ({
             'image/jpeg',
             true,
           );
+          if (session !== analysisSessionRef.current) return;
           setInferenceSource(source);
           if (source === 'demo' || !response) {
             setError(cloudUnavailableMessage(cloudError));
@@ -160,24 +184,23 @@ const SellMode: React.FC<SellModeProps> = ({
           }
           const sellRes = parseAnalysisToSellResult(response, preloadedImage);
           setResult(sellRes);
-          if (voiceEnabled) {
+          if (voiceEnabled && session === analysisSessionRef.current) {
             speakSellModeResult(sellRes);
           }
         } catch (err) {
+          if (session !== analysisSessionRef.current) return;
           setError('Analysis failed. Please try again.');
         }
-        setIsAnalyzing(false);
+        if (session === analysisSessionRef.current) {
+          setIsAnalyzing(false);
+        }
       };
       analyzePreloaded();
     }
   }, [preloadedImage, processedPreload, isAnalyzing, voiceEnabled, onImageProcessed]);
 
   const handleCapture = () => {
-    if (isJudgeDemoBuild()) judgeStop();
-    else {
-      stopSpeaking();
-      clearPausedSpeech();
-    }
+    cancelAnalysisSession();
     fileInputRef.current?.click();
   };
 
@@ -185,16 +208,12 @@ const SellMode: React.FC<SellModeProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
-    if (voiceEnabled) {
-      judgeStop();
-    }
+    const session = ++analysisSessionRef.current;
+    judgeStop();
     if (voiceEnabled && isJudgeDemoBuild()) {
       void judgeSpeakDynamic('Analyzing your photo. One moment.');
     } else if (voiceEnabled) {
       speakFromUserGesture('Analyzing your photo. One moment.');
-    } else {
-      stopSpeaking();
-      clearPausedSpeech();
     }
     setError(null);
     setIsAnalyzing(true);
@@ -206,11 +225,13 @@ const SellMode: React.FC<SellModeProps> = ({
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
+      if (session !== analysisSessionRef.current) return;
       const { content: response, source, cloudError } = await analyzeForSellModeWithFallback(
         base64,
         file.type,
         true,
       );
+      if (session !== analysisSessionRef.current) return;
       setInferenceSource(source);
       if (source === 'demo' || !response) {
         setError(cloudUnavailableMessage(cloudError));
@@ -219,25 +240,25 @@ const SellMode: React.FC<SellModeProps> = ({
       }
       const sellRes = parseAnalysisToSellResult(response, base64);
       setResult(sellRes);
-      if (voiceEnabled) {
+      if (voiceEnabled && session === analysisSessionRef.current) {
         speakSellModeResult(sellRes);
       }
     } catch (err) {
+      if (session !== analysisSessionRef.current) return;
       console.error('[SellMode] Analysis failed:', err);
       setError('Failed to analyze photo. Please try again.');
     }
-    setIsAnalyzing(false);
+    if (session === analysisSessionRef.current) {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleBack = () => {
+    cancelAnalysisSession();
     if (showGuidedJourney) {
       if (showStudioModeEntry()) {
         setShowGuidedJourney(false);
-        stopSpeaking();
-        clearPausedSpeech();
       } else {
-        if (isJudgeDemoBuild()) judgeStop();
-        else hardStopVoice();
         onBack();
       }
     } else if (result || showCompare) {
@@ -245,25 +266,19 @@ const SellMode: React.FC<SellModeProps> = ({
       setShowCompare(false);
       setDemoCompareResult(null);
       setError(null);
-      if (isJudgeDemoBuild()) judgeStop();
-      else {
-        stopSpeaking();
-        clearPausedSpeech();
-      }
+      setIsAnalyzing(false);
     } else {
-      if (isJudgeDemoBuild()) judgeStop();
-      else hardStopVoice();
       onBack();
     }
   };
 
   const handleRetry = () => {
-    stopSpeaking();
-    clearPausedSpeech();
+    cancelAnalysisSession();
     setResult(null);
     setError(null);
     setShowCompare(false);
     setDemoCompareResult(null);
+    setIsAnalyzing(false);
   };
 
   const copyToClipboard = (text: string, field: string) => {
@@ -273,6 +288,7 @@ const SellMode: React.FC<SellModeProps> = ({
   };
 
   const handleTutorial = () => {
+    cancelAnalysisSession();
     if (isJudgeDemoBuild()) {
       if (voiceEnabled && !judgePlayAudio(JUDGE_STUDIO_AUDIO)) {
         judgeSpeak(getArtisanStudioWelcomeScript());
@@ -444,8 +460,7 @@ const SellMode: React.FC<SellModeProps> = ({
               {/* Compare Option */}
               <button
                 onClick={() => {
-                  stopSpeaking();
-                  clearPausedSpeech();
+                  cancelAnalysisSession();
                   setShowCompare(true);
                   setDemoCompareResult(DEMO_COMPARISON_RESULT);
                 }}
@@ -593,7 +608,7 @@ const SellMode: React.FC<SellModeProps> = ({
                         type="button"
                         onPointerDown={() => primeJudgeSpeech()}
                         onClick={() => {
-                          judgeStop();
+                          cancelAnalysisSession();
                           speakSellModeResult(result, true);
                         }}
                         className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-[#2F4858] text-white text-xs font-semibold shrink-0"

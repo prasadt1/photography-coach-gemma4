@@ -2,7 +2,7 @@
  * Judge-demo speech — WAV files for fixed copy; /api/tts for dynamic analysis (Mac Chrome).
  */
 
-let utteranceSeq = 0;
+let playbackGeneration = 0;
 let judgeAudio: HTMLAudioElement | null = null;
 let judgeTtsAbort: AbortController | null = null;
 let judgeObjectUrl: string | null = null;
@@ -21,9 +21,27 @@ function setStatus(status: JudgeSpeechStatus, detail?: string): void {
   statusListener?.(status, detail);
 }
 
+function isPlaybackActive(playId: number): boolean {
+  return playId === playbackGeneration;
+}
+
+function detachAudioElement(audio: HTMLAudioElement): void {
+  audio.onended = null;
+  audio.onerror = null;
+  audio.onpause = null;
+  try {
+    audio.pause();
+    audio.currentTime = 0;
+    audio.removeAttribute('src');
+    audio.load();
+  } catch {
+    /* ignore */
+  }
+}
+
 /** Stop all judge audio (WAV, TTS API, Web Speech). */
 export function judgeStop(): void {
-  utteranceSeq += 1;
+  playbackGeneration += 1;
   setStatus('idle');
 
   if (typeof window === 'undefined') return;
@@ -34,10 +52,7 @@ export function judgeStop(): void {
   }
 
   if (judgeAudio) {
-    judgeAudio.pause();
-    judgeAudio.currentTime = 0;
-    judgeAudio.removeAttribute('src');
-    judgeAudio.load();
+    detachAudioElement(judgeAudio);
     judgeAudio = null;
   }
 
@@ -64,25 +79,41 @@ export function primeJudgeSpeech(): void {
   synth.getVoices();
 }
 
-function playAudioElement(audio: HTMLAudioElement, onEnd?: () => void): void {
+function playAudioElement(audio: HTMLAudioElement, playId: number, onEnd?: () => void): void {
+  if (!isPlaybackActive(playId)) {
+    detachAudioElement(audio);
+    return;
+  }
+
   judgeAudio = audio;
   setStatus('speaking');
+
   audio.onended = () => {
+    if (!isPlaybackActive(playId)) return;
     if (judgeObjectUrl) {
       URL.revokeObjectURL(judgeObjectUrl);
       judgeObjectUrl = null;
     }
-    judgeAudio = null;
+    if (judgeAudio === audio) judgeAudio = null;
     setStatus('idle');
     onEnd?.();
   };
+
   audio.onerror = () => {
+    if (!isPlaybackActive(playId)) return;
     console.warn('[LENS speech] audio playback error');
     setStatus('error', 'audio');
   };
+
   void audio.play().then(() => {
+    if (!isPlaybackActive(playId)) {
+      detachAudioElement(audio);
+      if (judgeAudio === audio) judgeAudio = null;
+      return;
+    }
     console.info('[LENS speech] audio playing');
   }).catch((err) => {
+    if (!isPlaybackActive(playId)) return;
     console.warn('[LENS speech] audio play blocked:', err);
     setStatus('error', 'audio-blocked');
   });
@@ -93,9 +124,10 @@ export function judgePlayAudio(url: string, onEnd?: () => void): boolean {
   if (typeof window === 'undefined') return false;
   try {
     judgeStop();
+    const playId = playbackGeneration;
     const audio = new Audio(url);
     audio.preload = 'auto';
-    playAudioElement(audio, onEnd);
+    playAudioElement(audio, playId, onEnd);
     return true;
   } catch (err) {
     console.warn('[LENS speech] audio error:', err);
@@ -111,7 +143,7 @@ export async function judgeSpeakDynamic(text: string, onEnd?: () => void): Promi
   judgeStop();
   primeJudgeSpeech();
 
-  const seq = ++utteranceSeq;
+  const playId = playbackGeneration;
 
   try {
     judgeTtsAbort = new AbortController();
@@ -122,20 +154,20 @@ export async function judgeSpeakDynamic(text: string, onEnd?: () => void): Promi
       signal: judgeTtsAbort.signal,
     });
 
-    if (seq !== utteranceSeq) return;
+    if (!isPlaybackActive(playId)) return;
 
     if (!res.ok) {
       throw new Error(`TTS HTTP ${res.status}`);
     }
 
     const blob = await res.blob();
-    if (seq !== utteranceSeq) return;
+    if (!isPlaybackActive(playId)) return;
 
     judgeObjectUrl = URL.createObjectURL(blob);
     const audio = new Audio(judgeObjectUrl);
-    playAudioElement(audio, onEnd);
+    playAudioElement(audio, playId, onEnd);
   } catch (err) {
-    if (seq !== utteranceSeq) return;
+    if (!isPlaybackActive(playId)) return;
     if ((err as Error).name === 'AbortError') return;
     console.warn('[LENS speech] API TTS failed, trying Web Speech:', err);
     judgeSpeak(trimmed, 1, onEnd);
@@ -153,25 +185,25 @@ export function judgeSpeak(text: string, rate = 1, onEnd?: () => void): void {
 
   judgeStop();
   primeJudgeSpeech();
-  const seq = ++utteranceSeq;
+  const playId = playbackGeneration;
 
   const run = () => {
-    if (seq !== utteranceSeq) return;
+    if (!isPlaybackActive(playId)) return;
     const u = new SpeechSynthesisUtterance(text.trim());
     u.lang = 'en-US';
     u.rate = rate;
     u.volume = 1;
     u.onstart = () => {
-      if (seq === utteranceSeq) setStatus('speaking');
+      if (isPlaybackActive(playId)) setStatus('speaking');
     };
     u.onend = () => {
-      if (seq === utteranceSeq) {
+      if (isPlaybackActive(playId)) {
         setStatus('idle');
         onEnd?.();
       }
     };
     u.onerror = (e) => {
-      if (seq !== utteranceSeq) return;
+      if (!isPlaybackActive(playId)) return;
       if (e.error !== 'canceled' && e.error !== 'interrupted') {
         console.warn('[LENS speech] Web Speech error:', e.error);
         setStatus('error', e.error);

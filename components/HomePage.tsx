@@ -24,7 +24,15 @@ import {
   getArtisanStudioWelcomeScript,
 } from '../lib/branding';
 import { OperationalMode } from '../types.v2';
-import { judgeSpeak } from '../lib/judgeSpeech';
+import {
+  judgeSpeak,
+  judgePlayAudio,
+  primeJudgeSpeech,
+  setJudgeSpeechStatusListener,
+} from '../lib/judgeSpeech';
+
+const JUDGE_HOME_AUDIO = '/audio/judge-home-welcome.wav';
+const JUDGE_STUDIO_AUDIO = '/audio/judge-studio-welcome.wav';
 import { detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
 import Header from './Header';
 import Footer from './Footer';
@@ -45,6 +53,13 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
   const [connectionState, setConnectionState] = useState<'connecting' | 'ready'>('connecting');
   const [inferenceSource, setInferenceSource] = useState<InferenceSource>('demo');
   const judgeWelcomeSpoken = useRef(false);
+  const [speechStatus, setSpeechStatus] = useState<'idle' | 'speaking' | 'error'>('idle');
+
+  useEffect(() => {
+    if (!isJudgeDemoBuild()) return;
+    setJudgeSpeechStatusListener((status) => setSpeechStatus(status));
+    return () => setJudgeSpeechStatusListener(null);
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -60,23 +75,27 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
   }, []);
 
   const playJudgeWelcome = useCallback(() => {
-    if (!voiceEnabled) return;
     judgeWelcomeSpoken.current = true;
-    judgeSpeak(getJudgeHomeWelcomeScript());
-  }, [voiceEnabled]);
+    primeJudgeSpeech();
+    if (!judgePlayAudio(JUDGE_HOME_AUDIO)) {
+      judgeSpeak(getJudgeHomeWelcomeScript());
+    }
+  }, []);
 
   const handleEnterArtisanStudio = useCallback(() => {
     judgeWelcomeSpoken.current = true;
     sessionStorage.setItem(ARTISAN_GRID_WELCOME_KEY, '1');
     if (voiceEnabled && isJudgeDemoBuild()) {
       sessionStorage.setItem('lens-studio-welcomed-session', '1');
-      judgeSpeak(getArtisanStudioWelcomeScript());
+      if (!judgePlayAudio(JUDGE_STUDIO_AUDIO)) {
+        judgeSpeak(getArtisanStudioWelcomeScript());
+      }
     }
     onSelectMode('sell');
   }, [voiceEnabled, onSelectMode]);
 
   const handleVoicePreview = () => {
-    if (!voiceEnabled) return;
+    primeJudgeSpeech();
     judgeSpeak(
       'Voice coaching activated. I will describe what I see in your photos and guide you to better shots.',
     );
@@ -169,16 +188,22 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                     local quick start
                   </a>
                 </p>
-                <button
-                  type="button"
-                  onClick={playJudgeWelcome}
-                  disabled={!voiceEnabled}
-                  className="inline-flex select-none items-center gap-2 px-4 py-2.5 rounded-full bg-[#2F4858] hover:bg-[#1D3444] text-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#C06B45] disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-label="Hear short spoken intro for judges on this page"
-                >
-                  <AudioLines className="w-4 h-4" aria-hidden />
-                  Hear demo guide
-                </button>
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onPointerDown={() => primeJudgeSpeech()}
+                    onClick={playJudgeWelcome}
+                    className="inline-flex select-none items-center gap-2 px-4 py-2.5 rounded-full bg-[#2F4858] hover:bg-[#1D3444] text-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#C06B45]"
+                    aria-label="Hear short spoken intro for judges on this page"
+                  >
+                    <AudioLines className="w-4 h-4" aria-hidden />
+                    Hear demo guide
+                  </button>
+                  <p className="text-xs text-[#524A3D] min-h-[1.25rem]" aria-live="polite" role="status">
+                    {speechStatus === 'speaking' && 'Speaking… check Mac volume and Chrome tab is not muted.'}
+                    {speechStatus === 'error' && 'Speech could not start — try Chrome settings → Accessibility → Spoken Content.'}
+                  </p>
+                </div>
               </div>
             )}
 

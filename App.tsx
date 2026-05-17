@@ -27,7 +27,7 @@ import {
 import { SupportedLanguage, LANGUAGE_LABELS } from './services/promptService';
 import { setOperationalMode, exportAuditLog } from './services/auditService';
 import { speak, hardStopVoice, primeSpeechVoices } from './services/voiceCoach';
-import { judgeStop } from './lib/judgeSpeech';
+import { judgeStop, primeJudgeSpeech } from './lib/judgeSpeech';
 import { AppState } from './types';
 import { PhotoAnalysisV2, OperationalMode, SessionHistoryEntry } from './types.v2';
 import { getInitialAppRoute, showStudioModeEntry } from './lib/launchRoute';
@@ -102,6 +102,10 @@ function App() {
 
   useEffect(() => {
     primeSpeechVoices();
+    if (!isJudgeDemoBuild()) return;
+    const prime = () => primeJudgeSpeech();
+    document.addEventListener('pointerdown', prime, { once: true, capture: true });
+    return () => document.removeEventListener('pointerdown', prime, true);
   }, []);
 
   useEffect(() => {

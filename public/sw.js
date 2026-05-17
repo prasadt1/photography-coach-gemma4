@@ -3,7 +3,7 @@
  * Network-first for HTML/shell; cache-first for hashed assets only.
  */
 
-const CACHE_NAME = 'photography-coach-v6-network-first-shell';
+const CACHE_NAME = 'photography-coach-v7-network-first-shell';
 const ASSETS_TO_PRECACHE = ['/manifest.json'];
 
 self.addEventListener('install', (event) => {

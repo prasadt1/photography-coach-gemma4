@@ -17,7 +17,9 @@ import {
 } from 'lucide-react';
 import { analyzeForSellModeWithFallback, detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
 import { speak, speakFromUserGesture, stopSpeaking, hardStopVoice, clearPausedSpeech } from '../services/voiceCoach';
-import { judgeSpeak, judgeStop } from '../lib/judgeSpeech';
+import { judgeSpeak, judgePlayAudio, judgeStop } from '../lib/judgeSpeech';
+
+const JUDGE_STUDIO_AUDIO = '/audio/judge-studio-welcome.wav';
 import {
   type SellModeResult,
   sellResultFromV3,
@@ -262,7 +264,9 @@ const SellMode: React.FC<SellModeProps> = ({
 
   const handleTutorial = () => {
     if (isJudgeDemoBuild()) {
-      if (voiceEnabled) judgeSpeak(getArtisanStudioWelcomeScript());
+      if (voiceEnabled && !judgePlayAudio(JUDGE_STUDIO_AUDIO)) {
+        judgeSpeak(getArtisanStudioWelcomeScript());
+      }
       return;
     }
     const tutorialText = `Welcome to the Artisan Studio. Here's how to use this tool.

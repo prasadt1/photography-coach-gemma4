@@ -559,6 +559,74 @@ export function speakMore(): void {
  */
 let speakQueueTimer: ReturnType<typeof setTimeout> | null = null;
 
+/** Set when the user has gestured; helps post-async speak on Chrome after unlock. */
+let speechSessionUnlocked = false;
+
+/** Call synchronously inside click/tap handlers so later speak() is not blocked. */
+export function unlockSpeechForSession(): void {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return;
+  speechSessionUnlocked = true;
+  primeSpeechVoices();
+  try {
+    const u = new SpeechSynthesisUtterance('\u200b');
+    u.volume = 0.01;
+    u.rate = 1;
+    window.speechSynthesis.speak(u);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function isSpeechSessionUnlocked(): boolean {
+  return speechSessionUnlocked;
+}
+
+/**
+ * Speak in the same turn as a user gesture (Chrome requires this).
+ * Clears prior speech without leaving isCancelled=true.
+ */
+export function speakFromUserGesture(
+  text: string,
+  rate = 0.95,
+  onEnd?: () => void,
+  onStart?: () => void,
+): void {
+  if (!text?.trim()) return;
+  unlockSpeechForSession();
+  if (speakQueueTimer) {
+    clearTimeout(speakQueueTimer);
+    speakQueueTimer = null;
+  }
+  if (pendingTimeout) {
+    clearTimeout(pendingTimeout);
+    pendingTimeout = null;
+  }
+  isCancelled = false;
+  isCurrentlySpeaking = false;
+  speechSynthesis.cancel();
+  speak(text, rate, onEnd, onStart);
+}
+
+/** After async work when the session was unlocked by an earlier gesture. */
+export function speakAfterUnlock(
+  text: string,
+  rate = 0.95,
+  onEnd?: () => void,
+  onStart?: () => void,
+): void {
+  if (!text?.trim()) return;
+  if (speechSessionUnlocked) {
+    if (speakQueueTimer) {
+      clearTimeout(speakQueueTimer);
+      speakQueueTimer = null;
+    }
+    isCancelled = false;
+    speak(text, rate, onEnd, onStart);
+    return;
+  }
+  speakQueued(text, 180, rate, onEnd, onStart);
+}
+
 export function stopSpeaking(): void {
   console.log('[voiceCoach] stopSpeaking() called');
   isCancelled = true;

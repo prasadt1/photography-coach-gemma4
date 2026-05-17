@@ -216,7 +216,10 @@ function App() {
   }, []);
 
   const handleModeChange = useCallback((newMode: OperationalMode) => {
-    hardStopVoice();
+    // Entering studio: welcome is spoken synchronously on the Enter click — do not cancel it.
+    if (newMode !== 'sell') {
+      hardStopVoice();
+    }
     setMode(newMode);
     setOperationalMode(newMode);
     setShowHome(false); // Leave home page when mode is selected

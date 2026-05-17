@@ -21,9 +21,10 @@ import {
   OLLAMA_CLOUD_MODEL_TAG,
   ARTISAN_GRID_WELCOME_KEY,
   getJudgeHomeWelcomeScript,
+  getArtisanStudioWelcomeScript,
 } from '../lib/branding';
 import { OperationalMode } from '../types.v2';
-import { speak, speakQueued } from '../services/voiceCoach';
+import { speak, speakFromUserGesture } from '../services/voiceCoach';
 import { detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
 import Header from './Header';
 import Footer from './Footer';
@@ -61,7 +62,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
   }, []);
 
   const playJudgeWelcome = useCallback(() => {
-    speakQueued(getJudgeHomeWelcomeScript(), 80, 0.95, undefined, () => {
+    speakFromUserGesture(getJudgeHomeWelcomeScript(), 0.95, () => {
       judgeWelcomeSpoken.current = true;
       setWelcomePlayed(true);
       setShowVoicePrompt(false);
@@ -73,7 +74,10 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
     setWelcomePlayed(true);
     setShowVoicePrompt(false);
     sessionStorage.setItem(ARTISAN_GRID_WELCOME_KEY, '1');
-    sessionStorage.setItem('lens-play-studio-welcome', voiceEnabled && isJudgeDemoBuild() ? '1' : '');
+    if (voiceEnabled && isJudgeDemoBuild()) {
+      sessionStorage.setItem('lens-studio-welcomed-session', '1');
+      speakFromUserGesture(getArtisanStudioWelcomeScript());
+    }
     onSelectMode('sell');
   }, [voiceEnabled, onSelectMode]);
 

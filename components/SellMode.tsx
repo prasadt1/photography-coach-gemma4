@@ -16,7 +16,7 @@ import {
   Upload, HelpCircle, AudioLines,
 } from 'lucide-react';
 import { analyzeForSellModeWithFallback, detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
-import { speak, speakQueued, stopSpeaking, hardStopVoice, resumeSpeech, hasPausedSpeech, clearPausedSpeech } from '../services/voiceCoach';
+import { speak, speakFromUserGesture, stopSpeaking, hardStopVoice, resumeSpeech, hasPausedSpeech, clearPausedSpeech } from '../services/voiceCoach';
 import {
   type SellModeResult,
   sellResultFromV3,
@@ -86,29 +86,6 @@ const SellMode: React.FC<SellModeProps> = ({
   );
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const studioWelcomePlayed = useRef(false);
-
-  const playArtisanStudioWelcome = useCallback(() => {
-    speakQueued(getArtisanStudioWelcomeScript(), 100);
-  }, []);
-
-  // Studio welcome after Enter Artisan Studio (no hardStop on unmount — Strict Mode was killing all VO)
-  useEffect(() => {
-    if (!isJudgeDemoBuild() || !voiceEnabled || showGuidedJourney) return;
-    if (sessionStorage.getItem('lens-play-studio-welcome') !== '1') return;
-    if (sessionStorage.getItem('lens-studio-welcomed-session') === '1') return;
-
-    const timer = window.setTimeout(() => {
-      sessionStorage.removeItem('lens-play-studio-welcome');
-      sessionStorage.setItem('lens-studio-welcomed-session', '1');
-      if (studioWelcomePlayed.current) return;
-      studioWelcomePlayed.current = true;
-      playArtisanStudioWelcome();
-    }, 350);
-
-    return () => window.clearTimeout(timer);
-  }, [voiceEnabled, showGuidedJourney, playArtisanStudioWelcome]);
-
   useEffect(() => {
     detectInferenceSource().then((source) => {
       setInferenceSource(source);
@@ -129,6 +106,9 @@ const SellMode: React.FC<SellModeProps> = ({
   }, [voiceEnabled]);
 
   const handleDemoSampleSelect = useCallback(async (sample: DemoResponse) => {
+    if (voiceEnabled) {
+      speakFromUserGesture('Analyzing your sample. One moment.');
+    }
     setError(null);
     setIsAnalyzing(true);
     setResult(null);
@@ -192,8 +172,12 @@ const SellMode: React.FC<SellModeProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
-    stopSpeaking();
-    clearPausedSpeech();
+    if (voiceEnabled) {
+      speakFromUserGesture('Analyzing your photo. One moment.');
+    } else {
+      stopSpeaking();
+      clearPausedSpeech();
+    }
     setError(null);
     setIsAnalyzing(true);
     setResult(null);
@@ -267,7 +251,7 @@ const SellMode: React.FC<SellModeProps> = ({
 
   const handleTutorial = () => {
     if (isJudgeDemoBuild()) {
-      playArtisanStudioWelcome();
+      speakFromUserGesture(getArtisanStudioWelcomeScript());
       return;
     }
     const tutorialText = `Welcome to the Artisan Studio. Here's how to use this tool.
@@ -582,7 +566,7 @@ const SellMode: React.FC<SellModeProps> = ({
                     {voiceEnabled && (
                       <button
                         type="button"
-                        onClick={() => speakSellModeResult(result)}
+                        onClick={() => speakSellModeResult(result, true)}
                         className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-[#2F4858] text-white text-xs font-semibold shrink-0"
                       >
                         <AudioLines className="w-4 h-4" />

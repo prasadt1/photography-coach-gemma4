@@ -6,7 +6,8 @@ import { extractColourCheckFromSubject, buildArtisanVoiceScript } from '../servi
 import {
   parseArtisanResponseV3,
   parseSellResponse,
-  speakQueued,
+  speakFromUserGesture,
+  speakAfterUnlock,
   type ArtisanAnalysisV3,
 } from '../services/voiceCoach';
 
@@ -105,8 +106,12 @@ export function buildSellModeVoiceScript(result: SellModeResult): string {
   });
 }
 
-export function speakSellModeResult(result: SellModeResult): void {
+export function speakSellModeResult(result: SellModeResult, fromUserGesture = false): void {
   const script = buildSellModeVoiceScript(result);
   if (!script.trim()) return;
-  speakQueued(script, 200);
+  if (fromUserGesture) {
+    speakFromUserGesture(script);
+  } else {
+    speakAfterUnlock(script);
+  }
 }

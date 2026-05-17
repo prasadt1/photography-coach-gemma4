@@ -77,7 +77,7 @@ L.E.N.S. runs Gemma 4 through **Ollama**, and is honest about where inference ha
 | **[lens-app-gemma4.vercel.app](https://lens-app-gemma4.vercel.app)** | `VITE_DEPLOYMENT_PROFILE=judge` | Home → **Enter Artisan Studio** → sample grid or upload (cloud E4B) → optional voice-guided journey |
 | **[photography-coach-gemma4.vercel.app](https://photography-coach-gemma4.vercel.app)** | `artisan` (default) | Boots into the **voice-guided Artisan journey** (submission / video story) |
 
-**Vercel env — judge project (`lens-app-gemma4`):** `VITE_DEPLOYMENT_PROFILE=judge` · `OLLAMA_API_KEY` · `OLLAMA_TARGET=cloud` · `OLLAMA_CLOUD_MODEL=gemma4:e4b` — then redeploy.
+**Vercel env — judge project (`lens-app-gemma4`):** `VITE_DEPLOYMENT_PROFILE=judge` · `OLLAMA_API_KEY` · `OLLAMA_TARGET=cloud` · `OLLAMA_CLOUD_MODEL=gemma4:31b` (or `gemma4:e4b` — auto-mapped to `31b` on [Ollama Cloud](https://docs.ollama.com/cloud); **E4B is local-only** via `ollama pull gemma4:e4b`) — then redeploy.
 
 > **Why E4B?** Gemma 4's E4B variant is small enough to run on a maker's own laptop through Ollama — and that on-device capability is the whole point: private, offline, free coaching. Larger Gemma 4 variants give sharper critique but cannot run locally on modest hardware.
 
@@ -250,7 +250,7 @@ ollama pull gemma4:e4b                # pull it if missing
 ollama run gemma4:e4b "ready"
 ```
 
-**Hosted demo returns no analysis** — confirm `OLLAMA_API_KEY`, `OLLAMA_TARGET=cloud`, and `OLLAMA_CLOUD_MODEL=gemma4:e4b` are set on the **lens-app** Vercel project (not just a local `.env`), then redeploy. For local dev with real inference: `OLLAMA_TARGET=local vercel dev` after `ollama pull gemma4:e4b`. See `TROUBLESHOOTING.md` for more.
+**Hosted demo returns no analysis** — confirm `OLLAMA_API_KEY`, `OLLAMA_TARGET=cloud`, and a valid cloud model (`gemma4:31b` on [ollama.com/api/tags](https://ollama.com/api/tags)) on the **lens-app** Vercel project, then redeploy. For local E4B: `OLLAMA_TARGET=local vercel dev` after `ollama pull gemma4:e4b`. See `TROUBLESHOOTING.md` for more.
 
 ---
 

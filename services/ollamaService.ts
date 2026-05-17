@@ -788,15 +788,22 @@ async function analyzePhotoCloud(
       base64Image,
       systemPrompt,
       userPrompt,
+      artisanSchema: !!jsonSchema,
       jsonSchema: jsonSchema ?? undefined,
     }),
     signal: signal ?? AbortSignal.timeout(120_000),
   });
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
+    const error = await res.json().catch(() => ({})) as {
+      error?: string;
+      message?: string;
+      details?: string;
+      code?: string;
+    };
+    const detail = error.details || error.message || '';
     throw new OllamaError(
-      `Cloud analysis failed: ${error.error ?? res.statusText}`,
+      `Cloud analysis failed: ${error.error ?? res.statusText}${detail ? ` — ${detail.slice(0, 200)}` : ''}`,
       res.status,
     );
   }
@@ -823,8 +830,9 @@ export async function analyzePhotoWithFallback(
   userPrompt: string,
   signal?: AbortSignal,
   options?: { artisanSchema?: boolean },
-): Promise<{ content: string; source: InferenceSource }> {
+): Promise<{ content: string; source: InferenceSource; cloudError?: string }> {
   const jsonSchema = options?.artisanSchema ? ARTISAN_V3_OUTPUT_SCHEMA : undefined;
+  let cloudError: string | undefined;
 
   // On deployed sites, skip local Ollama entirely (would cause Mixed Content error)
   if (!OLLAMA_CLOUD_CONFIG.enabled) {
@@ -860,6 +868,7 @@ export async function analyzePhotoWithFallback(
         jsonSchema,
       );
     } catch (err) {
+      cloudError = err instanceof Error ? err.message : String(err);
       console.warn('[analyzePhotoWithFallback] Cloud failed:', err);
     }
   }
@@ -869,6 +878,7 @@ export async function analyzePhotoWithFallback(
   return {
     content: '', // Empty signals Demo Mode — caller handles canned responses
     source: 'demo',
+    cloudError,
   };
 }
 

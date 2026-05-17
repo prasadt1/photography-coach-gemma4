@@ -15,9 +15,25 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { ARTISAN_V3_OUTPUT_SCHEMA } from '../lib/artisanV3Schema';
 
 const OLLAMA_CLOUD_URL = 'https://ollama.com/api/chat';
-const DEFAULT_CLOUD_MODEL = 'gemma4:e4b';
-const DEFAULT_LOCAL_URL = 'http://127.0.0.1:11434';
+/** Local default — Gemma 4 E4B */
 const DEFAULT_LOCAL_MODEL = 'gemma4:e4b';
+/**
+ * Ollama Cloud catalog (ollama.com/api/tags) lists gemma4:31b, not gemma4:e4b.
+ * E4B runs on-device; cloud uploads use Gemma 4 31B unless overridden in env.
+ */
+const DEFAULT_CLOUD_MODEL = 'gemma4:31b';
+const DEFAULT_LOCAL_URL = 'http://127.0.0.1:11434';
+
+/** Map common local tags to a cloud-hosted Gemma 4 when judges set OLLAMA_CLOUD_MODEL=gemma4:e4b */
+const CLOUD_MODEL_ALIASES: Record<string, string> = {
+  'gemma4:e4b': 'gemma4:31b',
+  'gemma4:4b': 'gemma4:31b',
+};
+
+function resolveCloudModel(requested?: string): string {
+  const raw = requested || DEFAULT_CLOUD_MODEL;
+  return CLOUD_MODEL_ALIASES[raw] ?? raw;
+}
 const TIMEOUT_MS = 120_000;
 
 interface AnalyzeRequest {
@@ -55,7 +71,8 @@ export default async function handler(
   const isLocal = target === 'local';
   const localUrl = (process.env.OLLAMA_LOCAL_URL || DEFAULT_LOCAL_URL).replace(/\/$/, '');
   const localModel = process.env.OLLAMA_LOCAL_MODEL || DEFAULT_LOCAL_MODEL;
-  const cloudModel = process.env.OLLAMA_CLOUD_MODEL || DEFAULT_CLOUD_MODEL;
+  const cloudModelRequested = process.env.OLLAMA_CLOUD_MODEL || DEFAULT_CLOUD_MODEL;
+  const cloudModel = isLocal ? localModel : resolveCloudModel(cloudModelRequested);
   const apiKey = process.env.OLLAMA_API_KEY;
 
   if (!isLocal && !apiKey) {
@@ -201,6 +218,9 @@ export default async function handler(
       content,
       source: isLocal ? 'ollama-local' : 'ollama-hosted',
       model,
+      ...( !isLocal && cloudModel !== cloudModelRequested
+        ? { requestedModel: cloudModelRequested, cloudNote: 'E4B runs locally; cloud uses Gemma 4 31B' }
+        : {}),
       target,
     });
   } catch (err) {

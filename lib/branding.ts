@@ -23,6 +23,9 @@ export const GEMMA_4_MODEL_CARD_URL =
 /** Prefer model card for “Gemma 4 E4B” links — Google has no separate E4B-only page */
 export const GEMMA_4_E4B_DOCS_URL = GEMMA_4_MODEL_CARD_URL;
 
+/** Ollama Cloud tag for live uploads (E4B is local-only on ollama.com today). */
+export const OLLAMA_CLOUD_MODEL_TAG = 'gemma4:31b';
+
 export function getJudgeHomeWelcomeScript(): string {
   return (
     `Welcome to L.E.N.S., Local Edge Native Studio. ` +

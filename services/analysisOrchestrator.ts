@@ -364,7 +364,7 @@ export async function analyzeForSellModeWithFallback(
   base64Image: string,
   mimeType: string,
   accessibilityMode: boolean = false,
-): Promise<{ content: string; source: InferenceSource }> {
+): Promise<{ content: string; source: InferenceSource; cloudError?: string }> {
   // Resize for faster inference
   const resized = await resizeForModel(base64Image, 768);
 

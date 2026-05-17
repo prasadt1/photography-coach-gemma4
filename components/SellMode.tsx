@@ -21,6 +21,7 @@ import { getAnalyzingStatus, getUploadHint } from '../config';
 import { showStudioModeEntry } from '../lib/launchRoute';
 import { isJudgeDemoBuild } from '../lib/deploymentProfile';
 import { GEMMA_4_E4B, OLLAMA_CLOUD } from '../lib/branding';
+import { extractColourCheckFromSubject } from '../services/artisanDisplay';
 import { DEMO_RESPONSES, DemoResponse, simulateProcessing, getComparisonSamples, DEMO_COMPARISON_RESULT } from '../src/data/demoResponses';
 import { ComparisonResult } from '../services/ollamaService';
 import Header from './Header';
@@ -64,6 +65,38 @@ interface SellResult {
   whatISee?: string;
   colorCheck?: string;
   nextAction?: string;
+  tags?: string[];
+}
+
+function sellResultFromV3(
+  v3: NonNullable<ReturnType<typeof parseArtisanResponseV3>>,
+  imageBase64: string,
+  rawResponse: string,
+): SellResult {
+  const { sceneDescription, colourCheck } = extractColourCheckFromSubject(v3.subject);
+  return {
+    subject: sceneDescription || v3.subject,
+    colorCheck: colourCheck ?? undefined,
+    framing: v3.critique.framing,
+    lighting: v3.critique.lighting,
+    primaryFix: v3.critique.primary_fix,
+    confidenceNote: v3.confidence_note,
+    altText: v3.alt_text,
+    listingCopy: v3.listing_copy,
+    tags: v3.tags,
+    readyToList: v3.ready_to_list,
+    imageBase64,
+    rawResponse,
+  };
+}
+
+function cloudUnavailableMessage(cloudError?: string): string {
+  const hint =
+    'Live upload uses Gemma 4 on Ollama Cloud (gemma4:31b). Local E4B (gemma4:e4b) is in the README quick start.';
+  if (!cloudError) {
+    return `Analysis unavailable. Try a sample photo, or check Ollama Cloud settings. ${hint}`;
+  }
+  return `Analysis unavailable: ${cloudError} ${hint}`;
 }
 
 const SellMode: React.FC<SellModeProps> = ({
@@ -125,8 +158,10 @@ const SellMode: React.FC<SellModeProps> = ({
     setResult(null);
     await simulateProcessing();
     const r = sample.response;
+    const { sceneDescription, colourCheck } = extractColourCheckFromSubject(r.subject);
     setResult({
-      subject: r.subject,
+      subject: sceneDescription || r.subject,
+      colorCheck: colourCheck ?? undefined,
       framing: r.critique.framing,
       lighting: r.critique.lighting,
       primaryFix: r.critique.primary_fix,
@@ -161,27 +196,20 @@ const SellMode: React.FC<SellModeProps> = ({
         setIsAnalyzing(true);
         setResult(null);
         try {
-          const { content: response, source } = await analyzeForSellModeWithFallback(preloadedImage, 'image/jpeg', voiceEnabled);
+          const { content: response, source, cloudError } = await analyzeForSellModeWithFallback(
+            preloadedImage,
+            'image/jpeg',
+            true,
+          );
           setInferenceSource(source);
           if (source === 'demo' || !response) {
-            setError('Analysis unavailable. Try a demo sample.');
+            setError(cloudUnavailableMessage(cloudError));
             setIsAnalyzing(false);
             return;
           }
           const v3Parsed = parseArtisanResponseV3(response);
           if (v3Parsed) {
-            setResult({
-              subject: v3Parsed.subject,
-              framing: v3Parsed.critique.framing,
-              lighting: v3Parsed.critique.lighting,
-              primaryFix: v3Parsed.critique.primary_fix,
-              confidenceNote: v3Parsed.confidence_note,
-              altText: v3Parsed.alt_text,
-              listingCopy: v3Parsed.listing_copy,
-              readyToList: v3Parsed.ready_to_list,
-              imageBase64: preloadedImage,
-              rawResponse: response,
-            });
+            setResult(sellResultFromV3(v3Parsed, preloadedImage, response));
             if (voiceEnabled) {
               const voiceText = [
                 v3Parsed.subject,
@@ -251,27 +279,20 @@ const SellMode: React.FC<SellModeProps> = ({
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
-      const { content: response, source } = await analyzeForSellModeWithFallback(base64, file.type, voiceEnabled);
+      const { content: response, source, cloudError } = await analyzeForSellModeWithFallback(
+        base64,
+        file.type,
+        true,
+      );
       setInferenceSource(source);
       if (source === 'demo' || !response) {
-        setError('Analysis unavailable. Try a demo sample instead.');
+        setError(cloudUnavailableMessage(cloudError));
         setIsAnalyzing(false);
         return;
       }
       const v3Parsed = parseArtisanResponseV3(response);
       if (v3Parsed) {
-        setResult({
-          subject: v3Parsed.subject,
-          framing: v3Parsed.critique.framing,
-          lighting: v3Parsed.critique.lighting,
-          primaryFix: v3Parsed.critique.primary_fix,
-          confidenceNote: v3Parsed.confidence_note,
-          altText: v3Parsed.alt_text,
-          listingCopy: v3Parsed.listing_copy,
-          readyToList: v3Parsed.ready_to_list,
-          imageBase64: base64,
-          rawResponse: response,
-        });
+        setResult(sellResultFromV3(v3Parsed, base64, response));
         if (voiceEnabled) {
           const voiceText = [
             v3Parsed.subject,
@@ -646,6 +667,13 @@ const SellMode: React.FC<SellModeProps> = ({
                     <p className="text-xl font-semibold text-[#241F18]">{result.subject}</p>
                   </div>
 
+                  {result.colorCheck && (
+                    <div className="p-5 rounded-2xl bg-[#F4ECDC] border-2 border-[#C06B45]/40">
+                      <p className="text-xs font-semibold text-[#AB3B24] uppercase tracking-wider mb-2">Colour check</p>
+                      <p className="text-[#241F18]">{result.colorCheck}</p>
+                    </div>
+                  )}
+
                   {result.primaryFix && !result.readyToList && (
                     <div className="p-5 rounded-2xl bg-[#A9B8BE] border-2 border-[#2F4858]">
                       <div className="flex items-center gap-2 mb-2">
@@ -698,6 +726,13 @@ const SellMode: React.FC<SellModeProps> = ({
                   </div>
 
                   <div className="space-y-5">
+                    {result.tags && result.tags.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-[#524A3D] uppercase tracking-wider mb-2">Marketplace tags</p>
+                        <p className="text-sm text-[#241F18]">{result.tags.join(', ')}</p>
+                      </div>
+                    )}
+
                     {result.listingCopy && (
                       <div>
                         <div className="flex items-center justify-between mb-2">

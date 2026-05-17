@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, X, ExternalLink } from 'lucide-react';
 import { isJudgeDemoBuild } from '../lib/deploymentProfile';
-import { GEMMA_4_E4B, GEMMA_TRADEMARK, OLLAMA_CLOUD, OLLAMA_MODEL_TAG } from '../lib/branding';
+import {
+  GEMMA_4_E4B,
+  GEMMA_TRADEMARK,
+  OLLAMA_CLOUD,
+  OLLAMA_CLOUD_MODEL_TAG,
+} from '../lib/branding';
 
 const REPO_QUICKSTART =
   'https://github.com/prasadt1/photography-coach-gemma4#-quick-start';
@@ -47,7 +52,7 @@ export const DemoBanner: React.FC = () => {
             <strong className="font-semibold">{GEMMA_4_E4B}</strong> outputs recorded from a local Mac
             (same prompts and JSON schema). <strong className="font-semibold">Upload your photo</strong>{' '}
             uses <strong className="font-semibold">{OLLAMA_CLOUD}</strong> with{' '}
-            <code className="bg-black/20 px-1 rounded text-xs">{OLLAMA_MODEL_TAG}</code> so you can test
+            <code className="bg-black/20 px-1 rounded text-xs">{OLLAMA_CLOUD_MODEL_TAG}</code> so you can test
             without installing Ollama. Tap <strong>Enter Artisan Studio</strong> below, then try a
             sample or upload. For fully on-device coaching, see the{' '}
             <a

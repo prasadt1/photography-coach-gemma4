@@ -18,6 +18,7 @@ import {
   GEMMA_4_E4B_DOCS_URL,
   OLLAMA_CLOUD,
   OLLAMA_MODEL_TAG,
+  OLLAMA_CLOUD_MODEL_TAG,
   getJudgeHomeWelcomeScript,
 } from '../lib/branding';
 import { OperationalMode } from '../types.v2';
@@ -142,8 +143,8 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                   aria-live="polite"
                 >
                   <strong>Judge try-it:</strong> tap <strong>Enter Artisan Studio</strong> below. Samples =
-                  recorded <strong>{GEMMA_4_E4B}</strong> (local Mac); upload = live{' '}
-                  <strong>{OLLAMA_CLOUD}</strong> (<code className="text-xs">{OLLAMA_MODEL_TAG}</code>).
+                  recorded <strong>{GEMMA_4_E4B}</strong> (local Mac, {OLLAMA_MODEL_TAG}); upload = live{' '}
+                  <strong>{OLLAMA_CLOUD}</strong> (<code className="text-xs">{OLLAMA_CLOUD_MODEL_TAG}</code>).
                   Optional: full voice-guided journey inside.{' '}
                   <a
                     href={GEMMA_4_E4B_DOCS_URL}

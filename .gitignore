@@ -27,6 +27,9 @@ release/
 *.litertlm
 models/
 
+# Local HTTPS dev certs (mkcert)
+.cert/
+
 # Environment files
 .env
 .env.local
@@ -55,3 +58,4 @@ models/
 # Internal Cursor / agent review notes (not for public repo)
 OPUS-CURSOR-REVIEW.md
 *-CURSOR-REVIEW.md
+README-diagrams-prompts.md

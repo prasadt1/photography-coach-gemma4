@@ -9,7 +9,7 @@ import { GEMMA_4_E4B, GEMMA_4_E4B_DOCS_URL, GEMMA_TRADEMARK } from '../lib/brand
 const Footer: React.FC = () => {
   return (
     <footer className="py-6 bg-[#F4ECDC] border-t-2 border-[#D8CDB8] mt-8">
-      <div className="max-w-7xl mx-auto px-6 text-center space-y-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center space-y-4">
         <p className="text-[14px] text-[#241F18] leading-relaxed">
           Built for the{' '}
           <a
@@ -23,8 +23,8 @@ const Footer: React.FC = () => {
           {' '}· Digital Equity & Inclusivity · Ollama tracks
         </p>
 
-        <div className="flex flex-wrap items-center justify-center gap-6 text-[15px] text-[#241F18]">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-6 text-sm sm:text-[15px] text-[#241F18]">
+          <div className="flex flex-wrap items-center justify-center gap-2">
             <span className="font-medium">Powered by</span>
             <a
               href={GEMMA_4_E4B_DOCS_URL}
@@ -47,7 +47,7 @@ const Footer: React.FC = () => {
               Ollama
             </a>
           </div>
-          <span className="text-[#524A3D]">·</span>
+          <span className="hidden sm:inline text-[#524A3D]">·</span>
           <div className="flex items-center gap-2">
             <span className="font-medium">Voice via</span>
             <span className="font-semibold text-[#241F18]">Web Speech API</span>

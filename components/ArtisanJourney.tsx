@@ -14,12 +14,14 @@ import {
 } from 'lucide-react';
 import {
   analyzeForSellModeWithFallback,
+  warmUpModel,
   warmUpModelViaApi,
   type InferenceSource,
 } from '../services/analysisOrchestrator';
 import {
   parseArtisanResponseV3,
   speak,
+  unlockSpeechForSession,
   stopSpeaking,
   startListening,
   stopListening,
@@ -27,13 +29,18 @@ import {
   isCurrentlyListening,
 } from '../services/voiceCoach';
 import LiveCameraCapture from './LiveCameraCapture';
-import { getArtisanInferenceBadge } from '../config';
+import { getArtisanInferenceBadge, OLLAMA_CLOUD_CONFIG, OLLAMA_CONFIG } from '../config';
 import {
   extractColourCheckFromSubject,
   buildArtisanVoiceScript,
   getAnalysisStatusCopy,
   type ArtisanCaptureKind,
 } from '../services/artisanDisplay';
+import { shouldSkipArtisanVoiceConsent } from '../lib/artisanJourneyRoute';
+import {
+  consumeOpenCameraAfterHttps,
+  redirectToHttpsForCamera,
+} from '../lib/devSecureUrl';
 
 type JourneyPhase =
   | 'voicePrompt'
@@ -85,9 +92,14 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   inferenceSource: _inferenceSource,
   onExit,
 }) => {
+  const skipVoiceConsentInitial = shouldSkipArtisanVoiceConsent();
+
   // Journey state
-  const [phase, setPhase] = useState<JourneyPhase>('voicePrompt');
-  const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(false);
+  const [phase, setPhase] = useState<JourneyPhase>(() =>
+    skipVoiceConsentInitial ? 'firstCapture' : 'voicePrompt',
+  );
+  const [voiceCommandsEnabled, setVoiceCommandsEnabled] = useState(skipVoiceConsentInitial);
+  const [voiceListeningPrimed, setVoiceListeningPrimed] = useState(false);
 
   // Attempts array: app maintains session state (model is stateless)
   const [attempts, setAttempts] = useState<Attempt[]>([]);
@@ -101,10 +113,19 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [showAllTags, setShowAllTags] = useState(false);
   const [currentInferenceSource, setCurrentInferenceSource] = useState<InferenceSource>('demo');
-  const [showLiveCamera, setShowLiveCamera] = useState(false);
+  const [showLiveCamera, setShowLiveCamera] = useState(skipVoiceConsentInitial);
 
   // Voice is primary if enabled, buttons are backup
   const voiceEnabled = voiceEnabledProp || voiceCommandsEnabled;
+
+  const handleVoiceCommandRef = useRef<(transcript: string) => void>(() => {});
+
+  const primeVoiceListening = useCallback(() => {
+    if (!voiceCommandsEnabled) return;
+    unlockSpeechForSession();
+    setVoiceListeningPrimed(true);
+    startListening((transcript) => handleVoiceCommandRef.current(transcript), true);
+  }, [voiceCommandsEnabled]);
 
   // Refs for accessibility
   const phaseAnnouncerRef = useRef<HTMLDivElement>(null);
@@ -131,7 +152,32 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
   // Preload Gemma while the user reads prompts (reduces cold-start + TTS chop on first photo)
   useEffect(() => {
-    void warmUpModelViaApi();
+    if (OLLAMA_CLOUD_CONFIG.enabled) void warmUpModelViaApi();
+    else void warmUpModel();
+  }, []);
+
+  /** In-app live camera (getUserMedia). On LAN HTTP, Safari requires HTTPS first. */
+  const openLiveCamera = useCallback(
+    (voiceLine?: string) => {
+      if (redirectToHttpsForCamera()) {
+        if (voiceEnabled && voiceLine) speak(voiceLine);
+        else if (voiceEnabled) {
+          speak(
+            'Switching to a secure connection so your in-app camera can open. Accept the certificate warning if Safari asks.',
+          );
+        }
+        return;
+      }
+      setShowLiveCamera(true);
+      if (voiceEnabled && voiceLine) speak(voiceLine);
+    },
+    [voiceEnabled],
+  );
+
+  useEffect(() => {
+    if (consumeOpenCameraAfterHttps()) {
+      setShowLiveCamera(true);
+    }
   }, []);
 
   // ========== Comparison Logic (App-Side, Deterministic) ==========
@@ -185,17 +231,24 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     return { strongerIndex, improvementText };
   }, []);
 
-  const goToFirstCapture = useCallback((withVoiceCommands: boolean) => {
-    if (withVoiceCommands) setVoiceCommandsEnabled(true);
-    void warmUpModelViaApi();
-    setPhase('firstCapture');
-    setShowLiveCamera(true);
-    speak(
-      withVoiceCommands
-        ? 'Voice commands enabled. Opening your camera now. Position your craft in good light.'
-        : 'Opening your camera now. Position your craft in good light.'
-    );
-  }, []);
+  const goToFirstCapture = useCallback(
+    (withVoiceCommands: boolean) => {
+      if (withVoiceCommands) {
+        unlockSpeechForSession();
+        setVoiceCommandsEnabled(true);
+        setVoiceListeningPrimed(true);
+        startListening((transcript) => handleVoiceCommandRef.current(transcript), true);
+      }
+      void warmUpModelViaApi();
+      setPhase('firstCapture');
+      openLiveCamera(
+        withVoiceCommands
+          ? 'Voice commands enabled. Opening your camera now. Position your craft in good light.'
+          : 'Opening your camera now. Position your craft in good light.',
+      );
+    },
+    [openLiveCamera],
+  );
 
   /**
    * Handle captured image from getUserMedia canvas
@@ -228,7 +281,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
       }
 
       // Call Gemma 4
-      const { content: response, source } = await analyzeForSellModeWithFallback(
+      const { content: response, source, localError } = await analyzeForSellModeWithFallback(
         imageDataUrl,
         'image/jpeg', // getUserMedia canvas captures as JPEG
         true, // Always use blind/low-vision artisan prompts (colour analogies, inches, JSON)
@@ -240,6 +293,16 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
       // Demo fallback with canned artisan coaching
       let parsed;
       if (source === 'demo' || !response) {
+        if (import.meta.env.DEV) {
+          const detail = localError ? ` ${localError}` : '';
+          setError(
+            `Could not reach local Gemma 4 (tried ${OLLAMA_CONFIG.baseUrl}).${detail} ` +
+              'First photo can take 1–2 minutes while the model loads. Keep this page open.',
+          );
+          setIsProcessing(false);
+          clearAnalysisStatusTimer();
+          return;
+        }
         // Add realistic delay to demo mode
         await new Promise(resolve => setTimeout(resolve, 3000));
 
@@ -370,12 +433,8 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   // ========== Phase 4: Retry Choice ==========
   const handleRetake = useCallback(() => {
     setPhase('secondCapture');
-    // Auto-open camera for voice-first experience
-    setShowLiveCamera(true);
-    if (voiceEnabled) {
-      speak('Opening camera for a second photo. Apply the fix.');
-    }
-  }, [voiceEnabled]);
+    openLiveCamera('Opening camera for a second photo. Apply the fix.');
+  }, [openLiveCamera]);
 
   const handleSkipToListing = useCallback(() => {
     setPhase('listing');
@@ -437,8 +496,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
             (window as Window & { __artisanCameraCapture?: () => void }).__artisanCameraCapture!();
             speak('Got it. Analyzing now.');
           } else {
-            setShowLiveCamera(true);
-            speak('Opening camera.');
+            openLiveCamera('Opening camera.');
           }
         }
         break;
@@ -475,6 +533,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     phase,
     voiceEnabled,
     goToFirstCapture,
+    openLiveCamera,
     handleRetake,
     handleSkipToListing,
     handleReadAllTags,
@@ -482,13 +541,23 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     onExit,
   ]);
 
+  handleVoiceCommandRef.current = handleVoiceCommand;
+
   useEffect(() => {
-    if (voiceCommandsEnabled && !isCurrentlyListening()) {
-      startListening(handleVoiceCommand, true);
-    } else if (!voiceCommandsEnabled && isCurrentlyListening()) {
-      stopListening();
+    if (!voiceCommandsEnabled) {
+      if (isCurrentlyListening()) stopListening();
+      return;
     }
-  }, [voiceCommandsEnabled, handleVoiceCommand]);
+    if (!voiceListeningPrimed) return;
+    if (!isCurrentlyListening()) {
+      startListening((transcript) => handleVoiceCommandRef.current(transcript), true);
+    }
+  }, [voiceCommandsEnabled, voiceListeningPrimed]);
+
+  useEffect(() => {
+    if (!skipVoiceConsentInitial) return;
+    void warmUpModelViaApi();
+  }, [skipVoiceConsentInitial]);
 
   const hasGreeted = useRef(false);
   useEffect(() => {
@@ -581,6 +650,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button
+            onPointerDown={() => unlockSpeechForSession()}
             onClick={() => goToFirstCapture(true)}
             className="inline-flex items-center gap-3 px-8 py-4 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full text-lg font-bold shadow-xl transition-colors focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
             aria-label="Enable voice commands"
@@ -634,6 +704,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
             handleImageCapture(imageDataUrl);
           }}
           onClose={() => setShowLiveCamera(false)}
+          onPrimeVoice={voiceCommandsEnabled ? primeVoiceListening : undefined}
           promptText={promptText}
           buttonLabel="Take Photo"
         />
@@ -675,12 +746,10 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           <p className="text-[#3D362B] mb-6">{promptText}</p>
 
           <button
-            onClick={() => {
-              setShowLiveCamera(true);
-              if (voiceEnabled) {
-                speak('Opening camera. ' + promptText);
-              }
+            onPointerDown={() => {
+              if (voiceCommandsEnabled) primeVoiceListening();
             }}
+            onClick={() => openLiveCamera('Opening camera. ' + promptText)}
             className="inline-flex items-center gap-2 px-6 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full font-semibold focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50"
             aria-label={isSecond ? "Open camera for second photo" : "Open camera for first photo"}
           >

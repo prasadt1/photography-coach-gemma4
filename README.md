@@ -4,6 +4,8 @@
 
 **A private, voice-guided photography coach for blind and low-vision artisans.**
 
+![L.E.N.S. — Local Edge Native Studio cover](docs/images/cover.png)
+
 [![Gemma 4 E4B](https://img.shields.io/badge/Powered%20by-Gemma%204%20E4B-4285F4?style=flat-square&logo=google)](https://ollama.com/library)
 [![Ollama](https://img.shields.io/badge/Runtime-Ollama-000000?style=flat-square)](https://ollama.com)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)](https://react.dev)
@@ -68,7 +70,7 @@ L.E.N.S. runs Gemma 4 through **Ollama**, and is honest about where inference ha
 | **Ollama Cloud (judge demo only)** | Powers **[lens-app-gemma4.vercel.app](https://lens-app-gemma4.vercel.app)** so judges can upload a photo without a local install. Uses **Gemma 4 31B** on [Ollama Cloud](https://ollama.com) (E4B is not hosted there). | Requires a connection |
 | **Demo Mode** | Offline playback of real, previously recorded E4B responses — a no-setup walkthrough. | None |
 
-**On-device E4B is the product; the judge deploy is how reviewers try uploads quickly.** The **lens-app** demo is labelled honestly: **sample photos** play back real E4B runs recorded on a local Mac; **uploads** use **Ollama Cloud** (`gemma4:31b`). The **photography-coach** deploy is the real-product / video build and does **not** send photos to Ollama Cloud. Every mode targets the **same strict JSON contract**, validated on the client so a malformed response fails loudly instead of degrading silently.
+**On-device E4B is the product; the judge deploy is how reviewers try uploads quickly.** The **lens-app** demo is labelled honestly: **sample photos** play back real E4B runs recorded on a local Mac; **uploads** use **Ollama Cloud** (`gemma4:31b`). The **photography-coach** deploy is the real-product / video build and does **not** send photos to Ollama Cloud. Opening the product Vercel URL alone does **not** run E4B in the browser — **Ollama must be running on your Mac** (same Wi‑Fi or a tunnel; see below). Every mode targets the **same strict JSON contract**, validated on the client so a malformed response fails loudly instead of degrading silently.
 
 ### Two public deployments (one repo)
 
@@ -107,7 +109,7 @@ ollama serve
 npm start
 ```
 
-Open **http://localhost:5173**, capture or upload a photo, and L.E.N.S. coaches you through it.
+Open **http://localhost:3000** (Vite may use **3001** or **3002** if 3000 is busy — check the terminal), capture or upload a photo, and L.E.N.S. coaches you through it.
 
 > Prefer to skip setup? Open the **[judge try-it demo](https://lens-app-gemma4.vercel.app)** — samples (recorded local E4B) + upload (Ollama Cloud **31B**), no install required.
 
@@ -122,36 +124,61 @@ The app is an installable PWA. Which backend you hit depends on **which deploy**
 | **[photography-coach-gemma4.vercel.app](https://photography-coach-gemma4.vercel.app)** (real product / video) | **Gemma 4 E4B on your Mac** — the PWA talks to Ollama on the machine running the model, not Ollama Cloud. Same Wi‑Fi: `OLLAMA_HOST=0.0.0.0:11434 ollama serve` (see [docs/ios-pwa-setup.md](docs/ios-pwa-setup.md)). Off-LAN demo: `cloudflared tunnel --url http://127.0.0.1:11434` on the Mac while Ollama serves E4B. |
 | **[lens-app-gemma4.vercel.app](https://lens-app-gemma4.vercel.app)** (judge demo) | **Ollama Cloud — Gemma 4 31B** for live uploads; samples are recorded E4B from a local Mac. |
 
-**Install (either URL):**
+### Same Wi‑Fi demo / video (HTTPS on LAN)
 
-1. Open the deploy in **Safari** on iPhone.
+Safari requires **HTTPS** for the in-app camera on a LAN IP. On your Mac:
+
+```bash
+# Terminal 1 — Ollama reachable from the phone
+OLLAMA_ORIGINS="*" OLLAMA_HOST=0.0.0.0:11434 ollama serve
+
+# Terminal 2 — once per machine (trusted cert on iPhone): npm run setup:https
+npm run start:https
+```
+
+Open the **Network** URL Vite prints (e.g. `https://192.168.x.x:3000`, or **3001** if 3000 is busy). Install the mkcert root on iPhone when prompted — see [scripts/setup-dev-https.sh](scripts/setup-dev-https.sh). The dev server proxies `/ollama` → `127.0.0.1:11434` so the phone never hits mixed-content errors.
+
+**Demo video on LAN:** HTTPS + a LAN IP **skips the voice-consent screen** and opens the in-app camera immediately. Force with `?skipConsent=1` on any host. Say **“take photo”** on the capture button (touch the button once first so iOS allows the mic), or tap **Take Photo**.
+
+**Install (hosted deploy or LAN URL):**
+
+1. Open the URL in **Safari** on iPhone.
 2. Share → **Add to Home Screen**, then launch full-screen.
-3. Grant camera permission once. Capture is voice-driven (*"take photo"*) with a labelled button as an equal alternative.
+3. Grant camera permission once. Use the **labelled capture button** on iPhone (reliable); voice commands are supported where the browser allows. **Voice coaching (TTS)** works after you interact with the page.
 
 On-device inference **on the phone itself** (LiteRT native) is Phase 2 — see [Spike 3](docs/spikes/spike-3-litert-ios.md). Judge deploy env vars: table under [Two public deployments](#two-public-deployments-one-repo).
 
 ---
 
-## 📐 Architecture
+## 📊 Diagrams
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│  CLIENT — React + TypeScript + Vite                          │
-│  PWA (installable, getUserMedia camera) · Electron desktop   │
-└───────────────────────────────┬──────────────────────────────┘
-                                ▼
-┌──────────────────────────────────────────────────────────────┐
-│  INFERENCE — Gemma 4 via Ollama                              │
-│  Local E4B (on-device)  ·  Ollama Cloud  ·  Demo Mode        │
-│  Priority chain: local → cloud → demo                        │
-└───────────────────────────────┬──────────────────────────────┘
-                                ▼
-┌──────────────────────────────────────────────────────────────┐
-│  CONTRACT & VALIDATION                                       │
-│  One strict JSON schema · Zod + JSON-Schema validation       │
-│  Refusal detection · (Electron) hash-chained audit log       │
-└──────────────────────────────────────────────────────────────┘
-```
+High-level visuals (also used in the Kaggle writeup). Source files live in [`docs/images/`](docs/images/) (including `cover.png`).
+
+### Artisan journey
+
+Voice-guided flow: capture → local analysis → one spoken fix → compare → listing copy.
+
+![L.E.N.S. user journey for blind and low-vision artisans](docs/images/user-journey.png)
+
+### System architecture
+
+Client, services, and inference paths (Artisan vs Studio). Green = local; blue = judge cloud only.
+
+![L.E.N.S. system architecture](docs/images/architecture.png)
+
+### Three deployment modes
+
+Local E4B (product), Ollama Cloud 31B (judge uploads), Demo Mode (recorded E4B samples).
+
+![L.E.N.S. deployment modes](docs/images/deployment-modes.png)
+
+### Tech stack
+
+![L.E.N.S. tech stack](docs/images/tech-stack.png)
+
+---
+
+## 📐 Architecture
 
 - **Strict JSON contract.** One structured object drives all five outputs; the client validates every response.
 - **Principles-led prompt.** Gemma is driven by a system prompt that asks for explicit observations, reasoning, and a single prioritized fix.
@@ -190,9 +217,10 @@ Because the users are blind and low-vision, accessibility is part of the build, 
 
 **Web (Vite + React)**
 ```bash
-npm start       # dev server (http://localhost:5173)
-npm run build   # production build → dist/
-npm run preview # preview the production build
+npm start         # dev server → http://localhost:3000
+npm run start:https  # LAN HTTPS for iPhone camera (see Try it on a phone)
+npm run build     # production build → dist/
+npm run preview   # preview the production build
 ```
 
 **Desktop (Electron + Vault Mode)** — a guaranteed-offline build with OS-level network isolation:
@@ -232,13 +260,14 @@ photography-coach-gemma4/
 │   ├── analysisOrchestrator.ts# Local → cloud → demo pipeline
 │   ├── promptService.ts       # Principles-led system prompt
 │   ├── validationService.ts   # JSON contract validation
-│   ├── voiceService.ts        # Web Speech API (TTS + voice input)
-│   └── demoMode.ts            # Recorded-response playback
+│   ├── voiceCoach.ts          # Artisan TTS + voice commands
+│   ├── voiceService.ts        # Studio voice helpers
+│   └── (demo samples)         # src/data/demoResponses.ts + public/demo-samples/
 ├── api/analyze.ts             # Vercel serverless fn → Ollama Cloud
 ├── electron/                  # Desktop shell + Vault Mode
-├── public/                    # PWA manifest + service worker
+├── public/                    # PWA manifest + service worker + demo-samples/
 ├── types.v2.ts                # JSON schema types
-└── docs/                      # Specs, spikes, integration guides
+└── docs/                      # Specs, spikes, diagrams (docs/images/)
 ```
 
 ---

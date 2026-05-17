@@ -136,8 +136,6 @@ const SellMode: React.FC<SellModeProps> = ({
   );
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const listingPreviewRef = useRef<HTMLDivElement>(null);
-
   const playArtisanStudioWelcome = useCallback(() => {
     stopSpeaking();
     clearPausedSpeech();
@@ -175,12 +173,6 @@ const SellMode: React.FC<SellModeProps> = ({
     showCompare,
     playArtisanStudioWelcome,
   ]);
-
-  useEffect(() => {
-    if (result && listingPreviewRef.current) {
-      listingPreviewRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, [result]);
 
   useEffect(() => {
     return () => {
@@ -860,7 +852,7 @@ const SellMode: React.FC<SellModeProps> = ({
               )}
 
               {(result.listingCopy || result.altText) && (
-                <div ref={listingPreviewRef} id="etsy-listing-draft">
+                <div id="etsy-listing-draft">
                 <MarketplaceListingPreview
                   draft={buildMarketplaceListingDraft({
                     subject: result.subject,

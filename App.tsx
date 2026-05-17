@@ -26,7 +26,7 @@ import {
 } from './services/analysisOrchestrator';
 import { SupportedLanguage, LANGUAGE_LABELS } from './services/promptService';
 import { setOperationalMode, exportAuditLog } from './services/auditService';
-import { speak } from './services/voiceCoach';
+import { speak, stopSpeaking } from './services/voiceCoach';
 import { AppState } from './types';
 import { PhotoAnalysisV2, OperationalMode, SessionHistoryEntry } from './types.v2';
 import { getInitialAppRoute, showStudioModeEntry } from './lib/launchRoute';
@@ -116,6 +116,13 @@ function App() {
   useEffect(() => {
     localStorage.setItem('lens-voice-enabled', String(voiceEnabled));
   }, [voiceEnabled]);
+
+  const handleVoiceToggle = useCallback(() => {
+    setVoiceEnabled((prev) => {
+      if (prev) stopSpeaking();
+      return !prev;
+    });
+  }, []);
 
   // Handler to send image from Studio to Sell mode ("Optimize for Marketplace")
   const handleSendToSell = useCallback((imageBase64: string) => {
@@ -419,7 +426,7 @@ function App() {
           photosAnalyzed: userStats.photosAnalyzed,
         }}
         voiceEnabled={voiceEnabled}
-        onVoiceToggle={() => setVoiceEnabled(!voiceEnabled)}
+        onVoiceToggle={handleVoiceToggle}
       />
     );
   }
@@ -431,7 +438,7 @@ function App() {
         onBack={handleGoHome}
         ollamaReady={ollamaReady}
         voiceEnabled={voiceEnabled}
-        onVoiceToggle={() => setVoiceEnabled(!voiceEnabled)}
+        onVoiceToggle={handleVoiceToggle}
         preloadedImage={pendingSellImage}
         onImageProcessed={() => setPendingSellImage(null)}
       />
@@ -448,7 +455,7 @@ function App() {
         onBack={handleGoHome}
         backLabel="Home"
         voiceEnabled={voiceEnabled}
-        onVoiceToggle={() => setVoiceEnabled(!voiceEnabled)}
+        onVoiceToggle={handleVoiceToggle}
         inferenceSource={ollamaReady ? 'local' : 'demo'}
         showInferenceStatus={ollamaReady !== null}
       />

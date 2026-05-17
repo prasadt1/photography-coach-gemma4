@@ -73,7 +73,16 @@ const COMMAND_DEBOUNCE_MS = 2000; // Wait 2 seconds between commands
  * Chrome bug workaround: Split text into sentences and speak them sequentially
  * to avoid truncation at periods.
  */
-export function speak(text: string, rate = 0.95, onEnd?: () => void): void {
+export function isSpeaking(): boolean {
+  return isCurrentlySpeaking;
+}
+
+export function speak(
+  text: string,
+  rate = 0.95,
+  onEnd?: () => void,
+  onStart?: () => void,
+): void {
   console.log('[voiceCoach] speak() called with:', text.slice(0, 50) + '...');
 
   // Cancel any existing speech first to prevent overlapping
@@ -101,7 +110,7 @@ export function speak(text: string, rate = 0.95, onEnd?: () => void): void {
     console.log('[voiceCoach] Voices not loaded, waiting...');
     speechSynthesis.onvoiceschanged = () => {
       if (!isCancelled) {
-        speak(text, rate, onEnd);
+        speak(text, rate, onEnd, onStart);
       }
     };
     return;
@@ -127,7 +136,7 @@ export function speak(text: string, rate = 0.95, onEnd?: () => void): void {
 
   console.log('[voiceCoach] Split into', sentences.length, 'sentences');
 
-  speakFromIndex(sentences, 0, rate, preferredVoice, onEnd);
+  speakFromIndex(sentences, 0, rate, preferredVoice, onEnd, onStart);
 }
 
 // Internal function to speak from a specific index
@@ -136,9 +145,11 @@ function speakFromIndex(
   startIndex: number,
   rate: number,
   preferredVoice: SpeechSynthesisVoice | null | undefined,
-  onEnd?: () => void
+  onEnd?: () => void,
+  onStart?: () => void,
 ): void {
   let currentIndex = startIndex;
+  let didFireStart = false;
 
   const speakNextSentence = () => {
     // Check if cancelled before speaking next sentence
@@ -171,6 +182,13 @@ function speakFromIndex(
       utterance.voice = preferredVoice;
     }
 
+    utterance.onstart = () => {
+      if (!didFireStart) {
+        didFireStart = true;
+        onStart?.();
+      }
+    };
+
     utterance.onend = () => {
       if (isCancelled) {
         pausedIndex = currentIndex + 1; // Save next position
@@ -183,12 +201,16 @@ function speakFromIndex(
       pendingTimeout = setTimeout(speakNextSentence, 100);
     };
 
-    utterance.onerror = (e: any) => {
+    utterance.onerror = (e: SpeechSynthesisErrorEvent) => {
       if (isCancelled) {
         pausedIndex = currentIndex + 1;
         return;
       }
       console.error('[voiceCoach] Speech error:', e.error, e);
+      if (currentIndex === 0 && e.error === 'not-allowed') {
+        isCurrentlySpeaking = false;
+        return;
+      }
       currentIndex++;
       pausedIndex = currentIndex;
       pendingTimeout = setTimeout(speakNextSentence, 100);

@@ -4,7 +4,7 @@
 
 import React from 'react';
 import {
-  Camera, Tag, FileText, Layers, DollarSign, ExternalLink, Volume2, Copy, CheckCircle2,
+  Camera, Tag, FileText, Layers, DollarSign, ExternalLink, Volume2, VolumeX, Copy, CheckCircle2,
 } from 'lucide-react';
 import { speak, stopSpeaking } from '../services/voiceCoach';
 
@@ -29,6 +29,16 @@ const MarketplaceListingPreview: React.FC<MarketplaceListingPreviewProps> = ({
   voiceEnabled = false,
 }) => {
   const [copied, setCopied] = React.useState(false);
+  const [listingPlaying, setListingPlaying] = React.useState(false);
+  const listingPlayingRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (!voiceEnabled && listingPlayingRef.current) {
+      stopSpeaking();
+      listingPlayingRef.current = false;
+      setListingPlaying(false);
+    }
+  }, [voiceEnabled]);
 
   const fullPasteText = [
     `Title: ${draft.title}`,
@@ -46,12 +56,25 @@ const MarketplaceListingPreview: React.FC<MarketplaceListingPreviewProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleHearListing = () => {
-    stopSpeaking();
+  const listingSpeech = () => {
     const tagsLine = draft.tags.length ? `Tags: ${draft.tags.join(', ')}.` : '';
-    speak(
-      `Your Etsy listing draft. Title: ${draft.title}. Description: ${draft.description}. ${tagsLine} Alt text for your photo: ${draft.altText}. Copy these into Etsy when you create your listing.`,
-    );
+    return `Your Etsy listing draft. Title: ${draft.title}. Description: ${draft.description}. ${tagsLine} Alt text for your photo: ${draft.altText}. Copy these into Etsy when you create your listing.`;
+  };
+
+  const handleHearListing = () => {
+    if (listingPlayingRef.current || listingPlaying) {
+      stopSpeaking();
+      listingPlayingRef.current = false;
+      setListingPlaying(false);
+      return;
+    }
+    stopSpeaking();
+    listingPlayingRef.current = true;
+    setListingPlaying(true);
+    speak(listingSpeech(), 0.95, () => {
+      listingPlayingRef.current = false;
+      setListingPlaying(false);
+    });
   };
 
   const rows: { icon: React.ReactNode; label: string; value: string; hint?: string }[] = [
@@ -113,10 +136,15 @@ const MarketplaceListingPreview: React.FC<MarketplaceListingPreviewProps> = ({
             <button
               type="button"
               onClick={handleHearListing}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#2F4858] text-white text-sm font-semibold"
+              aria-pressed={listingPlaying}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${
+                listingPlaying
+                  ? 'bg-[#AB3B24] text-white'
+                  : 'bg-[#2F4858] text-white'
+              }`}
             >
-              <Volume2 className="w-4 h-4" />
-              Hear listing draft
+              {listingPlaying ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+              {listingPlaying ? 'Stop listing audio' : 'Hear listing draft'}
             </button>
           )}
           <button

@@ -62,8 +62,14 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
   const playJudgeWelcome = useCallback(() => {
     stopSpeaking();
     clearPausedSpeech();
-    judgeWelcomeSpoken.current = true;
-    speak(getJudgeHomeWelcomeScript());
+    speak(
+      getJudgeHomeWelcomeScript(),
+      0.95,
+      undefined,
+      () => {
+        judgeWelcomeSpoken.current = true;
+      },
+    );
   }, []);
 
   const handleEnterArtisanStudio = useCallback(() => {
@@ -77,19 +83,29 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
     onSelectMode('sell');
   }, [voiceEnabled, onSelectMode]);
 
-  // Judge home: browsers block autoplay — short welcome on first tap (not on studio CTA).
+  // Judge home: auto-play welcome when voice is on; retry on first tap if the browser blocked autoplay.
   useEffect(() => {
     if (!isJudgeDemoBuild() || !voiceEnabled) return;
+
+    const tryWelcome = () => {
+      if (judgeWelcomeSpoken.current) return;
+      playJudgeWelcome();
+    };
+
+    const autoTimer = window.setTimeout(tryWelcome, 700);
 
     const onFirstGesture = (e: PointerEvent) => {
       if (judgeWelcomeSpoken.current) return;
       const target = e.target as HTMLElement | null;
       if (target?.closest('[data-skip-home-welcome]')) return;
-      playJudgeWelcome();
+      tryWelcome();
     };
 
     window.addEventListener('pointerdown', onFirstGesture, { once: true, capture: true });
-    return () => window.removeEventListener('pointerdown', onFirstGesture, { capture: true });
+    return () => {
+      window.clearTimeout(autoTimer);
+      window.removeEventListener('pointerdown', onFirstGesture, { capture: true });
+    };
   }, [voiceEnabled, playJudgeWelcome]);
 
   const handleVoicePreview = () => {
@@ -165,12 +181,6 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                       Turn <strong>Voice</strong> on (top right) for spoken guides.
                     </span>
                   )}
-                  {voiceEnabled && (
-                    <span className="block mt-2 text-[#524A3D]">
-                      Tap the page or <strong>Hear demo guide</strong> for a short home intro (browsers require a tap
-                      before speech).
-                    </span>
-                  )}{' '}
                   <a
                     href={GEMMA_4_E4B_DOCS_URL}
                     className="underline font-semibold"

@@ -21,7 +21,7 @@ import {
 import {
   parseArtisanResponseV3,
   speak,
-  speakFromUserGesture,
+  primeSpeechVoices,
   unlockSpeechForSession,
   stopSpeaking,
   startListening,
@@ -29,6 +29,7 @@ import {
   parseVoiceCommand,
   isCurrentlyListening,
 } from '../services/voiceCoach';
+import { speakArtisanCoaching } from '../lib/artisanSpeech';
 import LiveCameraCapture from './LiveCameraCapture';
 import { getArtisanInferenceBadge, OLLAMA_CLOUD_CONFIG, OLLAMA_CONFIG } from '../config';
 import {
@@ -139,14 +140,42 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     startListening((transcript) => handleVoiceCommandRef.current(transcript), true);
   }, [tapOnlyDemo, voiceCommandsEnabled]);
 
+  const demoWelcomeHeardRef = useRef(false);
+
+  const coachSpeak = useCallback(
+    (text: string, onEnd?: () => void, onStart?: () => void) => {
+      if (tapOnlyDemo) speakArtisanCoaching(text, onEnd, onStart);
+      else speak(text, 0.95, onEnd, onStart);
+    },
+    [tapOnlyDemo],
+  );
+
+  const speakDemoWelcome = useCallback(() => {
+    if (demoWelcomeHeardRef.current) return;
+    primeSpeechVoices();
+    coachSpeak(TAP_GUIDANCE.welcome.tts, undefined, () => {
+      demoWelcomeHeardRef.current = true;
+    });
+  }, [coachSpeak]);
+
   const handleDemoWelcomeStart = useCallback(() => {
     unlockSpeechForSession();
-    speakFromUserGesture(TAP_GUIDANCE.welcome.tts, 0.95, () => {
+    const openCamera = () => {
       setPhase('firstCapture');
       setShowLiveCamera(true);
-      speak(TAP_GUIDANCE.camera.tts);
-    });
-  }, []);
+      coachSpeak(TAP_GUIDANCE.camera.tts);
+    };
+    if (!demoWelcomeHeardRef.current) {
+      coachSpeak(TAP_GUIDANCE.welcome.tts, () => {
+        demoWelcomeHeardRef.current = true;
+        openCamera();
+      });
+      return;
+    }
+    stopSpeaking();
+    demoWelcomeHeardRef.current = true;
+    openCamera();
+  }, [coachSpeak]);
 
   // Refs for accessibility
   const phaseAnnouncerRef = useRef<HTMLDivElement>(null);
@@ -176,6 +205,11 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     if (OLLAMA_CLOUD_CONFIG.enabled) void warmUpModelViaApi();
     else void warmUpModel();
   }, []);
+
+  // Load Enhanced/Samantha before first coaching line (avoids compact default voice on iOS).
+  useEffect(() => {
+    if (tapOnlyDemo) primeSpeechVoices();
+  }, [tapOnlyDemo]);
 
   /** In-app live camera (getUserMedia). On LAN HTTP, Safari requires HTTPS first. */
   const openLiveCamera = useCallback(
@@ -289,7 +323,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
       if (coachingEnabled) {
         stopSpeaking();
         analysisStatusTimerRef.current = setTimeout(() => {
-          speak(analysisStatus.voiceAfterDelay);
+          coachSpeak(analysisStatus.voiceAfterDelay);
         }, 5000);
       }
 
@@ -397,7 +431,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
         // Speak analysis results
         if (coachingEnabled) {
-          speak(
+          coachSpeak(
             buildArtisanVoiceScript({
               sceneDescription: analysis.sceneDescription,
               colourCheck: analysis.colourCheck,
@@ -429,7 +463,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           setComparisonText(improvementText);
 
           if (coachingEnabled) {
-            speak(
+            coachSpeak(
               tapOnlyDemo
                 ? `${improvementText} ${TAP_GUIDANCE.comparison.tts}`
                 : improvementText,
@@ -442,7 +476,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           setComparisonText('Photo two is the stronger one.');
 
           if (coachingEnabled) {
-            speak(
+            coachSpeak(
               tapOnlyDemo
                 ? `Photo two is the stronger one. The fix improved the shot. ${TAP_GUIDANCE.comparison.tts}`
                 : 'Photo two is the stronger one. The fix improved the shot.',
@@ -465,20 +499,17 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     setPhase('secondCapture');
     if (tapOnlyDemo) {
       setShowLiveCamera(true);
-      speak(TAP_GUIDANCE.camera.tts);
+      coachSpeak(TAP_GUIDANCE.camera.tts);
     } else {
       openLiveCamera('Opening camera for a second photo. Apply the fix.');
     }
-  }, [openLiveCamera, tapOnlyDemo]);
+  }, [openLiveCamera, tapOnlyDemo, coachSpeak]);
 
   const handleContinueToListing = useCallback(() => {
     setPhase('listing');
-    if (coachingEnabled) {
-      speak(
-        tapOnlyDemo
-          ? `Your listing is ready. ${TAP_GUIDANCE.listing.ttsSuffix}`
-          : 'Generating your listing from the stronger photo.',
-      );
+    // Tap-only: listing phase effect reads full listing + copy cue (same voice as analysis).
+    if (coachingEnabled && !tapOnlyDemo) {
+      speak('Generating your listing from the stronger photo.');
     }
   }, [coachingEnabled, tapOnlyDemo]);
 
@@ -490,10 +521,10 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     navigator.clipboard.writeText(text);
     setCopiedField(field);
     if (coachingEnabled) {
-      speak('Copied to clipboard.');
+      coachSpeak('Copied to clipboard.');
     }
     setTimeout(() => setCopiedField(null), 2000);
-  }, [coachingEnabled]);
+  }, [coachingEnabled, coachSpeak]);
 
   const handleReadAllTags = useCallback(() => {
     const finalAttempt = attempts[strongerAttemptIndex ?? attempts.length - 1];
@@ -602,6 +633,14 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   }, [tapOnlyDemo, voiceCommandsEnabled, voiceListeningPrimed]);
 
 
+  // Tap-only welcome: auto-coach on entry (same speak() voice as listing readout).
+  useEffect(() => {
+    if (!tapOnlyDemo || phase !== 'demoWelcome') return;
+    primeSpeechVoices();
+    const t = window.setTimeout(() => speakDemoWelcome(), 400);
+    return () => window.clearTimeout(t);
+  }, [tapOnlyDemo, phase, speakDemoWelcome]);
+
   const hasGreeted = useRef(false);
   useEffect(() => {
     if (phase === 'voicePrompt' && !hasGreeted.current) {
@@ -631,22 +670,27 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
       hasSpokenListing.current = false;
       return;
     }
-    if (!voiceEnabled || hasSpokenListing.current) return;
+    if (!coachingEnabled || hasSpokenListing.current) return;
 
     const finalAttempt = attempts[strongerAttemptIndex ?? attempts.length - 1];
     if (!finalAttempt) return;
 
     hasSpokenListing.current = true;
     const a = finalAttempt.analysisJSON;
+    const closingCue = tapOnlyDemo
+      ? TAP_GUIDANCE.listing.ttsSuffix
+      : voiceCommandsEnabled
+        ? 'Tap copy listing for Etsy, or say copy.'
+        : 'Tap copy listing for Etsy.';
     const voiceText = [
       'Your listing is ready.',
       a.listingCopy,
       a.altText ? `Alt text: ${a.altText}` : '',
       a.tags?.length ? `Tags: ${a.tags.slice(0, 5).join(', ')}` : '',
-      'Tap copy listing for Etsy, or say copy.',
+      closingCue,
     ].filter(Boolean).join(' ');
-    speak(voiceText);
-  }, [phase, voiceEnabled, attempts, strongerAttemptIndex]);
+    coachSpeak(voiceText);
+  }, [phase, coachingEnabled, tapOnlyDemo, voiceCommandsEnabled, attempts, strongerAttemptIndex, coachSpeak]);
 
   // ========== Render Phases ==========
 
@@ -674,7 +718,15 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   // Tap-only demo welcome (LAN / ?record=1)
   if (phase === 'demoWelcome') {
     return (
-      <div className="max-w-2xl mx-auto px-6 py-16 text-center" ref={mainContentRef} tabIndex={-1}>
+      <div
+        className="max-w-2xl mx-auto px-6 py-16 text-center"
+        ref={mainContentRef}
+        tabIndex={-1}
+        onPointerDown={() => {
+          unlockSpeechForSession();
+          speakDemoWelcome();
+        }}
+      >
         <div className="mb-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#C06B45] text-white text-sm font-bold uppercase tracking-wide mb-6">
             <AudioLines className="w-4 h-4" />

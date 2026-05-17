@@ -59,6 +59,44 @@ let speechCompleted = false;
 // Lock to prevent multiple simultaneous speech sessions
 let isCurrentlySpeaking = false;
 
+/** Pinned coaching voice (Enhanced / Samantha) — same timbre for welcome through listing. */
+let cachedCoachingVoice: SpeechSynthesisVoice | null = null;
+
+/** Coaching readout rate — slightly slower than default feels less robotic on iOS. */
+export const COACHING_SPEECH_RATE = 0.92;
+
+/** Prefer Enhanced / premium system voices (matches best iOS/macOS listing readout). */
+export function pickCoachingVoice(
+  voices: SpeechSynthesisVoice[],
+): SpeechSynthesisVoice | undefined {
+  if (cachedCoachingVoice && voices.some((v) => v.voiceURI === cachedCoachingVoice!.voiceURI)) {
+    return cachedCoachingVoice;
+  }
+
+  const score = (v: SpeechSynthesisVoice): number => {
+    const n = v.name;
+    const nl = n.toLowerCase();
+    if (nl.includes('enhanced')) return 0;
+    if (nl.includes('premium')) return 1;
+    if (n.includes('Samantha')) return 2;
+    if (n.includes('Karen')) return 3;
+    if (n.includes('Moira')) return 4;
+    if (n.includes('Google US English')) return 5;
+    if (n.includes('Google UK English Female')) return 6;
+    if (n.includes('Google US')) return 7;
+    if (n.includes('Microsoft Zira')) return 8;
+    if (v.lang.startsWith('en') && v.localService) return 9;
+    if (v.lang.startsWith('en')) return 10;
+    return 99;
+  };
+
+  const en = voices.filter((v) => v.lang.startsWith('en'));
+  if (en.length === 0) return undefined;
+  en.sort((a, b) => score(a) - score(b));
+  cachedCoachingVoice = en[0];
+  return en[0];
+}
+
 // ─── Speech Recognition (Voice Commands) ──────────────────────────────────────
 
 let recognition: SpeechRecognition | null = null;
@@ -129,12 +167,7 @@ export function speak(
     return;
   }
 
-  const preferredVoice = voices.find(v =>
-    v.name.includes('Samantha') ||  // macOS
-    v.name.includes('Google US') || // Chrome
-    v.name.includes('Microsoft Zira') || // Windows
-    (v.lang.startsWith('en') && v.localService)
-  ) || voices.find(v => v.lang.startsWith('en'));
+  const preferredVoice = pickCoachingVoice(voices);
 
   console.log('[voiceCoach] Using voice:', preferredVoice?.name || 'default');
 
@@ -216,7 +249,7 @@ function speakFromIndex(
       currentIndex++;
       pausedIndex = currentIndex; // Track progress
       // Small delay between sentences for natural flow
-      pendingTimeout = setTimeout(speakNextSentence, 100);
+      pendingTimeout = setTimeout(speakNextSentence, 150);
     };
 
     utterance.onerror = (e: SpeechSynthesisErrorEvent) => {
@@ -231,7 +264,7 @@ function speakFromIndex(
       }
       currentIndex++;
       pausedIndex = currentIndex;
-      pendingTimeout = setTimeout(speakNextSentence, 100);
+      pendingTimeout = setTimeout(speakNextSentence, 150);
     };
 
     speechSynthesis.speak(utterance);
@@ -266,12 +299,7 @@ export function resumeSpeech(rate = 0.95): boolean {
   }
 
   const voices = speechSynthesis.getVoices();
-  const preferredVoice = voices.find(v =>
-    v.name.includes('Samantha') ||
-    v.name.includes('Google US') ||
-    v.name.includes('Microsoft Zira') ||
-    (v.lang.startsWith('en') && v.localService)
-  ) || voices.find(v => v.lang.startsWith('en'));
+  const preferredVoice = pickCoachingVoice(voices);
 
   speakFromIndex(pausedSentences, pausedIndex, rate, preferredVoice);
   return true;
@@ -631,12 +659,7 @@ export function speakNow(
 
   const run = () => {
     const voices = synth.getVoices();
-    const preferredVoice =
-      voices.find((v) => v.name.includes('Samantha')) ||
-      voices.find((v) => v.name.includes('Google US')) ||
-      voices.find((v) => v.name.includes('Microsoft Zira')) ||
-      voices.find((v) => v.lang.startsWith('en') && v.localService) ||
-      voices.find((v) => v.lang.startsWith('en'));
+    const preferredVoice = pickCoachingVoice(voices);
 
     lastSpokenText = text;
     isCurrentlySpeaking = true;
@@ -693,16 +716,35 @@ export function speakFromUserGesture(
 /** After async work when the session was unlocked by an earlier gesture. */
 export function speakAfterUnlock(
   text: string,
-  rate = 0.95,
+  rate = COACHING_SPEECH_RATE,
   onEnd?: () => void,
   onStart?: () => void,
 ): void {
   if (!text?.trim()) return;
   if (speechSessionUnlocked) {
-    speakNow(text, rate, onEnd, onStart);
+    // Sentence-chunked speak() — same delivery as Etsy listing readout.
+    speakQueued(text, 120, rate, onEnd, onStart);
     return;
   }
   speakQueued(text, 180, rate, onEnd, onStart);
+}
+
+/**
+ * Artisan / demo coaching — Enhanced voice, sentence-chunked (listing-style).
+ * Use after unlockSpeechForSession() or from a tap handler.
+ */
+export function speakCoaching(
+  text: string,
+  onEnd?: () => void,
+  onStart?: () => void,
+): void {
+  if (!text?.trim()) return;
+  primeSpeechVoices();
+  if (speechSessionUnlocked) {
+    speakQueued(text, 120, COACHING_SPEECH_RATE, onEnd, onStart);
+  } else {
+    speak(text, COACHING_SPEECH_RATE, onEnd, onStart);
+  }
 }
 
 export function stopSpeaking(): void {

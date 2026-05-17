@@ -86,15 +86,28 @@ const SellMode: React.FC<SellModeProps> = ({
   );
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const studioWelcomePlayed = useRef(false);
+
   const playArtisanStudioWelcome = useCallback(() => {
-    speakQueued(getArtisanStudioWelcomeScript());
+    speakQueued(getArtisanStudioWelcomeScript(), 100);
   }, []);
 
+  // Studio welcome after Enter Artisan Studio (no hardStop on unmount — Strict Mode was killing all VO)
   useEffect(() => {
-    return () => {
-      hardStopVoice();
-    };
-  }, []);
+    if (!isJudgeDemoBuild() || !voiceEnabled || showGuidedJourney) return;
+    if (sessionStorage.getItem('lens-play-studio-welcome') !== '1') return;
+    if (sessionStorage.getItem('lens-studio-welcomed-session') === '1') return;
+
+    const timer = window.setTimeout(() => {
+      sessionStorage.removeItem('lens-play-studio-welcome');
+      sessionStorage.setItem('lens-studio-welcomed-session', '1');
+      if (studioWelcomePlayed.current) return;
+      studioWelcomePlayed.current = true;
+      playArtisanStudioWelcome();
+    }, 350);
+
+    return () => window.clearTimeout(timer);
+  }, [voiceEnabled, showGuidedJourney, playArtisanStudioWelcome]);
 
   useEffect(() => {
     detectInferenceSource().then((source) => {
@@ -116,8 +129,6 @@ const SellMode: React.FC<SellModeProps> = ({
   }, [voiceEnabled]);
 
   const handleDemoSampleSelect = useCallback(async (sample: DemoResponse) => {
-    stopSpeaking();
-    clearPausedSpeech();
     setError(null);
     setIsAnalyzing(true);
     setResult(null);
@@ -223,6 +234,7 @@ const SellMode: React.FC<SellModeProps> = ({
         stopSpeaking();
         clearPausedSpeech();
       } else {
+        hardStopVoice();
         onBack();
       }
     } else if (result || showCompare) {
@@ -233,6 +245,7 @@ const SellMode: React.FC<SellModeProps> = ({
       stopSpeaking();
       clearPausedSpeech();
     } else {
+      hardStopVoice();
       onBack();
     }
   };

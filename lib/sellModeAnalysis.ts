@@ -106,5 +106,7 @@ export function buildSellModeVoiceScript(result: SellModeResult): string {
 }
 
 export function speakSellModeResult(result: SellModeResult): void {
-  speakQueued(buildSellModeVoiceScript(result));
+  const script = buildSellModeVoiceScript(result);
+  if (!script.trim()) return;
+  speakQueued(script, 200);
 }

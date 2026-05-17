@@ -26,7 +26,7 @@ import {
 } from './services/analysisOrchestrator';
 import { SupportedLanguage, LANGUAGE_LABELS } from './services/promptService';
 import { setOperationalMode, exportAuditLog } from './services/auditService';
-import { speak, hardStopVoice } from './services/voiceCoach';
+import { speak, hardStopVoice, primeSpeechVoices } from './services/voiceCoach';
 import { AppState } from './types';
 import { PhotoAnalysisV2, OperationalMode, SessionHistoryEntry } from './types.v2';
 import { getInitialAppRoute, showStudioModeEntry } from './lib/launchRoute';
@@ -97,6 +97,10 @@ function App() {
   });
 
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    primeSpeechVoices();
+  }, []);
 
   useEffect(() => {
     checkOllamaHealth().then(({ running, modelAvailable }) => {
@@ -236,6 +240,8 @@ function App() {
     setError(null);
     if (isJudgeDemoBuild()) {
       sessionStorage.removeItem(ARTISAN_GRID_WELCOME_KEY);
+      sessionStorage.removeItem('lens-play-studio-welcome');
+      sessionStorage.removeItem('lens-studio-welcomed-session');
     }
   }, []);
 

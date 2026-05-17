@@ -10,7 +10,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5%2B-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green?style=flat-square)](LICENSE)
 
-🔗 **[Live demo](https://lens-app-gemma4.vercel.app)** · **Demo video:** _add link before submission_ · Built for the **Gemma 4 Good Hackathon**
+🔗 **Live demos:** [Judge try-it](https://lens-app-gemma4.vercel.app) (Ollama Cloud 31B) · [Real product / video](https://photography-coach-gemma4.vercel.app) (local E4B) · **Demo video:** _add link before submission_ · Built for the **Gemma 4 Good Hackathon**
 
 **Tracks:** Digital Equity & Inclusivity · Ollama
 
@@ -286,7 +286,7 @@ Apache License 2.0 — see [LICENSE](LICENSE).
 
 ## 🔗 Links
 
-- **Live demo:** https://lens-app-gemma4.vercel.app
+- **Judge try-it:** https://lens-app-gemma4.vercel.app · **Real product / video:** https://photography-coach-gemma4.vercel.app
 - **Demo video:** _add before submission_
 - **Repository:** https://github.com/prasadt1/photography-coach-gemma4
 - **Hackathon:** Gemma 4 Good

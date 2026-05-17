@@ -77,6 +77,16 @@ export function isSpeaking(): boolean {
   return isCurrentlySpeaking;
 }
 
+/** Load voices early (Chrome needs this before first speak). */
+export function primeSpeechVoices(): void {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return;
+  const load = () => {
+    speechSynthesis.getVoices();
+  };
+  load();
+  speechSynthesis.addEventListener('voiceschanged', load);
+}
+
 export function speak(
   text: string,
   rate = 0.95,
@@ -129,14 +139,19 @@ export function speak(
   const sentences = text
     .split(/(?<=[.!?])\s+/)
     .filter(s => s.trim().length > 0);
+  const toSpeak = sentences.length > 0 ? sentences : [text.trim()].filter(Boolean);
+  if (toSpeak.length === 0) {
+    isCurrentlySpeaking = false;
+    return;
+  }
 
   // Store for resume functionality
-  pausedSentences = sentences;
+  pausedSentences = toSpeak;
   pausedIndex = 0;
 
-  console.log('[voiceCoach] Split into', sentences.length, 'sentences');
+  console.log('[voiceCoach] Split into', toSpeak.length, 'sentences');
 
-  speakFromIndex(sentences, 0, rate, preferredVoice, onEnd, onStart);
+  speakFromIndex(toSpeak, 0, rate, preferredVoice, onEnd, onStart);
 }
 
 // Internal function to speak from a specific index
@@ -570,15 +585,20 @@ export function hardStopVoice(): void {
   lastSpokenText = '';
 }
 
-/** After hardStop/cancel, wait briefly so Chrome can start the next utterance */
-export function speakQueued(text: string, delayMs = 120, rate = 0.95, onEnd?: () => void, onStart?: () => void): void {
+/**
+ * Schedule speech after a short delay so Chrome recovers from speechSynthesis.cancel().
+ * Use this after hardStopVoice or navigation — do not call speak() immediately after cancel.
+ */
+export function speakQueued(text: string, delayMs = 180, rate = 0.95, onEnd?: () => void, onStart?: () => void): void {
+  if (!text?.trim()) return;
   if (speakQueueTimer) {
     clearTimeout(speakQueueTimer);
     speakQueueTimer = null;
   }
-  isCancelled = false;
+  primeSpeechVoices();
   speakQueueTimer = setTimeout(() => {
     speakQueueTimer = null;
+    isCancelled = false;
     speak(text, rate, onEnd, onStart);
   }, delayMs);
 }

@@ -5,6 +5,9 @@
   "functions": {
     "api/analyze.ts": {
       "maxDuration": 120
+    },
+    "api/tts.ts": {
+      "maxDuration": 60
     }
   },
   "rewrites": [

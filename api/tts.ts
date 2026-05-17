@@ -1,0 +1,45 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
+
+const MAX_CHARS = 2500;
+const VOICE = 'en-US-JennyNeural';
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    return res.status(204).end();
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const text = typeof req.body?.text === 'string' ? req.body.text.trim() : '';
+  if (!text) {
+    return res.status(400).json({ error: 'text required' });
+  }
+
+  const spoken = text.slice(0, MAX_CHARS);
+
+  try {
+    const tts = new MsEdgeTTS();
+    await tts.setMetadata(VOICE, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+    const { audioStream } = tts.toStream(spoken);
+    const chunks: Buffer[] = [];
+
+    for await (const chunk of audioStream as AsyncIterable<Buffer>) {
+      chunks.push(Buffer.from(chunk));
+    }
+
+    const audio = Buffer.concat(chunks);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(200).send(audio);
+  } catch (err) {
+    console.error('[api/tts]', err);
+    return res.status(500).json({ error: 'TTS failed' });
+  }
+}

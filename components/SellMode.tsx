@@ -17,7 +17,13 @@ import {
 } from 'lucide-react';
 import { analyzeForSellModeWithFallback, detectInferenceSource, type InferenceSource } from '../services/analysisOrchestrator';
 import { speak, speakFromUserGesture, stopSpeaking, hardStopVoice, clearPausedSpeech } from '../services/voiceCoach';
-import { judgeSpeak, judgePlayAudio, judgeStop } from '../lib/judgeSpeech';
+import {
+  judgeSpeak,
+  judgeSpeakDynamic,
+  judgePlayAudio,
+  judgeStop,
+  primeJudgeSpeech,
+} from '../lib/judgeSpeech';
 
 const JUDGE_STUDIO_AUDIO = '/audio/judge-studio-welcome.wav';
 import {
@@ -109,7 +115,8 @@ const SellMode: React.FC<SellModeProps> = ({
 
   const handleDemoSampleSelect = useCallback(async (sample: DemoResponse) => {
     if (voiceEnabled) {
-      if (isJudgeDemoBuild()) judgeSpeak('Analyzing your sample. One moment.');
+      judgeStop();
+      if (isJudgeDemoBuild()) void judgeSpeakDynamic('Analyzing your sample. One moment.');
       else speakFromUserGesture('Analyzing your sample. One moment.');
     }
     setError(null);
@@ -178,8 +185,11 @@ const SellMode: React.FC<SellModeProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
+    if (voiceEnabled) {
+      judgeStop();
+    }
     if (voiceEnabled && isJudgeDemoBuild()) {
-      judgeSpeak('Analyzing your photo. One moment.');
+      void judgeSpeakDynamic('Analyzing your photo. One moment.');
     } else if (voiceEnabled) {
       speakFromUserGesture('Analyzing your photo. One moment.');
     } else {
@@ -581,7 +591,11 @@ const SellMode: React.FC<SellModeProps> = ({
                     {voiceEnabled && (
                       <button
                         type="button"
-                        onClick={() => speakSellModeResult(result, true)}
+                        onPointerDown={() => primeJudgeSpeech()}
+                        onClick={() => {
+                          judgeStop();
+                          speakSellModeResult(result, true);
+                        }}
                         className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-[#2F4858] text-white text-xs font-semibold shrink-0"
                       >
                         <AudioLines className="w-4 h-4" />
@@ -640,8 +654,8 @@ const SellMode: React.FC<SellModeProps> = ({
                 </div>
               )}
 
-              {/* Listing Assets */}
-              {(result.altText || result.listingCopy) && (
+              {/* Listing Assets (artisan build — judge uses Etsy listing draft only) */}
+              {!isJudgeDemoBuild() && (result.altText || result.listingCopy) && (
                 <div className="rounded-2xl bg-[#F4ECDC] border-2 border-[#D8CDB8] p-6">
                   <div className="flex items-center gap-2 mb-6">
                     <FileText className="w-4 h-4 text-[#C06B45]" />

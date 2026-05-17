@@ -11,7 +11,11 @@ import {
   type ArtisanAnalysisV3,
 } from '../services/voiceCoach';
 import { isJudgeDemoBuild } from './deploymentProfile';
-import { judgeSpeak } from './judgeSpeech';
+import {
+  judgeSpeakDynamic,
+  judgePlayAudio,
+  judgeDemoSampleAnalysisAudio,
+} from './judgeSpeech';
 
 export interface SellModeResult {
   subject: string;
@@ -112,7 +116,9 @@ export function speakSellModeResult(result: SellModeResult, fromUserGesture = fa
   const script = buildSellModeVoiceScript(result);
   if (!script.trim()) return;
   if (isJudgeDemoBuild()) {
-    judgeSpeak(script);
+    const demoWav = judgeDemoSampleAnalysisAudio(result.imageBase64);
+    if (demoWav && judgePlayAudio(demoWav)) return;
+    void judgeSpeakDynamic(script);
     return;
   }
   if (fromUserGesture) {

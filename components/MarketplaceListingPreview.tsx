@@ -7,7 +7,7 @@ import {
   Camera, Tag, FileText, Layers, DollarSign, ExternalLink, Volume2, VolumeX, Copy, CheckCircle2,
 } from 'lucide-react';
 import { isJudgeDemoBuild } from '../lib/deploymentProfile';
-import { judgeSpeak, judgeStop } from '../lib/judgeSpeech';
+import { judgeSpeakDynamic, judgeStop, primeJudgeSpeech } from '../lib/judgeSpeech';
 import { speakFromUserGesture, hardStopVoice } from '../services/voiceCoach';
 
 export interface MarketplaceListingDraft {
@@ -72,6 +72,7 @@ const MarketplaceListingPreview: React.FC<MarketplaceListingPreviewProps> = ({
       setListingPlaying(false);
       return;
     }
+    judgeStop();
     listingPlayingRef.current = true;
     setListingPlaying(true);
     const onDone = () => {
@@ -79,7 +80,7 @@ const MarketplaceListingPreview: React.FC<MarketplaceListingPreviewProps> = ({
       setListingPlaying(false);
     };
     if (isJudgeDemoBuild()) {
-      judgeSpeak(listingSpeech(), 0.95, onDone);
+      void judgeSpeakDynamic(listingSpeech(), onDone);
     } else {
       speakFromUserGesture(listingSpeech(), 0.95, onDone);
     }
@@ -143,6 +144,7 @@ const MarketplaceListingPreview: React.FC<MarketplaceListingPreviewProps> = ({
           {voiceEnabled && (
             <button
               type="button"
+              onPointerDown={() => isJudgeDemoBuild() && primeJudgeSpeech()}
               onClick={handleHearListing}
               aria-pressed={listingPlaying}
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${

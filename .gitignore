@@ -51,3 +51,7 @@ models/
 *.sln
 *.sw?
 .vercel
+
+# Internal Cursor / agent review notes (not for public repo)
+OPUS-CURSOR-REVIEW.md
+*-CURSOR-REVIEW.md

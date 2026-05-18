@@ -3,6 +3,7 @@ import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import basicSsl from '@vitejs/plugin-basic-ssl';
+import { devTtsPlugin } from './scripts/vite-dev-tts-plugin';
 
 const certDir = path.resolve(__dirname, '.cert');
 const mkcertKey = path.join(certDir, 'dev-key.pem');
@@ -25,6 +26,7 @@ export default defineConfig(({ mode }) => {
       base: './',  // Use relative paths for Electron + file:// compatibility
       plugins: [
         react(),
+        ...(mode === 'development' ? [devTtsPlugin()] : []),
         ...(useHttps && !hasMkcert ? [basicSsl()] : []),
       ],
       server: {

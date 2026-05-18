@@ -7,34 +7,40 @@ import { GEMMA_4_E4B } from '../lib/branding';
 
 export type ArtisanCaptureKind = 'first' | 'compare' | 'replace';
 
-/** Screen + delayed voice copy while Gemma 4 E4B runs (first / 2nd photo / 3rd+ retake). */
+/** Screen + voice copy while Gemma 4 E4B runs (first / 2nd photo / 3rd+ retake). */
 export function getAnalysisStatusCopy(kind: ArtisanCaptureKind): {
   screenTitle: string;
   screenDetail: string;
+  /** Spoken on Take Photo (user gesture) — Samantha / analysis voice. */
+  voiceOnCapture: string;
   voiceAfterDelay: string;
 } {
+  const timingFirst =
+    'This usually takes twenty to thirty seconds. The very first run may take a little longer while the model loads.';
+  const timingNext = 'This usually takes twenty to thirty seconds.';
+
   switch (kind) {
     case 'first':
       return {
         screenTitle: `Analysing with ${GEMMA_4_E4B}`,
         screenDetail:
-          `${GEMMA_4_E4B} is studying your photo. The first run can take up to a minute while the model loads in memory.`,
-        voiceAfterDelay:
-          `${GEMMA_4_E4B} is analysing your photo. This can take up to a minute on the first run.`,
+          `${GEMMA_4_E4B} is studying your photo. ${timingFirst}`,
+        voiceOnCapture: `Analysing your photo with ${GEMMA_4_E4B}. ${timingFirst}`,
+        voiceAfterDelay: `Still analysing your photo with ${GEMMA_4_E4B}. ${timingNext}`,
       };
     case 'compare':
       return {
         screenTitle: `Analysing with ${GEMMA_4_E4B}`,
-        screenDetail: 'Comparing both photos to find the stronger shot...',
-        voiceAfterDelay:
-          `Comparing both photos with ${GEMMA_4_E4B} to find the stronger shot. This may take up to a minute.`,
+        screenDetail: `Comparing both photos to find the stronger shot. ${timingNext}`,
+        voiceOnCapture: `Comparing both photos with ${GEMMA_4_E4B}. ${timingNext}`,
+        voiceAfterDelay: `Still comparing your photos with ${GEMMA_4_E4B}. ${timingNext}`,
       };
     case 'replace':
       return {
         screenTitle: `Analysing with ${GEMMA_4_E4B}`,
-        screenDetail: 'Analysing your new photo and comparing it to your first shot...',
-        voiceAfterDelay:
-          'Analysing your new photo and comparing it to your first shot. This may take up to a minute.',
+        screenDetail: `Analysing your new photo and comparing it to your first shot. ${timingNext}`,
+        voiceOnCapture: `Analysing your new photo and comparing it to your first shot. ${timingNext}`,
+        voiceAfterDelay: `Still analysing and comparing your photos. ${timingNext}`,
       };
   }
 }

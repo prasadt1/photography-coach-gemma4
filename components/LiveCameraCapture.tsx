@@ -73,6 +73,10 @@ export const LiveCameraCapture: React.FC<LiveCameraCaptureProps> = ({
   );
 
   const captureFrame = useCallback(() => {
+    if (tapOnlyHero) {
+      void import('../services/voiceCoach').then((m) => m.unlockSpeechForSession());
+    }
+
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
@@ -90,7 +94,7 @@ export const LiveCameraCapture: React.FC<LiveCameraCaptureProps> = ({
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const imageDataUrl = canvas.toDataURL('image/jpeg', 0.92);
     onCapture(imageDataUrl);
-  }, [isStreaming, onCapture]);
+  }, [isStreaming, onCapture, tapOnlyHero]);
 
   useEffect(() => {
     if (needsFilePicker) return;

@@ -1,21 +1,39 @@
 /**
- * Artisan journey TTS — one coaching voice for welcome → listing (sentence-chunked).
+ * Artisan journey TTS — guide voice (UI cues) vs analysis voice (feedback + listing).
  */
 
 import {
-  speakCoaching,
+  speakGuideCoaching,
+  speakGuideFromUserGesture,
+  speakAnalysisCoaching,
   primeSpeechVoices,
   unlockSpeechForSession,
   isSpeechSessionUnlocked,
 } from '../services/voiceCoach';
 
-export { primeSpeechVoices, unlockSpeechForSession, isSpeechSessionUnlocked };
+export { stopGuideNeural } from './guideNeuralTts';
 
-/** Listing-style readout for tap-only demo and post-gesture coaching. */
-export function speakArtisanCoaching(
+export {
+  primeSpeechVoices,
+  unlockSpeechForSession,
+  isSpeechSessionUnlocked,
+  speakGuideFromUserGesture,
+};
+
+/** Welcome, camera hints, tap instructions. */
+export function speakArtisanGuide(
   text: string,
   onEnd?: () => void,
   onStart?: () => void,
 ): void {
-  speakCoaching(text, onEnd, onStart);
+  speakGuideCoaching(text, onEnd, onStart);
+}
+
+/** Photo analysis and marketplace listing readout. */
+export function speakArtisanAnalysis(
+  text: string,
+  onEnd?: () => void,
+  onStart?: () => void,
+): void {
+  speakAnalysisCoaching(text, onEnd, onStart);
 }

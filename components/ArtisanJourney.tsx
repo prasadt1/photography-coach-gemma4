@@ -10,7 +10,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Camera, Loader2, CheckCircle2, ArrowRight,
   Lightbulb, Grid3X3, Sun, Copy, FileText, Accessibility,
-  AudioLines, Sparkles,
+  AudioLines, Sparkles, Share2,
 } from 'lucide-react';
 import {
   analyzeForSellModeWithFallback,
@@ -22,6 +22,7 @@ import {
   parseArtisanResponseV3,
   speak,
   primeSpeechVoices,
+  clearGuideVoiceCache,
   unlockSpeechForSession,
   stopSpeaking,
   startListening,
@@ -29,7 +30,12 @@ import {
   parseVoiceCommand,
   isCurrentlyListening,
 } from '../services/voiceCoach';
-import { speakArtisanCoaching } from '../lib/artisanSpeech';
+import {
+  speakArtisanGuide,
+  speakArtisanAnalysis,
+  speakGuideFromUserGesture,
+  stopGuideNeural,
+} from '../lib/artisanSpeech';
 import LiveCameraCapture from './LiveCameraCapture';
 import { getArtisanInferenceBadge, OLLAMA_CLOUD_CONFIG, OLLAMA_CONFIG } from '../config';
 import {
@@ -39,6 +45,7 @@ import {
   type ArtisanCaptureKind,
 } from '../services/artisanDisplay';
 import { shouldUseTapOnlyDemo } from '../lib/artisanJourneyRoute';
+import { saveProductPhoto } from '../lib/saveProductPhoto';
 import {
   TAP_BTN_PRIMARY,
   TAP_BTN_SECONDARY,
@@ -121,6 +128,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [photoSaveAck, setPhotoSaveAck] = useState(false);
   const [showAllTags, setShowAllTags] = useState(false);
   const [currentInferenceSource, setCurrentInferenceSource] = useState<InferenceSource>('demo');
   const [showLiveCamera, setShowLiveCamera] = useState(false);
@@ -142,40 +150,61 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
   const demoWelcomeHeardRef = useRef(false);
 
-  const coachSpeak = useCallback(
+  /** UI cues — tap-only uses neural Ava on button taps; async hints use Web Speech. */
+  const guideSpeak = useCallback(
     (text: string, onEnd?: () => void, onStart?: () => void) => {
-      if (tapOnlyDemo) speakArtisanCoaching(text, onEnd, onStart);
+      if (tapOnlyDemo) speakArtisanGuide(text, onEnd, onStart);
       else speak(text, 0.95, onEnd, onStart);
     },
     [tapOnlyDemo],
   );
 
-  const speakDemoWelcome = useCallback(() => {
-    if (demoWelcomeHeardRef.current) return;
-    primeSpeechVoices();
-    coachSpeak(TAP_GUIDANCE.welcome.tts, undefined, () => {
-      demoWelcomeHeardRef.current = true;
-    });
-  }, [coachSpeak]);
+  const tapGuideSpeak = useCallback(
+    (text: string, onEnd?: () => void, onStart?: () => void) => {
+      unlockSpeechForSession();
+      speakGuideFromUserGesture(text, onEnd, onStart);
+    },
+    [],
+  );
+
+  /** Analysis + listing body — analysis voice on tap-only demo. */
+  const analysisSpeak = useCallback(
+    (text: string, onEnd?: () => void, onStart?: () => void) => {
+      if (tapOnlyDemo) speakArtisanAnalysis(text, onEnd, onStart);
+      else speak(text, 0.95, onEnd, onStart);
+    },
+    [tapOnlyDemo],
+  );
+
+  /** Stop Ava guide MP3, brief pause, then Samantha analysis (avoids canceling each other). */
+  const speakAnalysisResult = useCallback(
+    (text: string, onEnd?: () => void) => {
+      if (!text?.trim()) {
+        onEnd?.();
+        return;
+      }
+      stopGuideNeural();
+      window.setTimeout(() => {
+        analysisSpeak(text, onEnd);
+      }, 400);
+    },
+    [analysisSpeak],
+  );
 
   const handleDemoWelcomeStart = useCallback(() => {
-    unlockSpeechForSession();
+    primeSpeechVoices();
     const openCamera = () => {
       setPhase('firstCapture');
       setShowLiveCamera(true);
-      coachSpeak(TAP_GUIDANCE.camera.tts);
     };
     if (!demoWelcomeHeardRef.current) {
-      coachSpeak(TAP_GUIDANCE.welcome.tts, () => {
-        demoWelcomeHeardRef.current = true;
-        openCamera();
-      });
+      demoWelcomeHeardRef.current = true;
+      tapGuideSpeak(TAP_GUIDANCE.welcome.tts, openCamera);
       return;
     }
     stopSpeaking();
-    demoWelcomeHeardRef.current = true;
     openCamera();
-  }, [coachSpeak]);
+  }, [tapGuideSpeak]);
 
   // Refs for accessibility
   const phaseAnnouncerRef = useRef<HTMLDivElement>(null);
@@ -208,7 +237,10 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
   // Load Enhanced/Samantha before first coaching line (avoids compact default voice on iOS).
   useEffect(() => {
-    if (tapOnlyDemo) primeSpeechVoices();
+    if (tapOnlyDemo) {
+      clearGuideVoiceCache();
+      primeSpeechVoices();
+    }
   }, [tapOnlyDemo]);
 
   /** In-app live camera (getUserMedia). On LAN HTTP, Safari requires HTTPS first. */
@@ -320,10 +352,15 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
       const analysisStatus = getAnalysisStatusCopy(captureKind);
 
       clearAnalysisStatusTimer();
-      if (coachingEnabled) {
+      if (coachingEnabled && tapOnlyDemo) {
+        analysisSpeak(analysisStatus.voiceOnCapture);
+        analysisStatusTimerRef.current = setTimeout(() => {
+          analysisSpeak(analysisStatus.voiceAfterDelay);
+        }, 12000);
+      } else if (coachingEnabled) {
         stopSpeaking();
         analysisStatusTimerRef.current = setTimeout(() => {
-          coachSpeak(analysisStatus.voiceAfterDelay);
+          guideSpeak(analysisStatus.voiceAfterDelay);
         }, 5000);
       }
 
@@ -352,7 +389,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           const detail = localError ? ` ${localError}` : '';
           setError(
             `Could not reach local Gemma 4 (tried ${OLLAMA_CONFIG.baseUrl}).${detail} ` +
-              'First photo can take 1–2 minutes while the model loads. Keep this page open.',
+              'First photo may take up to forty-five seconds while the model loads. Keep this page open.',
           );
           setIsProcessing(false);
           clearAnalysisStatusTimer();
@@ -431,7 +468,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
         // Speak analysis results
         if (coachingEnabled) {
-          coachSpeak(
+          speakAnalysisResult(
             buildArtisanVoiceScript({
               sceneDescription: analysis.sceneDescription,
               colourCheck: analysis.colourCheck,
@@ -441,8 +478,10 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
               readyToList: analysis.readyToList,
               confidenceNote: analysis.confidenceNote,
               includeRetakePrompt: !tapOnlyDemo && !analysis.readyToList,
-              tapOnlyRetakeCue: tapOnlyDemo && !analysis.readyToList ? TAP_GUIDANCE.retake.ttsSuffix : undefined,
-            })
+              tapOnlyRetakeCue: tapOnlyDemo && !analysis.readyToList
+                ? TAP_GUIDANCE.retake.ttsSuffix
+                : undefined,
+            }),
           );
         }
       } else {
@@ -463,11 +502,12 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           setComparisonText(improvementText);
 
           if (coachingEnabled) {
-            coachSpeak(
-              tapOnlyDemo
-                ? `${improvementText} ${TAP_GUIDANCE.comparison.tts}`
-                : improvementText,
-            );
+            if (tapOnlyDemo) {
+              speakAnalysisResult(improvementText);
+            } else {
+              stopSpeaking();
+              speak(improvementText);
+            }
           }
         } catch (err) {
           console.warn('[ArtisanJourney] Comparison failed, using fallback:', err);
@@ -476,11 +516,12 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           setComparisonText('Photo two is the stronger one.');
 
           if (coachingEnabled) {
-            coachSpeak(
-              tapOnlyDemo
-                ? `Photo two is the stronger one. The fix improved the shot. ${TAP_GUIDANCE.comparison.tts}`
-                : 'Photo two is the stronger one. The fix improved the shot.',
-            );
+            if (tapOnlyDemo) {
+              speakAnalysisResult('Photo two is the stronger one. The fix improved the shot.');
+            } else {
+              stopSpeaking();
+              speak('Photo two is the stronger one. The fix improved the shot.');
+            }
           }
         }
       }
@@ -495,23 +536,70 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   };
 
   // ========== Phase 4: Retry Choice ==========
+  const hasSpokenListing = useRef(false);
+
+  const speakListingReadout = useCallback(() => {
+    if (!coachingEnabled || hasSpokenListing.current) return;
+
+    const finalAttempt = attempts[strongerAttemptIndex ?? attempts.length - 1];
+    if (!finalAttempt) return;
+
+    hasSpokenListing.current = true;
+    const a = finalAttempt.analysisJSON;
+    const isNaValue = (v?: string | null) => !v?.trim() || /^n\/?a$/i.test(v.trim());
+    const listingBody = [
+      !isNaValue(a.listingCopy) ? a.listingCopy! : '',
+      !isNaValue(a.altText) ? `Alt text: ${a.altText}` : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+    const tagsLine =
+      a.tags?.length ? `Tags: ${a.tags.slice(0, 5).join(', ')}` : '';
+
+    stopGuideNeural();
+    window.setTimeout(() => {
+      const analysisBlock = [listingBody, tagsLine].filter(Boolean).join(' ');
+      if (analysisBlock) analysisSpeak(analysisBlock);
+    }, 400);
+  }, [coachingEnabled, attempts, strongerAttemptIndex, analysisSpeak]);
+
   const handleRetake = useCallback(() => {
     setPhase('secondCapture');
-    if (tapOnlyDemo) {
-      setShowLiveCamera(true);
-      coachSpeak(TAP_GUIDANCE.camera.tts);
-    } else {
+    setShowLiveCamera(true);
+    if (tapOnlyDemo && coachingEnabled) {
+      tapGuideSpeak(TAP_GUIDANCE.retake.ttsSuffix);
+    } else if (!tapOnlyDemo) {
       openLiveCamera('Opening camera for a second photo. Apply the fix.');
     }
-  }, [openLiveCamera, tapOnlyDemo, coachSpeak]);
+  }, [openLiveCamera, tapOnlyDemo, coachingEnabled, tapGuideSpeak]);
 
   const handleContinueToListing = useCallback(() => {
-    setPhase('listing');
-    // Tap-only: listing phase effect reads full listing + copy cue (same voice as analysis).
+    const enterListing = () => {
+      setStrongerAttemptIndex((idx) => {
+        if (attempts.length === 1) return 0;
+        if (idx !== null) return idx;
+        return attempts.length > 0 ? attempts.length - 1 : null;
+      });
+      setPhase('listing');
+    };
+
+    if (tapOnlyDemo && coachingEnabled) {
+      const intro =
+        attempts.length >= 2
+          ? TAP_GUIDANCE.comparison.tts
+          : 'Your product photo and listing are ready.';
+      tapGuideSpeak(intro, () => {
+        enterListing();
+        speakListingReadout();
+      });
+      return;
+    }
+
+    enterListing();
     if (coachingEnabled && !tapOnlyDemo) {
       speak('Generating your listing from the stronger photo.');
     }
-  }, [coachingEnabled, tapOnlyDemo]);
+  }, [coachingEnabled, tapOnlyDemo, attempts.length, tapGuideSpeak, speakListingReadout]);
 
   const handleSkipToListing = useCallback(() => {
     handleContinueToListing();
@@ -521,10 +609,10 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     navigator.clipboard.writeText(text);
     setCopiedField(field);
     if (coachingEnabled) {
-      coachSpeak('Copied to clipboard.');
+      guideSpeak('Copied to clipboard.');
     }
     setTimeout(() => setCopiedField(null), 2000);
-  }, [coachingEnabled, coachSpeak]);
+  }, [coachingEnabled, guideSpeak]);
 
   const handleReadAllTags = useCallback(() => {
     const finalAttempt = attempts[strongerAttemptIndex ?? attempts.length - 1];
@@ -544,8 +632,35 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
       a.altText ? `Alt text: ${a.altText}` : '',
       a.tags?.length ? `Tags: ${a.tags.join(', ')}` : '',
     ].filter(Boolean);
-    copyToClipboard(parts.join('\n\n'), 'all');
-  }, [attempts, strongerAttemptIndex, copyToClipboard]);
+    navigator.clipboard.writeText(parts.join('\n\n'));
+    setCopiedField('all');
+    if (coachingEnabled) {
+      if (tapOnlyDemo) tapGuideSpeak('Copied to clipboard.');
+      else guideSpeak('Copied to clipboard.');
+    }
+    window.setTimeout(() => setCopiedField(null), 2000);
+  }, [attempts, strongerAttemptIndex, coachingEnabled, tapOnlyDemo, tapGuideSpeak, guideSpeak]);
+
+  const handleSaveProductPhoto = useCallback(async () => {
+    const finalAttempt = attempts[strongerAttemptIndex ?? attempts.length - 1];
+    if (!finalAttempt?.image) return;
+    if (coachingEnabled && tapOnlyDemo) {
+      tapGuideSpeak(
+        'Opening the share menu. Choose Save Image to keep the photo on your phone.',
+      );
+    }
+    const result = await saveProductPhoto(finalAttempt.image);
+    if (result === 'shared' || result === 'downloaded') {
+      setPhotoSaveAck(true);
+      window.setTimeout(() => setPhotoSaveAck(false), 3000);
+    } else if (coachingEnabled) {
+      if (tapOnlyDemo) {
+        tapGuideSpeak('Could not open save. Try again, or ask someone to help save the photo on screen.');
+      } else {
+        guideSpeak('Could not open save. Try again, or ask someone to help save the photo on screen.');
+      }
+    }
+  }, [attempts, strongerAttemptIndex, coachingEnabled, tapOnlyDemo, tapGuideSpeak, guideSpeak]);
 
   // Voice command handler — must stay above all conditional returns (Rules of Hooks)
   const handleVoiceCommand = useCallback((transcript: string) => {
@@ -633,14 +748,6 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   }, [tapOnlyDemo, voiceCommandsEnabled, voiceListeningPrimed]);
 
 
-  // Tap-only welcome: auto-coach on entry (same speak() voice as listing readout).
-  useEffect(() => {
-    if (!tapOnlyDemo || phase !== 'demoWelcome') return;
-    primeSpeechVoices();
-    const t = window.setTimeout(() => speakDemoWelcome(), 400);
-    return () => window.clearTimeout(t);
-  }, [tapOnlyDemo, phase, speakDemoWelcome]);
-
   const hasGreeted = useRef(false);
   useEffect(() => {
     if (phase === 'voicePrompt' && !hasGreeted.current) {
@@ -664,33 +771,51 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     }
   }, [phase]);
 
-  const hasSpokenListing = useRef(false);
   useEffect(() => {
     if (phase !== 'listing') {
       hasSpokenListing.current = false;
       return;
     }
-    if (!coachingEnabled || hasSpokenListing.current) return;
+    if (tapOnlyDemo || !coachingEnabled || hasSpokenListing.current) return;
 
     const finalAttempt = attempts[strongerAttemptIndex ?? attempts.length - 1];
     if (!finalAttempt) return;
 
-    hasSpokenListing.current = true;
     const a = finalAttempt.analysisJSON;
-    const closingCue = tapOnlyDemo
-      ? TAP_GUIDANCE.listing.ttsSuffix
-      : voiceCommandsEnabled
-        ? 'Tap copy listing for Etsy, or say copy.'
+    const offerSavePhoto = !!finalAttempt.image;
+    const closingCue = voiceCommandsEnabled
+      ? offerSavePhoto
+        ? 'Tap save photo for Etsy, or say copy for the listing text.'
+        : 'Tap copy listing for Etsy, or say copy.'
+      : offerSavePhoto
+        ? 'Tap save photo, then copy listing for Etsy.'
         : 'Tap copy listing for Etsy.';
-    const voiceText = [
-      'Your listing is ready.',
-      a.listingCopy,
-      a.altText ? `Alt text: ${a.altText}` : '',
-      a.tags?.length ? `Tags: ${a.tags.slice(0, 5).join(', ')}` : '',
-      closingCue,
-    ].filter(Boolean).join(' ');
-    coachSpeak(voiceText);
-  }, [phase, coachingEnabled, tapOnlyDemo, voiceCommandsEnabled, attempts, strongerAttemptIndex, coachSpeak]);
+    const isNaValue = (v?: string | null) => !v?.trim() || /^n\/?a$/i.test(v.trim());
+    const listingBody = [
+      !isNaValue(a.listingCopy) ? a.listingCopy! : '',
+      !isNaValue(a.altText) ? `Alt text: ${a.altText}` : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+    const tagsLine =
+      a.tags?.length ? `Tags: ${a.tags.slice(0, 5).join(', ')}` : '';
+
+    const t = window.setTimeout(() => {
+      hasSpokenListing.current = true;
+      const voiceText = ['Your listing is ready.', listingBody, tagsLine, closingCue]
+        .filter(Boolean)
+        .join(' ');
+      speak(voiceText);
+    }, 500);
+    return () => window.clearTimeout(t);
+  }, [
+    phase,
+    coachingEnabled,
+    tapOnlyDemo,
+    voiceCommandsEnabled,
+    attempts,
+    strongerAttemptIndex,
+  ]);
 
   // ========== Render Phases ==========
 
@@ -724,7 +849,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
         tabIndex={-1}
         onPointerDown={() => {
           unlockSpeechForSession();
-          speakDemoWelcome();
+          primeSpeechVoices();
         }}
       >
         <div className="mb-8">
@@ -739,6 +864,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
         </div>
         <button
           type="button"
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={handleDemoWelcomeStart}
           className={`${TAP_BTN_PRIMARY} max-w-md mx-auto`}
           aria-label={TAP_LABELS.start}
@@ -1201,12 +1327,15 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     }
 
     const analysis = finalAttempt.analysisJSON;
+    const canSaveProductPhoto = !!finalAttempt.image;
 
     return (
       <div className="max-w-4xl mx-auto px-6 py-8" ref={mainContentRef} tabIndex={-1}>
         <h2 className="text-2xl font-bold text-[#241F18] mb-2">Your marketplace listing</h2>
         <p className="text-[#3D362B] mb-6">
-          From your stronger photo — copy and paste into Etsy or Shopify.
+          {canSaveProductPhoto
+            ? 'Save your product photo for Etsy, then copy the listing text below.'
+            : 'From your stronger photo — copy and paste into Etsy or Shopify.'}
         </p>
 
         <div className="flex flex-col md:flex-row gap-6 mb-8">
@@ -1219,9 +1348,17 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           </div>
 
           <div className="flex-1">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#A9B8BE] border-2 border-[#2F4858] text-[#241F18] mb-4">
+            <div
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border-2 mb-4 ${
+                analysis.readyToList
+                  ? 'bg-[#A9B8BE] border-[#2F4858] text-[#241F18]'
+                  : 'bg-amber-100 border-amber-200 text-amber-800'
+              }`}
+            >
               <CheckCircle2 className="w-4 h-4" />
-              <span className="text-sm font-bold">Ready to list</span>
+              <span className="text-sm font-bold">
+                {analysis.readyToList ? 'Ready to list' : 'Listing draft — photo can still improve'}
+              </span>
             </div>
             <p className="text-lg font-semibold text-[#241F18]">{analysis.subject}</p>
           </div>
@@ -1325,16 +1462,41 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
         </div>
 
         {tapOnlyDemo && (
-          <p className={`${TAP_HINT_CLASS} mb-6`}>{TAP_GUIDANCE.listing.hint}</p>
+          <p className={`${TAP_HINT_CLASS} mb-6`}>
+            {canSaveProductPhoto ? TAP_GUIDANCE.listing.saveHint : TAP_GUIDANCE.listing.hint}
+          </p>
         )}
 
         <div className="flex flex-wrap gap-3 justify-center">
+          {canSaveProductPhoto && (
+            <button
+              type="button"
+              onClick={() => void handleSaveProductPhoto()}
+              className={
+                tapOnlyDemo
+                  ? `${TAP_BTN_PRIMARY} inline-flex items-center justify-center gap-2`
+                  : 'inline-flex items-center gap-2 px-6 py-3 bg-[#2F4858] hover:bg-[#243a47] text-white rounded-full font-semibold focus:outline-none focus:ring-4 focus:ring-[#2F4858]/50'
+              }
+              aria-label={tapOnlyDemo ? TAP_LABELS.savePhoto : 'Save product photo for Etsy'}
+            >
+              <Share2 className="w-5 h-5" />
+              <span>
+                {photoSaveAck
+                  ? 'Check your phone'
+                  : tapOnlyDemo
+                    ? TAP_LABELS.savePhoto
+                    : 'Save photo'}
+              </span>
+            </button>
+          )}
           <button
             ref={listingButtonRef}
             onClick={copyAllListingText}
             className={
               tapOnlyDemo
-                ? `${TAP_BTN_PRIMARY} inline-flex items-center justify-center gap-2`
+                ? canSaveProductPhoto
+                  ? `${TAP_BTN_SECONDARY} inline-flex items-center justify-center gap-2`
+                  : `${TAP_BTN_PRIMARY} inline-flex items-center justify-center gap-2`
                 : 'inline-flex items-center gap-2 px-6 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full font-semibold focus:outline-none focus:ring-4 focus:ring-[#C06B45]/50'
             }
             aria-label={tapOnlyDemo ? TAP_LABELS.copyListing : 'Copy all listing text for Etsy'}

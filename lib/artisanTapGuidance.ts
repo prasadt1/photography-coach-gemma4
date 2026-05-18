@@ -16,6 +16,7 @@ export const TAP_LABELS = {
   takePhoto: 'Take Photo',
   takeAnotherPhoto: 'Take another photo',
   continueToListing: 'Continue to listing',
+  savePhoto: 'Save photo',
   copyListing: 'Copy listing',
 } as const;
 
@@ -44,5 +45,11 @@ export const TAP_GUIDANCE = {
   listing: {
     hint: `Tap ${TAP_LABELS.copyListing} below to copy your description and tags.`,
     ttsSuffix: `Tap ${TAP_LABELS.copyListing} at the bottom of the screen to copy everything.`,
+    saveHint:
+      `Tap ${TAP_LABELS.savePhoto} to keep your product image for Etsy, then ${TAP_LABELS.copyListing} for the description and tags.`,
+    saveTtsSuffix:
+      `Your product photo is ready. Tap ${TAP_LABELS.savePhoto}. ` +
+      'Your phone may show a menu — choose Save Image. ' +
+      `Then tap ${TAP_LABELS.copyListing} for the listing text.`,
   },
 } as const;

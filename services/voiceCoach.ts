@@ -59,19 +59,172 @@ let speechCompleted = false;
 // Lock to prevent multiple simultaneous speech sessions
 let isCurrentlySpeaking = false;
 
-/** Pinned coaching voice (Enhanced / Samantha) — same timbre for welcome through listing. */
+/** Pinned voices — guide (UI cues) vs analysis (photo feedback + listing body). */
 let cachedCoachingVoice: SpeechSynthesisVoice | null = null;
+let cachedGuideVoice: SpeechSynthesisVoice | null = null;
+let cachedAnalysisVoice: SpeechSynthesisVoice | null = null;
 
-/** Coaching readout rate — slightly slower than default feels less robotic on iOS. */
-export const COACHING_SPEECH_RATE = 0.92;
+/** Analysis/listing readout — sentence-chunked (Samantha class). */
+export const ANALYSIS_SPEECH_RATE = 0.92;
 
-/** Prefer Enhanced / premium system voices (matches best iOS/macOS listing readout). */
+/** Guide UI cues — one fluid phrase, slightly slower. */
+export const GUIDE_SPEECH_RATE = 0.88;
+
+/** @deprecated Use GUIDE_SPEECH_RATE or ANALYSIS_SPEECH_RATE */
+export const COACHING_SPEECH_RATE = ANALYSIS_SPEECH_RATE;
+
+export type ArtisanSpeechRole = 'guide' | 'analysis';
+
+function voiceCached(
+  cached: SpeechSynthesisVoice | null,
+  voices: SpeechSynthesisVoice[],
+): boolean {
+  return !!cached && voices.some((v) => v.voiceURI === cached.voiceURI);
+}
+
+const MALE_GUIDE_FALLBACK =
+  /daniel|arthur|gordon|fred|lee|nick|david|microsoft david|google uk english male|siri voice 1/i;
+
+function isBritishVoice(v: SpeechSynthesisVoice): boolean {
+  const nl = `${v.name} ${v.lang}`.toLowerCase();
+  return (
+    v.lang.startsWith('en-GB') ||
+    nl.includes('uk english') ||
+    nl.includes('(uk)') ||
+    nl.includes('british')
+  );
+}
+
+/** Safari iOS novelty voices — not usable as a coach. */
+function isNoveltyVoice(v: SpeechSynthesisVoice): boolean {
+  return /^(Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Wobble|Fred|Good News|Jester|Junior|Organ|Superstar|Ralph|Trinoids|Whisper|Zarvox)\b/i.test(
+    v.name,
+  );
+}
+
+/** US-first coach — Ava (Enhanced) preferred for tap-only demo / video. */
+const GUIDE_VOICE_NAMES = [
+  'Ava',
+  'Karen',
+  'Allison',
+  'Zoe',
+  'Evan',
+  'Aaron',
+  'Tom',
+  'Fred',
+  'Tessa',
+  'Moira',
+  'Serena',
+  'Siri',
+  'Arthur',
+  'Daniel',
+] as const;
+
+function logGuideVoicePick(voice: SpeechSynthesisVoice, en: SpeechSynthesisVoice[]): void {
+  console.log(
+    '[voiceCoach] Guide voice:',
+    voice.name,
+    `(${voice.lang})`,
+    '| Safari EN voices:',
+    en.map((v) => `${v.name} [${v.lang}]`).join(', '),
+  );
+}
+
+/** UI coach: welcome, tap hints — Ava (Enhanced) first; not Samantha. */
+export function pickGuideVoice(
+  voices: SpeechSynthesisVoice[],
+): SpeechSynthesisVoice | undefined {
+  if (voiceCached(cachedGuideVoice, voices)) {
+    logGuideVoicePick(cachedGuideVoice!, voices.filter((v) => v.lang.startsWith('en')));
+    return cachedGuideVoice!;
+  }
+
+  const en = voices.filter(
+    (v) => v.lang.startsWith('en') && !v.name.toLowerCase().includes('samantha'),
+  );
+  if (en.length === 0) return undefined;
+
+  const us = en.filter((v) => !isBritishVoice(v) && !isNoveltyVoice(v));
+  const pool = us.length > 0 ? us : en.filter((v) => !isNoveltyVoice(v));
+
+  const usLocal = pool.filter((v) => v.lang.startsWith('en-US'));
+  const coachPool = usLocal.length > 0 ? usLocal : pool;
+
+  const avaEnhanced = coachPool.find((v) => {
+    const nl = v.name.toLowerCase();
+    return /ava/i.test(nl) && (nl.includes('enhanced') || nl.includes('premium'));
+  });
+  if (avaEnhanced) {
+    cachedGuideVoice = avaEnhanced;
+    logGuideVoicePick(avaEnhanced, en);
+    return avaEnhanced;
+  }
+
+  const ava = coachPool.find((v) => /ava/i.test(v.name));
+  if (ava) {
+    cachedGuideVoice = ava;
+    logGuideVoicePick(ava, en);
+    return ava;
+  }
+
+  const kathy = coachPool.find((v) => /kathy/i.test(v.name));
+  if (kathy) {
+    cachedGuideVoice = kathy;
+    logGuideVoicePick(kathy, en);
+    return kathy;
+  }
+
+  for (const pref of GUIDE_VOICE_NAMES) {
+    const hit = coachPool.find((v) => v.name.includes(pref));
+    if (hit) {
+      cachedGuideVoice = hit;
+      logGuideVoicePick(hit, en);
+      return hit;
+    }
+  }
+
+  const pick =
+    coachPool.find((v) => !MALE_GUIDE_FALLBACK.test(v.name.toLowerCase())) ?? coachPool[0];
+  cachedGuideVoice = pick;
+  logGuideVoicePick(pick, en);
+  return pick;
+}
+
+export function clearGuideVoiceCache(): void {
+  cachedGuideVoice = null;
+}
+
+/** Analysis + listing readout — warm US female (Samantha class). */
+export function pickAnalysisVoice(
+  voices: SpeechSynthesisVoice[],
+): SpeechSynthesisVoice | undefined {
+  if (voiceCached(cachedAnalysisVoice, voices)) return cachedAnalysisVoice!;
+
+  const score = (v: SpeechSynthesisVoice): number => {
+    const n = v.name;
+    const nl = n.toLowerCase();
+    if (nl.includes('samantha') && nl.includes('enhanced')) return 0;
+    if (n.includes('Samantha')) return 1;
+    if (nl.includes('enhanced')) return 2;
+    if (n.includes('Google US English')) return 3;
+    if (n.includes('Microsoft Zira')) return 4;
+    if (v.lang.startsWith('en-US') && v.localService) return 5;
+    if (v.lang.startsWith('en')) return 6;
+    return 99;
+  };
+
+  const en = voices.filter((v) => v.lang.startsWith('en'));
+  if (en.length === 0) return undefined;
+  en.sort((a, b) => score(a) - score(b));
+  cachedAnalysisVoice = en[0];
+  return en[0];
+}
+
+/** Legacy single-voice pick (non–tap-only paths). */
 export function pickCoachingVoice(
   voices: SpeechSynthesisVoice[],
 ): SpeechSynthesisVoice | undefined {
-  if (cachedCoachingVoice && voices.some((v) => v.voiceURI === cachedCoachingVoice!.voiceURI)) {
-    return cachedCoachingVoice;
-  }
+  if (voiceCached(cachedCoachingVoice, voices)) return cachedCoachingVoice!;
 
   const score = (v: SpeechSynthesisVoice): number => {
     const n = v.name;
@@ -97,6 +250,15 @@ export function pickCoachingVoice(
   return en[0];
 }
 
+function pickVoiceForRole(
+  voices: SpeechSynthesisVoice[],
+  role?: ArtisanSpeechRole,
+): SpeechSynthesisVoice | undefined {
+  if (role === 'guide') return pickGuideVoice(voices);
+  if (role === 'analysis') return pickAnalysisVoice(voices);
+  return pickCoachingVoice(voices);
+}
+
 // ─── Speech Recognition (Voice Commands) ──────────────────────────────────────
 
 let recognition: SpeechRecognition | null = null;
@@ -118,6 +280,7 @@ export function isSpeaking(): boolean {
 /** Load voices early (Chrome needs this before first speak). */
 export function primeSpeechVoices(): void {
   if (typeof window === 'undefined' || !window.speechSynthesis) return;
+  clearGuideVoiceCache();
   const load = () => {
     speechSynthesis.getVoices();
   };
@@ -130,8 +293,14 @@ export function speak(
   rate = 0.95,
   onEnd?: () => void,
   onStart?: () => void,
+  role?: ArtisanSpeechRole,
 ): void {
-  console.log('[voiceCoach] speak() called with:', text.slice(0, 50) + '...');
+  console.log(
+    `[voiceCoach] speak(${role ?? 'default'}) called with:`,
+    text.slice(0, 50) + '...',
+  );
+
+  void import('../lib/guideNeuralTts').then((m) => m.stopGuideNeural());
 
   // Cancel any existing speech first to prevent overlapping
   if (isCurrentlySpeaking) {
@@ -160,16 +329,19 @@ export function speak(
     const onVoices = () => {
       speechSynthesis.removeEventListener('voiceschanged', onVoices);
       if (!isCancelled) {
-        speak(text, rate, onEnd, onStart);
+        speak(text, rate, onEnd, onStart, role);
       }
     };
     speechSynthesis.addEventListener('voiceschanged', onVoices);
     return;
   }
 
-  const preferredVoice = pickCoachingVoice(voices);
+  const preferredVoice = pickVoiceForRole(voices, role);
 
-  console.log('[voiceCoach] Using voice:', preferredVoice?.name || 'default');
+  console.log(
+    `[voiceCoach] Using voice (${role ?? 'default'}):`,
+    preferredVoice?.name || 'system default',
+  );
 
   // Split text into sentences to work around Chrome truncation bug
   const sentences = text
@@ -639,6 +811,8 @@ export function speakNow(
   rate = 0.95,
   onEnd?: () => void,
   onStart?: () => void,
+  voiceOverride?: SpeechSynthesisVoice | null,
+  pitch = 1,
 ): void {
   if (!text?.trim()) return;
   const synth = prepareSpeechSynthesis();
@@ -659,7 +833,7 @@ export function speakNow(
 
   const run = () => {
     const voices = synth.getVoices();
-    const preferredVoice = pickCoachingVoice(voices);
+    const preferredVoice = voiceOverride ?? pickCoachingVoice(voices);
 
     lastSpokenText = text;
     isCurrentlySpeaking = true;
@@ -667,6 +841,7 @@ export function speakNow(
 
     const utterance = new SpeechSynthesisUtterance(text.trim());
     utterance.rate = rate;
+    utterance.pitch = pitch;
     utterance.volume = 1;
     if (preferredVoice) utterance.voice = preferredVoice;
 
@@ -729,22 +904,100 @@ export function speakAfterUnlock(
   speakQueued(text, 180, rate, onEnd, onStart);
 }
 
-/**
- * Artisan / demo coaching — Enhanced voice, sentence-chunked (listing-style).
- * Use after unlockSpeechForSession() or from a tap handler.
- */
-export function speakCoaching(
+function speakCoachingWithRole(
   text: string,
+  role: ArtisanSpeechRole,
   onEnd?: () => void,
   onStart?: () => void,
 ): void {
   if (!text?.trim()) return;
   primeSpeechVoices();
-  if (speechSessionUnlocked) {
-    speakQueued(text, 120, COACHING_SPEECH_RATE, onEnd, onStart);
-  } else {
-    speak(text, COACHING_SPEECH_RATE, onEnd, onStart);
+
+  if (role === 'guide') {
+    const deliverWebSpeech = () => {
+      void import('../lib/guideNeuralTts').then((m) => m.stopGuideNeural());
+      const synth = window.speechSynthesis;
+      if (!synth) return;
+      const voice = pickGuideVoice(synth.getVoices());
+      console.log('[voiceCoach] Guide speakNow:', voice?.name ?? 'default');
+      speakNow(text, GUIDE_SPEECH_RATE, onEnd, onStart, voice, 0.97);
+    };
+    if (speakQueueTimer) clearTimeout(speakQueueTimer);
+    if (speechSessionUnlocked) {
+      speakQueueTimer = setTimeout(() => {
+        speakQueueTimer = null;
+        isCancelled = false;
+        deliverWebSpeech();
+      }, 80);
+    } else {
+      deliverWebSpeech();
+    }
+    return;
   }
+
+  void import('../lib/guideNeuralTts').then((m) => m.stopGuideNeural());
+
+  const rate = ANALYSIS_SPEECH_RATE;
+  if (speechSessionUnlocked) {
+    speakQueued(text, 120, rate, onEnd, onStart, 'analysis');
+  } else {
+    speak(text, rate, onEnd, onStart, 'analysis');
+  }
+}
+
+/** Tap hints, welcome, navigation — one utterance (less robotic than sentence chops). */
+export function speakGuideCoaching(
+  text: string,
+  onEnd?: () => void,
+  onStart?: () => void,
+): void {
+  speakCoachingWithRole(text, 'guide', onEnd, onStart);
+}
+
+/**
+ * Guide line from a tap/click handler — unlocks audio (iOS-safe).
+ * Tries neural Ava first, then Web Speech Ava (Enhanced) fallback.
+ */
+export function speakGuideFromUserGesture(
+  text: string,
+  onEnd?: () => void,
+  onStart?: () => void,
+): void {
+  if (!text?.trim()) return;
+  if (!prepareSpeechSynthesis()) return;
+  speechSessionUnlocked = true;
+
+  const fallbackWebSpeech = () => {
+    const synth = window.speechSynthesis;
+    if (!synth) return;
+    const voice = pickGuideVoice(synth.getVoices());
+    console.log('[voiceCoach] Guide gesture Web Speech fallback:', voice?.name ?? 'default');
+    speakNow(text, GUIDE_SPEECH_RATE, onEnd, onStart, voice ?? null, 0.97);
+  };
+
+  void (async () => {
+    const { speakGuideNeural } = await import('../lib/guideNeuralTts');
+    const ok = await speakGuideNeural(text, onEnd, onStart);
+    if (!ok) fallbackWebSpeech();
+  })();
+}
+
+/** Analysis + listing body — sentence-chunked Samantha-style readout. */
+export function speakAnalysisCoaching(
+  text: string,
+  onEnd?: () => void,
+  onStart?: () => void,
+): void {
+  speakCoachingWithRole(text, 'analysis', onEnd, onStart);
+}
+
+/** @deprecated Use speakGuideCoaching / speakAnalysisCoaching */
+export function speakCoaching(
+  text: string,
+  onEnd?: () => void,
+  onStart?: () => void,
+): void {
+  speakAnalysisCoaching(text, onEnd, onStart);
 }
 
 export function stopSpeaking(): void {
@@ -758,8 +1011,9 @@ export function stopSpeaking(): void {
     clearTimeout(speakQueueTimer);
     speakQueueTimer = null;
   }
-  if (typeof window !== 'undefined' && window.speechSynthesis) {
-    window.speechSynthesis.cancel();
+  if (typeof window !== 'undefined') {
+    void import('../lib/guideNeuralTts').then((m) => m.stopGuideNeural());
+    window.speechSynthesis?.cancel();
   }
 }
 
@@ -774,7 +1028,14 @@ export function hardStopVoice(): void {
  * Schedule speech after a short delay so Chrome recovers from speechSynthesis.cancel().
  * Use this after hardStopVoice or navigation — do not call speak() immediately after cancel.
  */
-export function speakQueued(text: string, delayMs = 180, rate = 0.95, onEnd?: () => void, onStart?: () => void): void {
+export function speakQueued(
+  text: string,
+  delayMs = 180,
+  rate = 0.95,
+  onEnd?: () => void,
+  onStart?: () => void,
+  role?: ArtisanSpeechRole,
+): void {
   if (!text?.trim()) return;
   if (speakQueueTimer) {
     clearTimeout(speakQueueTimer);
@@ -784,7 +1045,7 @@ export function speakQueued(text: string, delayMs = 180, rate = 0.95, onEnd?: ()
   speakQueueTimer = setTimeout(() => {
     speakQueueTimer = null;
     isCancelled = false;
-    speak(text, rate, onEnd, onStart);
+    speak(text, rate, onEnd, onStart, role);
   }, delayMs);
 }
 

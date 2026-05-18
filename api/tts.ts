@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 
 const MAX_CHARS = 2500;
-const VOICE = 'en-US-JennyNeural';
+const DEFAULT_VOICE = 'en-US-JennyNeural';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') {
@@ -22,10 +22,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const spoken = text.slice(0, MAX_CHARS);
+  const voice =
+    typeof req.body?.voice === 'string' && req.body.voice.trim()
+      ? req.body.voice.trim()
+      : DEFAULT_VOICE;
 
   try {
     const tts = new MsEdgeTTS();
-    await tts.setMetadata(VOICE, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+    await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
     const { audioStream } = tts.toStream(spoken);
     const chunks: Buffer[] = [];
 

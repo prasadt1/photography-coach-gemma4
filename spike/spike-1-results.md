@@ -3,7 +3,6 @@
 > **Note (May 2026):** This spike predates the final blind-and-low-vision-first L.E.N.S. framing. The runtime findings below (model, runtime, quantisation, latency) carried over unchanged. Some product terminology reflects the earlier broader Studio scope.
 
 **Date:** 2026-05-06  
-**Tester:** Agent (Cursor)  
 **Machine:** MacBook, Apple M-series, 16 GB RAM  
 **Model:** gemma4:latest (E4B, Q4_K_M, 9.6 GB)  
 **Ollama:** v0.22.1  

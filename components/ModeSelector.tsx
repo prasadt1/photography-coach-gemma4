@@ -1,7 +1,6 @@
 /**
  * ModeSelector — Studio vs Vault Mode picker
  * Shown on the idle screen before photo upload.
- * Sources: docs/specs/01-product-spec.md, docs/specs/08-vault-mode-spec.md
  */
 
 import React from 'react';

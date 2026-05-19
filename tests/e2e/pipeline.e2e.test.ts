@@ -5,9 +5,6 @@
  * real services (Ollama + auditService) without a browser, verifying
  * the critical paths the manual test checklist relies on.
  *
- * Test cases mapped from docs/specs/13-implementation-roadmap-spec.md §6.2
- * and 10-platform-shells-spec.md §8:
- *
  *   P-1  Studio Mode happy path  (upload → pipeline → valid result)
  *   P-2  Vault Mode audit log    (pipeline + audit → verify chain → export)
  *   CP-2 Audit log export/import (export JSONL → hash chain intact)

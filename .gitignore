@@ -59,3 +59,15 @@ models/
 OPUS-CURSOR-REVIEW.md
 *-CURSOR-REVIEW.md
 README-diagrams-prompts.md
+
+# Hackathon/video production scratch (kept out of public repo)
+.venv-segment1/
+docs/Final-Demo-Video*
+docs/video-segment1/
+docs/video-evidence/
+docs/lens-demo-video-narration.md
+scripts/build_lens_video_evidence.py
+scripts/build_segment1_opener.py
+scripts/build_segment_z_cards.py
+scripts/build_segment_z_closer.py
+scripts/composite_iphone_mockup.py

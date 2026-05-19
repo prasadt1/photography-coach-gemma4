@@ -57,7 +57,6 @@ export const LiveCameraCapture: React.FC<LiveCameraCaptureProps> = ({
       ? 'Live preview needs HTTPS. Use Take Photo to open your device camera.'
       : 'Starting camera. Please allow access if prompted.',
   );
-
   const handleFileSelected = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];

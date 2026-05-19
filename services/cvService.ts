@@ -1,9 +1,6 @@
 /**
  * cvService.ts — Deterministic computer vision pipeline
  * Provides factual grounding data before Gemma inference.
- *
- * Sources: docs/specs/05-deterministic-cv-spec.md
- *
  * Pipeline order:
  *   1. EXIF extraction  (exifr — browser-compatible)
  *   2. Histogram analysis (canvas pixel data)

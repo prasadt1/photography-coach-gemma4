@@ -1,7 +1,7 @@
 {
-  "name": "photography-coach-ai",
+  "name": "lens-gemma4",
   "version": "1.0.0",
-  "description": "AI-powered photography mentor using Gemini 3 Pro",
+  "description": "Voice-guided product photography coach for blind and low-vision artisans using Gemma 4 via Ollama",
   "main": "electron-dist/main.js",
   "scripts": {
     "start": "vite",
@@ -23,16 +23,18 @@
     "electron:build:linux": "npm run build && npm run electron:compile && electron-builder --linux"
   },
   "keywords": [
-    "gemini",
+    "gemma",
+    "ollama",
     "ai",
     "photography",
+    "accessibility",
+    "product-photography",
     "react"
   ],
   "author": "",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "dependencies": {
     "@google/genai": "^1.31.0",
-    "@mlc-ai/web-llm": "^0.2.83",
     "@vercel/node": "^5.8.1",
     "canvas-confetti": "^1.9.4",
     "exifr": "^7.1.3",

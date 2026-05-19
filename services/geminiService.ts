@@ -1,15 +1,15 @@
-// Gemini 3 Pro integration for professional photography analysis
+// Optional Studio-only Gemini integration for cloud image enhancement.
 import { GoogleGenAI, Type } from '@google/genai';
 import { PhotoAnalysis, MentorMessage, ThinkingProcess } from '../types';
 
-// Pricing constants for Gemini 3 Pro (Estimated per 1M tokens)
+// Pricing constants for optional Gemini Studio calls (estimated per 1M tokens)
 const PRICING = {
   flash: {
     input: 0.075 / 1000000,
     output: 0.30 / 1000000,
     cachedInput: 0.01875 / 1000000 
   },
-  // Pricing for Gemini 3 Pro
+  // Pricing for the optional Gemini Pro path
   pro: {
     input: 3.50 / 1000000,
     output: 10.50 / 1000000,
@@ -118,7 +118,7 @@ export const analyzeImage = async (base64Image: string, mimeType: string): Promi
 
   const generateContent = async () => {
     return await ai.models.generateContent({
-      model: 'gemini-3-pro-preview', // COMPETITION REQUIREMENT: Gemini 3 Pro
+      model: 'gemini-3-pro-preview', // Optional Studio-only cloud critique path
       contents: {
         role: 'user',
         parts: [
@@ -241,7 +241,7 @@ export const analyzeImage = async (base64Image: string, mimeType: string): Promi
 
   // --- ECONOMICS CALCULATION ---
   if (response.usageMetadata) {
-    const pricing = PRICING.pro; // Using Gemini 3 Pro Pricing
+    const pricing = PRICING.pro; // Optional Gemini Pro pricing
 
     const rawPromptTokens = response.usageMetadata.promptTokenCount || 0;
     const outputTokens = response.usageMetadata.candidatesTokenCount || 0;

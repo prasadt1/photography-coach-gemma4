@@ -16,13 +16,11 @@ import SellMode from './components/SellMode';
 import AnalysisResults, { TabId, MentorChatStateV2 } from './components/AnalysisResults';
 import AuditLogPanel from './components/AuditLogPanel';
 import KeyboardShortcutsOverlay from './components/KeyboardShortcutsOverlay';
-import { PresentationSlides } from './components/PresentationSlides';
 import {
   runAnalysisPipeline,
   checkOllamaHealth,
   warmUpModel,
   AnalysisProgress,
-  AnalysisTier,
 } from './services/analysisOrchestrator';
 import { SupportedLanguage, LANGUAGE_LABELS } from './services/promptService';
 import { setOperationalMode, exportAuditLog } from './services/auditService';
@@ -46,7 +44,6 @@ function App() {
   const [currentFile, setCurrentFile] = useState<File | null>(null);
   const [analysis, setAnalysis] = useState<PhotoAnalysisV2 | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showSlides, setShowSlides] = useState(false);
 
   const initialRoute = getInitialAppRoute();
   const [mode, setMode] = useState<OperationalMode>(initialRoute.mode);
@@ -59,7 +56,6 @@ function App() {
   const [mentorChatState, setMentorChatState] = useState<MentorChatStateV2>({ messages: [], isLoading: false });
   const [showAuditLog, setShowAuditLog] = useState(false);
 
-  const [tier] = useState<AnalysisTier>('tier1-ollama');
   const [language, setLanguage] = useState<SupportedLanguage>('en');
   const [deepMode, setDeepMode] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -301,7 +297,6 @@ function App() {
         file,
         (progress) => setAnalysisProgress(progress),
         controller.signal,
-        tier,
         language,
         deepMode,
         false,
@@ -430,10 +425,6 @@ function App() {
       console.error('[App] Audit log export failed:', e);
     }
   };
-
-  if (showSlides) {
-    return <PresentationSlides onExit={() => setShowSlides(false)} initialSlide={1} />;
-  }
 
   // Show HomePage when in home state
   if (showHome) {

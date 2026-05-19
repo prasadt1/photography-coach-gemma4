@@ -12,7 +12,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5%2B-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green?style=flat-square)](LICENSE)
 
-🔗 **Live demos:** [Judge try-it](https://lens-app-gemma4.vercel.app) (Ollama Cloud 31B) · [Real product / video](https://photography-coach-gemma4.vercel.app) (local E4B) · **Demo video:** _add link before submission_ · Built for the **Gemma 4 Good Hackathon**
+🔗 **Live demos:** [Judge try-it](https://lens-app-gemma4.vercel.app) (Ollama Cloud 31B) · [Real product / video](https://photography-coach-gemma4.vercel.app) (local E4B) · **[Demo video](https://www.youtube.com/watch?v=qoDLKzzcYHM)** · Built for the **Gemma 4 Good Hackathon**
 
 **Tracks:** Digital Equity & Inclusivity · Ollama
 
@@ -185,6 +185,8 @@ Local E4B (product), Ollama Cloud 31B (judge uploads), Demo Mode (recorded E4B s
 - **Deterministic CV grounding** (Photo Studio): EXIF, histogram, and focus-map data are extracted client-side and passed alongside the image.
 - **Desktop Vault Mode** (Electron): OS-level network isolation and an audit log, for makers who want a guaranteed-offline build.
 
+For the mode-segmented view, see [`docs/architecture.md`](docs/architecture.md).
+
 ---
 
 ## 🔬 Engineering spikes
@@ -267,7 +269,7 @@ photography-coach-gemma4/
 ├── electron/                  # Desktop shell + Vault Mode
 ├── public/                    # PWA manifest + service worker + demo-samples/
 ├── types.v2.ts                # JSON schema types
-└── docs/                      # Specs, spikes, diagrams (docs/images/)
+└── docs/                      # Public setup notes, spikes, benchmarks, and diagrams
 ```
 
 ---
@@ -297,7 +299,7 @@ ollama pull gemma4:e4b                # pull it if missing
 ollama run gemma4:e4b "ready"
 ```
 
-**Hosted demo returns no analysis** — confirm `OLLAMA_API_KEY`, `OLLAMA_TARGET=cloud`, and a valid cloud model (`gemma4:31b` on [ollama.com/api/tags](https://ollama.com/api/tags)) on the **lens-app** Vercel project, then redeploy. For local E4B: `OLLAMA_TARGET=local vercel dev` after `ollama pull gemma4:e4b`. See `TROUBLESHOOTING.md` for more.
+**Hosted demo returns no analysis** — confirm `OLLAMA_API_KEY`, `OLLAMA_TARGET=cloud`, and a valid cloud model (`gemma4:31b` on [ollama.com/api/tags](https://ollama.com/api/tags)) on the **lens-app** Vercel project, then redeploy. For local E4B: `OLLAMA_TARGET=local vercel dev` after `ollama pull gemma4:e4b`. See [`docs/troubleshooting.md`](docs/troubleshooting.md) for more.
 
 ---
 
@@ -316,7 +318,7 @@ Apache License 2.0 — see [LICENSE](LICENSE).
 ## 🔗 Links
 
 - **Judge try-it:** https://lens-app-gemma4.vercel.app · **Real product / video:** https://photography-coach-gemma4.vercel.app
-- **Demo video:** _add before submission_
+- **Demo video:** https://www.youtube.com/watch?v=qoDLKzzcYHM
 - **Repository:** https://github.com/prasadt1/photography-coach-gemma4
 - **Hackathon:** Gemma 4 Good
 

@@ -1,5 +1,5 @@
 /**
- * Photography Coach v2 — Type Definitions
+ * L.E.N.S. — Type Definitions
  * Schema Version: 2.0 (Gemma 4 Edition)
  * Replaces types.ts v1 for new Ollama-based pipeline.
  */
@@ -81,7 +81,7 @@ export interface CameraSettings {
 export interface PhotoAnalysisV2 {
   // Provenance
   schema_version: string;         // "2.0"
-  model_id: string;               // "gemma-4-e4b" | "gemini-3-pro-preview"
+  model_id: string;               // "gemma-4-e4b" | "gemma4-cloud"
   quantization?: string;          // "Q4_K_M" | "Q5_K_M" | "Q8_0"
   timestamp?: number;             // Unix ms
 

@@ -1,6 +1,6 @@
 /**
  * ollamaService.ts — Gemma 4 E4B inference via Ollama
- * Primary inference engine for Photography Coach v2.
+ * Primary inference engine for L.E.N.S.
  *
  * Spike 1 findings (resolved):
  *   - JSON Schema format param: supported in Ollama 0.22.1 via format field

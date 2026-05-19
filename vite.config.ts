@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
             key: fs.readFileSync(mkcertKey),
             cert: fs.readFileSync(mkcertCert),
           }
-        : true
+        : undefined
       : undefined;
     return {
       base: './',  // Use relative paths for Electron + file:// compatibility

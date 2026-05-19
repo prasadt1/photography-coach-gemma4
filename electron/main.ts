@@ -1,8 +1,6 @@
 /**
  * electron/main.ts — Electron main process
  * Entry point for the desktop app (Vault Mode primary).
- *
- * Sources: docs/specs/10-platform-shells-spec.md §4.2
  */
 
 import { app, BrowserWindow, session, ipcMain } from 'electron';

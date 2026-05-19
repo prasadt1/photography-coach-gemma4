@@ -4,8 +4,6 @@
  * Runs in the renderer context before any web content loads.
  * Exposes a safe, narrow API surface to the renderer via contextBridge.
  * The renderer checks `window.electronAPI?.isElectron` to detect desktop mode.
- *
- * Sources: docs/specs/10-platform-shells-spec.md §4.2
  */
 
 import { contextBridge, ipcRenderer } from 'electron';

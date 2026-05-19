@@ -1,8 +1,6 @@
 /**
  * promptService.ts — Prompt templates for Gemma 4 E4B
  * Centralises all system prompts, user templates, and tone calibration.
- *
- * Sources: docs/specs/04-prompt-and-rationale-spec.md
  */
 
 import { PhotoAnalysisV2, CVData } from '../types.v2';
@@ -204,79 +202,7 @@ export function buildCullUserPrompt(_language: SupportedLanguage = 'en'): string
   return `Score this photograph for quick culling. Return JSON matching the requested schema only.`;
 }
 
-// ─── Mode-specific prompts (Voice, Quest, Sell) ─────────────────────────────────
-
-/**
- * VOICE MODE — Descriptive-first coaching for photographers of all abilities
- * Enhanced for accessibility: Describes scene FIRST, then provides spatial guidance
- * Supports low-vision users, beginners, and anyone using voice-first workflow
- */
-export const VOICE_COACH_SYSTEM_PROMPT = `You are a supportive voice coach helping photographers of all abilities frame their shots.
-
-STEP 1 - DESCRIBE WHAT YOU SEE (10-15 words):
-Start by describing the main subject and its surroundings.
-Example: "I see a handmade ceramic bowl on a wooden table with soft lighting."
-
-STEP 2 - SPATIAL GUIDANCE (10-15 words):
-Then provide framing guidance using a 12-hour clock face metaphor where:
-- 12:00 is top-center, 3:00 is right-center, 6:00 is bottom-center, 9:00 is left-center
-Example: "The bowl is at 2 o'clock, slightly cut off. Move your camera right to center it."
-
-RULES:
-1. Always describe the scene BEFORE giving directions
-2. Use natural, encouraging language
-3. Keep TOTAL response under 30 words (15 per step)
-4. Speak as if coaching someone who may not see the screen
-5. Mention if the subject is well-framed or needs adjustment
-
-Do NOT output JSON. Output plain speech only.`;
-
-export const VOICE_COACH_USER_PROMPT = `Describe what's in this photo, then guide me on how to frame it better. Use clock-face directions and keep it conversational.`;
-
-/**
- * QUEST MODE — Daily challenges with PASS/FAIL
- * AI Mode recommendation: Chain-of-thought for reliable binary output
- */
-export type QuestChallenge = {
-  id: string;
-  name: string;
-  criteria: string;
-  hint: string;
-};
-
-export const QUEST_CHALLENGES: QuestChallenge[] = [
-  { id: 'rule-of-thirds', name: 'Product Positioning', criteria: 'The main subject is positioned along the rule of thirds grid lines or intersections, not dead center', hint: 'Place your product where grid lines cross' },
-  { id: 'leading-lines', name: 'Guide Eye to Product', criteria: 'The photo contains visible lines (surfaces, edges, shadows, etc.) that draw the buyer\'s eye toward the main product', hint: 'Use surfaces or edges to lead focus' },
-  { id: 'golden-hour', name: 'Lighting for Sales', criteria: 'The lighting appears warm and appealing, showing texture and detail clearly without harsh shadows', hint: 'Natural window light or golden hour' },
-  { id: 'symmetry', name: 'Professional Balance', criteria: 'The composition shows clear bilateral symmetry where left and right (or top and bottom) balance each other professionally', hint: 'Balanced layouts sell better' },
-  { id: 'negative-space', name: 'Showcase with Space', criteria: 'The photo uses empty/minimal areas intentionally to emphasize the product and create breathing room for buyers', hint: 'Less clutter = more focus on product' },
-  { id: 'framing', name: 'Frame Your Product', criteria: 'The product is framed by complementary elements (surfaces, props, or natural frames) that enhance rather than distract', hint: 'Frame without competing for attention' },
-  { id: 'emotion', name: 'Capture Texture for Buyers', criteria: 'The photo clearly shows material quality, texture, and craftsmanship details that help buyers understand what they\'re purchasing', hint: 'Close-ups show quality and value' },
-];
-
-export function buildQuestSystemPrompt(challenge: QuestChallenge): string {
-  return `You are a strict photography judge evaluating a daily challenge.
-
-CHALLENGE: "${challenge.name}"
-CRITERIA: ${challenge.criteria}
-
-TASK:
-1. First, reason about whether the image meets the criteria (2-3 sentences max)
-2. Then output your verdict as exactly one word: PASS or FAIL
-3. Finally, provide a helpful 1-sentence tip
-
-OUTPUT FORMAT (use these exact labels):
-[REASONING]: (Your brief analysis of whether criteria is met)
-[VERDICT]: PASS or FAIL
-[TIP]: (One actionable tip)
-
-Be strict but fair. Only PASS if the criteria is clearly met.
-Do NOT output JSON.`;
-}
-
-export function buildQuestUserPrompt(challenge: QuestChallenge): string {
-  return `Judge this photo for the "${challenge.name}" challenge. Does it meet the criteria: "${challenge.criteria}"?`;
-}
+// ─── Mode-specific prompts (Artisan Studio) ───────────────────────────────────
 
 /**
  * ARTISAN MODE — Product photo coach for small makers and sellers

@@ -1,7 +1,7 @@
 {
-  "appId": "com.photographycoach.v2",
-  "productName": "Photography Coach",
-  "copyright": "Copyright © 2026",
+  "appId": "com.lens.gemma4",
+  "productName": "L.E.N.S.",
+  "copyright": "Copyright © 2026 L.E.N.S. Contributors",
   "directories": {
     "output": "dist-electron",
     "buildResources": "build"

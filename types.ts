@@ -38,14 +38,14 @@ export interface SessionCostMetric {
   newTokens?: number;
 }
 
-// Structured reasoning process from Gemini 3 Pro
+// Structured reasoning process from the optional Gemini Studio integration
 export interface ThinkingProcess {
   observations: string[]; // Initial things noticed
   reasoningSteps: string[]; // How the AI evaluated the photo
   priorityFixes: string[]; // Ranked list of fixes
 }
 
-// Main analysis result from Gemini
+// Main analysis result from the optional Gemini Studio integration
 export interface PhotoAnalysis {
   // Scoring metrics (0-100)
   scores: {
@@ -94,7 +94,7 @@ export interface PhotoAnalysis {
 // App states for UI flow
 export enum AppState {
   IDLE = 'IDLE',           // Waiting for upload
-  ANALYZING = 'ANALYZING', // Processing with Gemini
+  ANALYZING = 'ANALYZING', // Processing model analysis
   RESULTS = 'RESULTS',     // Showing analysis
   GENERATING = 'GENERATING', // Creating corrected image
   ERROR = 'ERROR'          // Something went wrong

@@ -1,7 +1,7 @@
 /**
  * xmpService.ts — Adobe XMP sidecar generation for Lightroom integration
  *
- * Exports Photography Coach critique data as .xmp files that Lightroom Classic
+ * Exports L.E.N.S. critique data as .xmp files that Lightroom Classic
  * can read to populate star ratings, color labels, and IPTC keywords.
  */
 
@@ -81,7 +81,7 @@ export function generateDescription(analysis: PhotoAnalysisV2): string {
 
   const critique = analysis.critique?.overall ?? 'No overall critique available.';
 
-  return `${stars} Photography Coach Critique (Gemma 4)\n\n${critique}\n\nScores: Composition ${analysis.scores.composition}/10, Lighting ${analysis.scores.lighting}/10, Technique ${analysis.scores.technique}/10`;
+  return `${stars} L.E.N.S. Photo Studio Critique (Gemma 4)\n\n${critique}\n\nScores: Composition ${analysis.scores.composition}/10, Lighting ${analysis.scores.lighting}/10, Technique ${analysis.scores.technique}/10`;
 }
 
 // ─── XMP Template Generation ──────────────────────────────────────────────────
@@ -107,7 +107,7 @@ export function generateXMP(analysis: PhotoAnalysisV2, originalFilename: string)
   const timestamp = new Date().toISOString();
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Photography Coach v2">
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="L.E.N.S.">
   <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
     <rdf:Description rdf:about=""
       xmlns:xmp="http://ns.adobe.com/xap/1.0/"
@@ -126,7 +126,7 @@ export function generateXMP(analysis: PhotoAnalysisV2, originalFilename: string)
       <xmp:MetadataDate>${timestamp}</xmp:MetadataDate>
 
       <!-- Creator Tool -->
-      <xmp:CreatorTool>Photography Coach v2 (Gemma 4 E4B)</xmp:CreatorTool>
+      <xmp:CreatorTool>L.E.N.S. (Gemma 4 E4B)</xmp:CreatorTool>
 
       <!-- Description (Overall Critique) -->
       <dc:description>
@@ -152,8 +152,8 @@ ${keywords.map(kw => `          <rdf:li>${escapeXML(kw)}</rdf:li>`).join('\n')}
       <!-- Photoshop-specific metadata -->
       <photoshop:Headline>${escapeXML(analysis.critique?.overall?.split('.')[0] ?? 'AI Critique')}</photoshop:Headline>
 
-      <!-- Custom metadata: Photography Coach scores -->
-      <Iptc4xmpCore:Location>Photography Coach Analysis</Iptc4xmpCore:Location>
+      <!-- Custom metadata: L.E.N.S. scores -->
+      <Iptc4xmpCore:Location>L.E.N.S. Analysis</Iptc4xmpCore:Location>
 
     </rdf:Description>
   </rdf:RDF>

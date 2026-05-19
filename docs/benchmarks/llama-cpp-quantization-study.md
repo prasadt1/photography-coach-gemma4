@@ -1,8 +1,8 @@
 # Why We Chose Q4_K_M (and Ollama) for Production
 
-> **Note (May 2026):** This spike was run during the project's *Photography Coach v2* phase, before the pivot to **L.E.N.S.** — the blind-and-low-vision-first product. The runtime findings below (model, runtime, quantisation, latency) carried over to L.E.N.S. unchanged. Some product terminology (Studio/Vault modes, five-axis scoring, "destination photographers") reflects the earlier scope.
+> **Note (May 2026):** This spike predates the final blind-and-low-vision-first L.E.N.S. framing. The runtime findings below (model, runtime, quantisation, latency) carried over unchanged. Some product terminology reflects the earlier broader Studio scope.
 
-**Purpose:** Document the architectural reasoning behind selecting Gemma 4 E4B Q4_K_M served via Ollama as the production runtime for Photography Coach.
+**Purpose:** Document the architectural reasoning behind selecting Gemma 4 E4B Q4_K_M served via Ollama as the production runtime for L.E.N.S.
 **Tester:** Prasad
 **Hardware:** MacBook (Apple Silicon, 16 GB unified memory)
 **Date:** May 2026
@@ -12,7 +12,7 @@
 
 ## Why This Document Exists
 
-The hackathon's llama.cpp Special Tech Track asks for "innovative implementation of Gemma 4 on resource-constrained hardware." Photography Coach v2 ships with Ollama as its runtime (which uses llama.cpp internally). This document explains the architectural reasoning so judges understand the choice was deliberate, not accidental.
+The hackathon's llama.cpp Special Tech Track asks for "innovative implementation of Gemma 4 on resource-constrained hardware." L.E.N.S. ships with Ollama as its runtime (which uses llama.cpp internally). This document explains the architectural reasoning so judges understand the choice was deliberate, not accidental.
 
 We also evaluated three Gemma 4 E4B quantization variants — Q4_K_M, Q5_K_M, Q8_0 — to inform the production model selection. The reasoning below summarizes that evaluation at the architectural level. **Detailed lab benchmarks are not included in this document; the production decision was driven by qualitative tradeoff analysis on a single development machine, not by a formal benchmark suite.**
 
@@ -20,7 +20,7 @@ We also evaluated three Gemma 4 E4B quantization variants — Q4_K_M, Q5_K_M, Q8
 
 ## The Tradeoff Space
 
-Photography Coach v2 needed a model that:
+L.E.N.S. needed a model that:
 
 1. **Fits in ≤12 GB RAM** on a typical photographer's MacBook (alongside Lightroom, Chrome, and other workflow apps)
 2. **Returns a structured JSON critique in ≤30 seconds (warm)** for acceptable UX
@@ -47,7 +47,7 @@ A typical photographer runs Lightroom (~3-5 GB), Chrome (~1-2 GB), and the OS (~
 
 ### 2. Latency budget for the UX
 
-Photography Coach is interactive — a photographer drops a photo and waits for a critique. Beyond ~30 seconds, the UX feels broken. Quantizations larger than Q4_K_M increase token-generation time, pushing closer to or past this threshold on a typical MacBook. The latency penalty is real and visible.
+L.E.N.S. is interactive — a maker captures a product photo and waits for coaching. Beyond ~30 seconds, the UX feels broken. Quantizations larger than Q4_K_M increase token-generation time, pushing closer to or past this threshold on a typical MacBook. The latency penalty is real and visible.
 
 ### 3. Quality drift is below user-perception threshold
 
@@ -103,7 +103,7 @@ ollama pull gemma4
 # Start Ollama
 ollama serve
 
-# In another terminal, run Photography Coach
+# In another terminal, run L.E.N.S.
 git clone https://github.com/prasadt1/photography-coach-gemma4
 cd photography-coach-gemma4
 npm install
@@ -127,7 +127,7 @@ Then update `services/ollamaService.ts:OLLAMA_CONFIG.model` to the new tag and r
 ## Limitations
 
 This document is architectural reasoning, not a formal benchmark report. Some claims are based on hands-on observation rather than measured data. A future version could add:
-- A real benchmark harness (`spike/benchmark-quantization.mjs` is a starting point)
+- A real benchmark harness under `scripts/` or `tools/`
 - A larger test set than 8 photos
 - Statistical comparison across multiple runs
 - Cross-platform performance data (Intel Mac, Linux, Windows)

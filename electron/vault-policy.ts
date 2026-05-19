@@ -6,8 +6,6 @@
  *
  * This is the cryptographic enforcement layer that makes Vault Mode
  * trustworthy on desktop (web browsers cannot provide this guarantee).
- *
- * Sources: docs/specs/08-vault-mode-spec.md §3, 10-platform-shells-spec.md §4.2
  */
 
 import { Session } from 'electron';

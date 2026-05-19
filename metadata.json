@@ -1,5 +1,5 @@
 {
-  "name": "AI Photography Coach",
-  "description": "Your personal AI photography coach. Upload your photos to receive instant, professional-grade feedback on composition, lighting, and technique.",
+  "name": "L.E.N.S. - Local Edge Native Studio",
+  "description": "A voice-guided product photography coach for blind and low-vision artisans, powered by Gemma 4 via Ollama.",
   "requestFramePermissions": []
 }

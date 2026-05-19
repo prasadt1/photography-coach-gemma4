@@ -1,9 +1,6 @@
 /**
  * auditService.ts — Hash-chained audit log for Vault Mode
  * Provides tamper-evident logging of all analysis events.
- *
- * Sources: docs/specs/08-vault-mode-spec.md
- *
  * Security model:
  *   - Each entry contains the SHA-256 hash of the previous entry
  *   - Tampering any entry invalidates all subsequent hashes

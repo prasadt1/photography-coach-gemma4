@@ -248,7 +248,7 @@ describe('xmpService', () => {
       const analysis = createMockAnalysis(5);
       const xmp = generateXMP(analysis, 'test.jpg');
 
-      expect(xmp).toContain('Photography Coach v2 (Gemma 4 E4B)');
+      expect(xmp).toContain('L.E.N.S. (Gemma 4 E4B)');
     });
   });
 

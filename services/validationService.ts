@@ -1,9 +1,6 @@
 /**
  * validationService.ts — Zod-based v2 schema validation
  * Runtime validation for PhotoAnalysisV2 responses from Gemma 4.
- *
- * Sources: docs/specs/09-validation-and-error-handling-spec.md
- *          docs/specs/02-output-schema.md
  */
 
 import { z } from 'zod';

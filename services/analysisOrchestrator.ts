@@ -2,7 +2,7 @@
  * analysisOrchestrator.ts — v2 analysis pipeline coordinator
  * Orchestrates: CV → Ollama → validation → audit log
  *
- * This replaces the direct geminiService.analyzeImage() call in App.tsx.
+ * This replaces the legacy direct cloud-model analysis call in App.tsx.
  * Day 1 skeleton: basic data flow wired up (CV → Ollama → console.log).
  * Day 2: full UI integration with AnalysisResults v2 component.
  */
@@ -13,11 +13,8 @@ import type { InferenceSource } from '../config';
 import { analyzeImageCV } from './cvService';
 import { logAnalysis } from './auditService';
 import { getOperationalMode } from './auditService';
-import { analyzePhotoBrowser, isWebGPUAvailable } from './browserLLM';
 import { SupportedLanguage } from './promptService';
 import { PhotoAnalysisV2, CVData } from '../types.v2';
-
-export type AnalysisTier = 'tier1-ollama' | 'tier2-browser';
 
 // Resize a base64 image to max `maxPx` on the long edge before sending to Ollama.
 // Gemma doesn't benefit from 12MP inputs — 1024px is sufficient for composition
@@ -71,7 +68,6 @@ export async function runAnalysisPipeline(
   file?: File,
   onProgress?: ProgressCallback,
   signal?: AbortSignal,
-  tier: AnalysisTier = 'tier1-ollama',
   language: SupportedLanguage = 'en',
   deepMode = false,
   fastMode = false,
@@ -84,7 +80,7 @@ export async function runAnalysisPipeline(
     onProgress?.({ stage, message, pct });
   };
 
-  const useCullPath = batchCull && fastMode && tier === 'tier1-ollama';
+  const useCullPath = batchCull && fastMode;
   const runtimeProfile = batchPass1 ? 'batch-pass1' : 'single';
 
   // Stage 1: Deterministic CV (skipped for demo cull batch — saves CPU and time)
@@ -104,81 +100,58 @@ export async function runAnalysisPipeline(
     report('cv', 'No image element provided — skipping CV grounding', 30);
   }
 
-  // Stage 2: model inference — tier-dependent
+  // Stage 2: model inference
   let analysis: PhotoAnalysisV2;
 
-  if (tier === 'tier2-browser') {
-    // Tier 2: text-only Gemma 2B in-browser. CV data is the only ground truth.
-    report('inference', 'Browser AI (Gemma 2B) is analyzing measurements…', 35);
-    if (!isWebGPUAvailable()) {
-      throw new Error('Browser AI requires WebGPU. Try Chrome/Edge desktop or use Tier 1 with Ollama.');
-    }
-    let charCount = 0;
-    analysis = await analyzePhotoBrowser(
-      base64Image,
+  report('inference', 'Preparing image for Gemma 4 E4B…', 33);
+  const targetResolution = useCullPath ? 512 : fastMode ? 768 : 1024;
+  const modelBase64 = await resizeForModel(base64Image, targetResolution);
+  report('inference', useCullPath
+    ? '⚡ Gemma 4 E4B cull pass… (target ~45–90s warm; cold start can be slower)'
+    : fastMode
+      ? '⚡ Gemma 4 E4B fast analysis… (target ~60–90s warm; cold start can be slower)'
+      : deepMode
+        ? 'Gemma 4 E4B is doing a deep critique… (60-90s, richer rationale)'
+        : 'Gemma 4 E4B is analyzing your photo…', 35);
+  let tokenCount = 0;
+  const tokenCap = useCullPath ? 450 : deepMode ? 1000 : 600;
+
+  if (useCullPath) {
+    analysis = await analyzePhotoCull(
+      modelBase64,
       mimeType,
-      cvData,
-      file?.name,
-      (partial) => {
-        charCount = partial.length;
-        const pct = 35 + Math.min(50, Math.round((charCount / 1500) * 50));
-        report('inference', `Gemma 2B thinking… (${charCount} chars)`, pct);
+      (_token) => {
+        tokenCount++;
+        const pct = 35 + Math.min(50, Math.round((tokenCount / tokenCap) * 50));
+        report('inference', `⚡ Cull pass… (${tokenCount} tokens)`, pct);
       },
       signal,
+      language,
+      runtimeProfile,
     );
-    report('inference', 'Gemma 2B inference complete', 85);
   } else {
-    // Tier 1: Gemma 4 E4B via Ollama (with full vision input)
-    report('inference', 'Preparing image for Gemma 4 E4B…', 33);
-    const targetResolution = useCullPath ? 512 : fastMode ? 768 : 1024;
-    const modelBase64 = await resizeForModel(base64Image, targetResolution);
-    report('inference', useCullPath
-      ? '⚡ Gemma 4 E4B cull pass… (target ~45–90s warm; cold start can be slower)'
-      : fastMode
-        ? '⚡ Gemma 4 E4B fast analysis… (target ~60–90s warm; cold start can be slower)'
-        : deepMode
-          ? 'Gemma 4 E4B is doing a deep critique… (60-90s, richer rationale)'
-          : 'Gemma 4 E4B is analyzing your photo…', 35);
-    let tokenCount = 0;
-    const tokenCap = useCullPath ? 450 : deepMode ? 1000 : 600;
-
-    if (useCullPath) {
-      analysis = await analyzePhotoCull(
-        modelBase64,
-        mimeType,
-        (_token) => {
-          tokenCount++;
-          const pct = 35 + Math.min(50, Math.round((tokenCount / tokenCap) * 50));
-          report('inference', `⚡ Cull pass… (${tokenCount} tokens)`, pct);
-        },
-        signal,
-        language,
-        runtimeProfile,
-      );
-    } else {
-      analysis = await analyzePhoto(
-        modelBase64,
-        mimeType,
-        cvData,
-        (_token) => {
-          tokenCount++;
-          const pct = 35 + Math.min(50, Math.round((tokenCount / tokenCap) * 50));
-          report('inference', fastMode
-            ? `⚡ Fast analysis… (${tokenCount} tokens)`
-            : deepMode
-              ? `Gemma 4 E4B deep-thinking… (${tokenCount} tokens)`
-              : `Gemma 4 E4B thinking… (${tokenCount} tokens)`, pct);
-        },
-        2,
-        signal,
-        language,
-        deepMode,
-        fastMode,
-        runtimeProfile,
-      );
-    }
-    report('inference', 'Gemma 4 E4B inference complete', 85);
+    analysis = await analyzePhoto(
+      modelBase64,
+      mimeType,
+      cvData,
+      (_token) => {
+        tokenCount++;
+        const pct = 35 + Math.min(50, Math.round((tokenCount / tokenCap) * 50));
+        report('inference', fastMode
+          ? `⚡ Fast analysis… (${tokenCount} tokens)`
+          : deepMode
+            ? `Gemma 4 E4B deep-thinking… (${tokenCount} tokens)`
+            : `Gemma 4 E4B thinking… (${tokenCount} tokens)`, pct);
+      },
+      2,
+      signal,
+      language,
+      deepMode,
+      fastMode,
+      runtimeProfile,
+    );
   }
+  report('inference', 'Gemma 4 E4B inference complete', 85);
 
   // Stage 3: Audit log (Vault Mode only)
   if (getOperationalMode() === 'vault') {
@@ -198,7 +171,7 @@ export async function runAnalysisPipeline(
 
   // Development smoke-test: log result to console
   if ((import.meta as any).env?.DEV) {
-    console.group('[Photography Coach v2] Analysis result');
+    console.group('[L.E.N.S.] Analysis result');
     console.log('Model:', analysis.model_id, analysis.quantization ?? '');
     console.log('Scores:', analysis.scores);
     console.log('Strengths:', analysis.strengths.length, 'items');
@@ -253,66 +226,15 @@ function loadImageElement(dataUrl: string): Promise<HTMLImageElement> {
   });
 }
 
-// ─── Mode-specific analysis (Voice, Quest, Sell) ─────────────────────────────
+// ─── Mode-specific analysis (Artisan Studio) ─────────────────────────────────
 
 import {
-  VOICE_COACH_SYSTEM_PROMPT,
-  VOICE_COACH_USER_PROMPT,
   SELL_COACH_SYSTEM_PROMPT,
   SELL_COACH_USER_PROMPT,
   ARTISAN_ACCESSIBILITY_SYSTEM_PROMPT,
   ARTISAN_ACCESSIBILITY_USER_PROMPT,
-  buildQuestSystemPrompt,
-  buildQuestUserPrompt,
-  QuestChallenge,
 } from './promptService';
 import { analyzePhotoRaw } from './ollamaService';
-
-/**
- * Analyze photo for Voice Mode (audio-first, clock-face directions)
- * Returns plain text response, not JSON
- */
-export async function analyzeForVoiceMode(
-  base64Image: string,
-  mimeType: string,
-): Promise<string> {
-  // Resize for faster inference
-  const resized = await resizeForModel(base64Image, 768);
-
-  const response = await analyzePhotoRaw(
-    resized,
-    mimeType,
-    VOICE_COACH_SYSTEM_PROMPT,
-    VOICE_COACH_USER_PROMPT,
-  );
-
-  return response;
-}
-
-/**
- * Analyze photo for Quest Mode (daily challenges with PASS/FAIL)
- * Returns plain text with [REASONING], [VERDICT], [TIP] blocks
- */
-export async function analyzeForQuestMode(
-  base64Image: string,
-  mimeType: string,
-  challenge: QuestChallenge,
-): Promise<string> {
-  // Resize for faster inference
-  const resized = await resizeForModel(base64Image, 768);
-
-  const systemPrompt = buildQuestSystemPrompt(challenge);
-  const userPrompt = buildQuestUserPrompt(challenge);
-
-  const response = await analyzePhotoRaw(
-    resized,
-    mimeType,
-    systemPrompt,
-    userPrompt,
-  );
-
-  return response;
-}
 
 /**
  * Analyze photo for Sell Mode (product photo coaching)

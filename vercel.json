@@ -3,11 +3,8 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "functions": {
-    "api/analyze.ts": {
+    "api/**/*.ts": {
       "maxDuration": 60
-    },
-    "api/tts.ts": {
-      "maxDuration": 30
     }
   },
   "rewrites": [

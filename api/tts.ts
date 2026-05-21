@@ -2,8 +2,6 @@
  * Vercel Serverless API: /api/tts — neural coach audio (Edge TTS).
  */
 
-export const maxDuration = 30;
-
 type VercelRequest = {
   method?: string;
   body?: { text?: string; voice?: string };

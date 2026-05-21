@@ -5,8 +5,6 @@
  * No @vercel/node import — uses Vercel's built-in req/res handler shape.
  */
 
-export const maxDuration = 60;
-
 type VercelRequest = {
   method?: string;
   body?: AnalyzeRequest;

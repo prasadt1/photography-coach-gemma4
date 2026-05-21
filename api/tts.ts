@@ -18,7 +18,7 @@ type VercelResponse = {
 const MAX_CHARS = 2500;
 const DEFAULT_VOICE = 'en-US-JennyNeural';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -65,3 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 }
+
+export default handler;
+module.exports = handler;
+module.exports.default = handler;

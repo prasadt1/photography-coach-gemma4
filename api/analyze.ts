@@ -162,7 +162,7 @@ function getTarget(): 'local' | 'cloud' {
   return process.env.OLLAMA_TARGET === 'local' ? 'local' : 'cloud';
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -336,3 +336,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 }
+
+export default handler;
+module.exports = handler;
+module.exports.default = handler;

@@ -760,6 +760,13 @@ export async function checkCloudAvailability(): Promise<boolean> {
     });
 
     if (res.status === 503) {
+      try {
+        const data = await res.json();
+        // Route is up; missing OLLAMA_API_KEY on Vercel
+        if (data.code === 'NO_API_KEY') return false;
+      } catch {
+        /* ignore */
+      }
       return false;
     }
 

@@ -1,17 +1,23 @@
 /**
  * Vercel Serverless API Route: /api/analyze
  *
- * Proxies image analysis to Ollama (cloud or local Mac via OLLAMA_TARGET=local).
- *
- * Environment Variables:
- *   OLLAMA_API_KEY - Required when OLLAMA_TARGET=cloud (default)
- *   OLLAMA_CLOUD_MODEL - Optional cloud model (default: gemma4:e4b)
- *   OLLAMA_TARGET - "cloud" (default) | "local"
- *   OLLAMA_LOCAL_URL - Optional (default: http://127.0.0.1:11434)
- *   OLLAMA_LOCAL_MODEL - Optional (default: gemma4:e4b)
+ * Proxies image analysis to Ollama Cloud or local Ollama (OLLAMA_TARGET=local).
+ * No @vercel/node import — uses Vercel's built-in req/res handler shape.
  */
 
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+export const maxDuration = 60;
+
+type VercelRequest = {
+  method?: string;
+  body?: AnalyzeRequest;
+};
+
+type VercelResponse = {
+  setHeader(name: string, value: string): void;
+  status(code: number): VercelResponse;
+  json(data: unknown): VercelResponse;
+  end(): void;
+};
 
 /** Inlined for Vercel serverless bundle (avoid cross-root import issues) */
 const ARTISAN_V3_OUTPUT_SCHEMA = {
@@ -58,22 +64,15 @@ const ARTISAN_V3_OUTPUT_SCHEMA = {
 };
 
 const OLLAMA_CLOUD_URL = 'https://ollama.com/api/chat';
-/** Local default — Gemma 4 E4B */
 const DEFAULT_LOCAL_MODEL = 'gemma4:e4b';
-/**
- * Ollama Cloud catalog (ollama.com/api/tags) lists gemma4:31b, not gemma4:e4b.
- * E4B runs on-device; cloud uploads use Gemma 4 31B unless overridden in env.
- */
 const DEFAULT_CLOUD_MODEL = 'gemma4:31b';
 const DEFAULT_LOCAL_URL = 'http://127.0.0.1:11434';
 
-/** Map common local tags to a cloud-hosted Gemma 4 when judges set OLLAMA_CLOUD_MODEL=gemma4:e4b */
 const CLOUD_MODEL_ALIASES: Record<string, string> = {
   'gemma4:e4b': 'gemma4:31b',
   'gemma4:4b': 'gemma4:31b',
 };
 
-/** Multimodal fallback on Ollama Cloud when Gemma 4 31B rejects vision/schema */
 const CLOUD_VISION_FALLBACK = 'gemma3:4b';
 
 function resolveCloudModel(requested?: string): string {
@@ -81,7 +80,6 @@ function resolveCloudModel(requested?: string): string {
   return CLOUD_MODEL_ALIASES[raw] ?? raw;
 }
 
-/** Vision-capable cloud model first — gemma4:31b may reject images on Ollama Cloud */
 function cloudModelsToTry(primary: string): string[] {
   return primary === CLOUD_VISION_FALLBACK
     ? [CLOUD_VISION_FALLBACK]
@@ -158,7 +156,6 @@ interface AnalyzeRequest {
   userPrompt?: string;
   healthCheck?: boolean;
   warmUp?: boolean;
-  /** When true, applies ARTISAN_V3_OUTPUT_SCHEMA (Ollama format JSON schema). */
   artisanSchema?: boolean;
   jsonSchema?: object;
 }
@@ -167,10 +164,7 @@ function getTarget(): 'local' | 'cloud' {
   return process.env.OLLAMA_TARGET === 'local' ? 'local' : 'cloud';
 }
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse,
-) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -195,7 +189,7 @@ export default async function handler(
     return res.status(503).json({
       error: 'Hosted analysis not configured',
       code: 'NO_API_KEY',
-      message: 'OLLAMA_API_KEY environment variable not set.',
+      message: 'OLLAMA_API_KEY environment variable not set on this Vercel project.',
     });
   }
 
@@ -203,19 +197,20 @@ export default async function handler(
   const endpoint = isLocal ? `${localUrl}/api/chat` : OLLAMA_CLOUD_URL;
 
   try {
-    const body = req.body as AnalyzeRequest;
+    const body = req.body ?? {};
 
-    if (body?.healthCheck) {
+    if (body.healthCheck) {
       return res.status(200).json({
         status: 'ok',
         configured: true,
+        cloudConfigured: !isLocal && Boolean(apiKey),
         target,
         model,
         endpoint,
       });
     }
 
-    if (body?.warmUp) {
+    if (body.warmUp) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 90_000);
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -244,12 +239,7 @@ export default async function handler(
             details: errorText.slice(0, 500),
           });
         }
-        return res.status(200).json({
-          status: 'ok',
-          warmed: true,
-          target,
-          model,
-        });
+        return res.status(200).json({ status: 'ok', warmed: true, target, model });
       } catch (err) {
         clearTimeout(timeoutId);
         if (err instanceof Error && err.name === 'AbortError') {
@@ -259,7 +249,7 @@ export default async function handler(
       }
     }
 
-    if (!body?.base64Image || !body.systemPrompt || !body.userPrompt) {
+    if (!body.base64Image || !body.systemPrompt || !body.userPrompt) {
       return res.status(400).json({
         error: 'Missing required fields: base64Image, systemPrompt, userPrompt',
       });
@@ -270,8 +260,7 @@ export default async function handler(
       : body.base64Image;
 
     const outputSchema =
-      body.jsonSchema ??
-      (body.artisanSchema ? ARTISAN_V3_OUTPUT_SCHEMA : undefined);
+      body.jsonSchema ?? (body.artisanSchema ? ARTISAN_V3_OUTPUT_SCHEMA : undefined);
 
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (!isLocal && apiKey) {
@@ -299,7 +288,7 @@ export default async function handler(
           content: result.content,
           source: isLocal ? 'ollama-local' : 'ollama-hosted',
           model: tryModel,
-          ...( !isLocal && tryModel !== cloudModelRequested
+          ...(!isLocal && tryModel !== cloudModelRequested
             ? {
                 requestedModel: cloudModelRequested,
                 cloudNote:

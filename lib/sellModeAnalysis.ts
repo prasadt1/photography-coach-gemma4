@@ -28,7 +28,12 @@ export function cloudUnavailableMessage(cloudError?: string): string {
     return `Analysis unavailable: ${detail || 'Invalid Ollama API key'}. Set OLLAMA_API_KEY on the Vercel project and redeploy.`;
   }
   if (!detail || /FUNCTION_INVOCATION_FAILED|server error has occurred/i.test(detail)) {
-    return `Analysis unavailable. The /api/analyze serverless function failed to start (redeploy after latest push; ensure OLLAMA_API_KEY is set). ${hint}`;
+    return (
+      `Analysis unavailable. The /api/analyze route on this Vercel project is not running — check Deployment → Functions logs, redeploy, and set OLLAMA_API_KEY + OLLAMA_TARGET=cloud on the lens-app project. ${hint}`
+    );
+  }
+  if (/NO_API_KEY|not configured/i.test(raw)) {
+    return `Analysis unavailable: OLLAMA_API_KEY is not set on this Vercel project. Add it under lens-app-gemma4 → Settings → Environment Variables, then redeploy. ${hint}`;
   }
   if (/gemma4:31b|README quick start/i.test(detail)) {
     return `Analysis unavailable: ${detail}`;

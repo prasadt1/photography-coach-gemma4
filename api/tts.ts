@@ -1,5 +1,21 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
+/**
+ * Vercel Serverless API: /api/tts — neural coach audio (Edge TTS).
+ */
+
+export const maxDuration = 30;
+
+type VercelRequest = {
+  method?: string;
+  body?: { text?: string; voice?: string };
+};
+
+type VercelResponse = {
+  setHeader(name: string, value: string): void;
+  status(code: number): VercelResponse;
+  json(data: unknown): VercelResponse;
+  send(data: Buffer): void;
+  end(): void;
+};
 
 const MAX_CHARS = 2500;
 const DEFAULT_VOICE = 'en-US-JennyNeural';
@@ -28,6 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       : DEFAULT_VOICE;
 
   try {
+    const { MsEdgeTTS, OUTPUT_FORMAT } = await import('msedge-tts');
     const tts = new MsEdgeTTS();
     await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
     const { audioStream } = tts.toStream(spoken);
@@ -44,6 +61,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).send(audio);
   } catch (err) {
     console.error('[api/tts]', err);
-    return res.status(500).json({ error: 'TTS failed' });
+    return res.status(500).json({
+      error: 'TTS failed',
+      message: err instanceof Error ? err.message : 'Unknown error',
+    });
   }
 }

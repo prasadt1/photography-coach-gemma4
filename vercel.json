@@ -4,10 +4,10 @@
   "outputDirectory": "dist",
   "functions": {
     "api/analyze.ts": {
-      "maxDuration": 120
+      "maxDuration": 60
     },
     "api/tts.ts": {
-      "maxDuration": 60
+      "maxDuration": 30
     }
   },
   "rewrites": [

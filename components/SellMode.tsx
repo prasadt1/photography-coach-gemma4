@@ -391,13 +391,16 @@ const SellMode: React.FC<SellModeProps> = ({
               <button
                 type="button"
                 onClick={() => {
+                  cancelAnalysisSession();
                   if (!isJudgeDemoBuild()) unlockSpeechForSession();
                   setShowGuidedJourney(true);
                 }}
                 className="inline-flex items-center gap-2 text-sm text-[#2F4858] font-semibold underline mb-6 focus:outline-none focus:ring-2 focus:ring-[#C06B45] rounded"
               >
                 <Sparkles className="w-4 h-4" />
-                Start voice-guided listing journey
+                {isJudgeDemoBuild()
+                  ? 'Start guided listing journey (on this page)'
+                  : 'Start voice-guided listing journey'}
               </button>
 
               {/* Compact How It Works */}

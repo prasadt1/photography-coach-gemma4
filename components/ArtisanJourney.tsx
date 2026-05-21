@@ -57,6 +57,8 @@ import {
   consumeOpenCameraAfterHttps,
   redirectToHttpsForCamera,
 } from '../lib/devSecureUrl';
+import { isJudgeDemoBuild } from '../lib/deploymentProfile';
+import { judgeSpeak, judgeStop } from '../lib/judgeSpeech';
 
 type JourneyPhase =
   | 'demoWelcome'
@@ -220,11 +222,21 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
     }
   }, []);
 
+  // Stop studio/grid VO when journey opens (avoids double audio on judge demo)
+  useEffect(() => {
+    if (isJudgeDemoBuild()) judgeStop();
+    stopSpeaking();
+    stopGuideNeural();
+    stopListening();
+  }, []);
+
   // Cleanup speech and recognition on unmount
   useEffect(() => {
     return () => {
       clearAnalysisStatusTimer();
+      if (isJudgeDemoBuild()) judgeStop();
       stopSpeaking();
+      stopGuideNeural();
       stopListening();
     };
   }, [clearAnalysisStatusTimer]);
@@ -752,12 +764,14 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
   useEffect(() => {
     if (phase === 'voicePrompt' && !hasGreeted.current) {
       hasGreeted.current = true;
-      stopSpeaking();
-      setTimeout(() => {
-        speak(
-          'Welcome to L.E.N.S. Artisan Studio. I will help you photograph your craft and build a listing. Tap Yes to enable voice commands, or No to use buttons only.'
-        );
-      }, 500);
+      if (isJudgeDemoBuild()) judgeStop();
+      else stopSpeaking();
+      const welcome =
+        'Welcome to the guided listing journey. I will help you photograph your craft and build a listing. Tap Yes to enable voice commands, or No to use buttons only.';
+      window.setTimeout(() => {
+        if (isJudgeDemoBuild()) void judgeSpeak(welcome);
+        else speak(welcome);
+      }, 400);
     }
   }, [phase]);
 

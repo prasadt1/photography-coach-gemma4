@@ -48,7 +48,7 @@ export const DemoBanner: React.FC = () => {
           <p className="text-[#ECE3D2]/95 text-sm flex-1 leading-relaxed">
             <strong className="font-semibold">Judge demo (this URL):</strong> try samples and uploads in{' '}
             <strong>Artisan Studio</strong> — live uploads via {OLLAMA_CLOUD}{' '}
-            (<code className="bg-black/20 px-1 rounded text-xs">{OLLAMA_CLOUD_MODEL_TAG}</code>), no install.
+            (<code className="bg-black/20 px-1 rounded text-xs">{OLLAMA_CLOUD_MODEL_TAG}</code>), no local Ollama install.
             Real product = {GEMMA_4_E4B} on your Mac — see paths on the home page. {GEMMA_TRADEMARK}
           </p>
           <button

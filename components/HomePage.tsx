@@ -181,7 +181,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                   <p className="text-sm text-[#241F18] leading-relaxed mb-4">
                     Judge flow on <strong>this page</strong>: sample photos (recorded {GEMMA_4_E4B}) plus{' '}
                     <strong>live uploads</strong> via {OLLAMA_CLOUD} ({OLLAMA_CLOUD_MODEL_TAG}) — similar
-                    end-to-end experience, no install.
+                    end-to-end experience, no local Ollama install on your computer.
                   </p>
                   <button
                     type="button"
@@ -193,8 +193,10 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" aria-hidden />
                   </button>
                   <p className="mt-3 text-xs text-[#524A3D] leading-relaxed">
-                    <sup>†</sup> Uploads use cloud so you can judge the flow without Ollama. The shipped product uses{' '}
-                    {GEMMA_4_E4B} on-device ({OLLAMA_MODEL_TAG}), offline and private.
+                    <sup>†</sup> Uploads use <strong>{OLLAMA_CLOUD}</strong> ({OLLAMA_CLOUD_MODEL_TAG}) so you can
+                    judge live analysis without installing Ollama locally. The shipped product uses{' '}
+                    {GEMMA_4_E4B} on-device ({OLLAMA_MODEL_TAG}) via <strong>local Ollama</strong> — offline and
+                    private.
                   </p>
                   {!voiceEnabled && (
                     <p className="mt-2 text-xs text-[#AB3B24] font-semibold">

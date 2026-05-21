@@ -38,6 +38,7 @@ import {
 } from '../lib/artisanSpeech';
 import LiveCameraCapture from './LiveCameraCapture';
 import { getArtisanInferenceBadge, OLLAMA_CLOUD_CONFIG, OLLAMA_CONFIG } from '../config';
+import { cloudUnavailableMessage } from '../lib/sellModeAnalysis';
 import {
   extractColourCheckFromSubject,
   buildArtisanVoiceScript,
@@ -385,7 +386,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
       }
 
       // Call Gemma 4
-      const { content: response, source, localError } = await analyzeForSellModeWithFallback(
+      const { content: response, source, localError, cloudError } = await analyzeForSellModeWithFallback(
         imageDataUrl,
         'image/jpeg', // getUserMedia canvas captures as JPEG
         true, // Always use blind/low-vision artisan prompts (colour analogies, inches, JSON)
@@ -394,9 +395,15 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
       // Store inference source for badge display
       setCurrentInferenceSource(source);
 
-      // Demo fallback with canned artisan coaching
       let parsed;
       if (source === 'demo' || !response) {
+        // Judge / hosted deploy: same live path as Artisan Studio upload — no silent canned scarf copy
+        if (OLLAMA_CLOUD_CONFIG.enabled) {
+          setError(cloudUnavailableMessage(cloudError ?? localError));
+          setIsProcessing(false);
+          clearAnalysisStatusTimer();
+          return;
+        }
         if (import.meta.env.DEV) {
           const detail = localError ? ` ${localError}` : '';
           setError(
@@ -407,10 +414,8 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           clearAnalysisStatusTimer();
           return;
         }
-        // Add realistic delay to demo mode
-        await new Promise(resolve => setTimeout(resolve, 3000));
-
-        // For second photo in demo, make it slightly better to show improvement
+        // Non-deployed preview only (no cloud route): legacy canned coaching
+        await new Promise((resolve) => setTimeout(resolve, 3000));
         const isSecond = attempts.length > 0;
         parsed = {
           subject: 'I see one handcrafted wool scarf in warm honey brown, similar to dried autumn leaves.',
@@ -428,7 +433,8 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
           primary_issue: isSecond ? '' : 'framing could be tighter',
           confidence_note: '',
           alt_text: 'Handcrafted item photographed in natural window light',
-          listing_copy: 'Lovingly handcrafted with attention to detail. This unique piece brings warmth and character to any space.',
+          listing_copy:
+            'Lovingly handcrafted with attention to detail. This unique piece brings warmth and character to any space.',
           ready_to_list: isSecond,
           tags: ['handmade', 'artisan', 'craft', 'unique', 'handcrafted'],
         };

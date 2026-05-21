@@ -38,6 +38,7 @@ import {
   sellResultFromV3,
   parseAnalysisToSellResult,
   speakSellModeResult,
+  cloudUnavailableMessage,
 } from '../lib/sellModeAnalysis';
 import type { ArtisanAnalysisV3 } from '../services/voiceCoach';
 import { getAnalyzingStatus, getUploadHint } from '../config';
@@ -64,24 +65,6 @@ type SellResult = SellModeResult;
 
 /** How the current result was produced — samples are pre-recorded E4B, uploads are live. */
 type AnalysisProvenance = 'recorded-sample' | 'live';
-
-function cloudUnavailableMessage(cloudError?: string): string {
-  const hint =
-    'Live upload uses gemma4:31b on Ollama Cloud (vision fallback: gemma3:4b). Local E4B (gemma4:e4b) is in the README quick start.';
-  const raw = cloudError?.trim() ?? '';
-  const detail = raw.replace(/^Cloud analysis failed:\s*/i, '').trim();
-
-  if (/invalid.*api key|401/i.test(raw)) {
-    return `Analysis unavailable: ${detail || 'Invalid Ollama API key'}. Set OLLAMA_API_KEY on the Vercel project and redeploy.`;
-  }
-  if (!detail || /FUNCTION_INVOCATION_FAILED|server error has occurred/i.test(detail)) {
-    return `Analysis unavailable. The /api/analyze serverless function failed to start (redeploy after latest push; ensure OLLAMA_API_KEY is set). ${hint}`;
-  }
-  if (/gemma4:31b|README quick start/i.test(detail)) {
-    return `Analysis unavailable: ${detail}`;
-  }
-  return `Analysis unavailable: ${detail}. ${hint}`;
-}
 
 const SellMode: React.FC<SellModeProps> = ({
   onBack,

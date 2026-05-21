@@ -43,7 +43,14 @@ import type { ArtisanAnalysisV3 } from '../services/voiceCoach';
 import { getAnalyzingStatus, getUploadHint } from '../config';
 import { showStudioModeEntry } from '../lib/launchRoute';
 import { isJudgeDemoBuild } from '../lib/deploymentProfile';
-import { GEMMA_4_E4B, OLLAMA_CLOUD, getArtisanStudioWelcomeScript } from '../lib/branding';
+import {
+  GEMMA_4_E4B,
+  OLLAMA_CLOUD,
+  OLLAMA_CLOUD_MODEL_TAG,
+  OLLAMA_MODEL_TAG,
+  REPO_LOCAL_QUICKSTART_URL,
+  getArtisanStudioWelcomeScript,
+} from '../lib/branding';
 import MarketplaceListingPreview, { buildMarketplaceListingDraft } from './MarketplaceListingPreview';
 import { DEMO_RESPONSES, DemoResponse, simulateProcessing, getComparisonSamples, DEMO_COMPARISON_RESULT } from '../src/data/demoResponses';
 import { ComparisonResult } from '../services/ollamaService';
@@ -61,6 +68,9 @@ interface SellModeProps {
 }
 
 type SellResult = SellModeResult;
+
+/** How the current result was produced — samples are pre-recorded E4B, uploads are live. */
+type AnalysisProvenance = 'recorded-sample' | 'live';
 
 function cloudUnavailableMessage(cloudError?: string): string {
   const hint =
@@ -100,6 +110,7 @@ const SellMode: React.FC<SellModeProps> = ({
   const [showGuidedJourney, setShowGuidedJourney] = useState(
     () => !preloadedImage && !isJudgeDemoBuild(),
   );
+  const [analysisProvenance, setAnalysisProvenance] = useState<AnalysisProvenance | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   /** Invalidates in-flight upload/sample analysis so VO does not restart after back/retry. */
@@ -147,6 +158,8 @@ const SellMode: React.FC<SellModeProps> = ({
       else speakFromUserGesture('Analyzing your sample. One moment.');
     }
     setError(null);
+    setAnalysisProvenance(null);
+    setInferenceSource('demo');
     setIsAnalyzing(true);
     setResult(null);
     await simulateProcessing();
@@ -160,6 +173,7 @@ const SellMode: React.FC<SellModeProps> = ({
     } as ArtisanAnalysisV3;
     const sellRes = sellResultFromV3(v3Payload, sample.imagePath, JSON.stringify(r));
     setResult(sellRes);
+    setAnalysisProvenance('recorded-sample');
     setIsAnalyzing(false);
     if (voiceEnabled && session === analysisSessionRef.current) {
       speakSellModeResult(sellRes);
@@ -174,6 +188,7 @@ const SellMode: React.FC<SellModeProps> = ({
       judgeStop();
       const analyzePreloaded = async () => {
         setError(null);
+        setAnalysisProvenance(null);
         setIsAnalyzing(true);
         setResult(null);
         try {
@@ -191,6 +206,7 @@ const SellMode: React.FC<SellModeProps> = ({
           }
           const sellRes = parseAnalysisToSellResult(response, preloadedImage);
           setResult(sellRes);
+          setAnalysisProvenance('live');
           if (voiceEnabled && session === analysisSessionRef.current) {
             speakSellModeResult(sellRes);
           }
@@ -223,6 +239,7 @@ const SellMode: React.FC<SellModeProps> = ({
       speakFromUserGesture('Analyzing your photo. One moment.');
     }
     setError(null);
+    setAnalysisProvenance(null);
     setIsAnalyzing(true);
     setResult(null);
     try {
@@ -247,6 +264,7 @@ const SellMode: React.FC<SellModeProps> = ({
       }
       const sellRes = parseAnalysisToSellResult(response, base64);
       setResult(sellRes);
+      setAnalysisProvenance('live');
       if (voiceEnabled && session === analysisSessionRef.current) {
         speakSellModeResult(sellRes);
       }
@@ -269,7 +287,12 @@ const SellMode: React.FC<SellModeProps> = ({
         onBack();
       }
     } else if (result || showCompare) {
+      if (isJudgeDemoBuild()) {
+        onBack();
+        return;
+      }
       setResult(null);
+      setAnalysisProvenance(null);
       setShowCompare(false);
       setDemoCompareResult(null);
       setError(null);
@@ -282,6 +305,7 @@ const SellMode: React.FC<SellModeProps> = ({
   const handleRetry = () => {
     cancelAnalysisSession();
     setResult(null);
+    setAnalysisProvenance(null);
     setError(null);
     setShowCompare(false);
     setDemoCompareResult(null);
@@ -330,7 +354,13 @@ const SellMode: React.FC<SellModeProps> = ({
       <Header
         showBack
         onBack={handleBack}
-        backLabel={result || showCompare ? "Go back" : "Return home"}
+        backLabel={
+          result || showCompare
+            ? isJudgeDemoBuild()
+              ? 'Return home'
+              : 'Go back'
+            : 'Return home'
+        }
         voiceEnabled={voiceEnabled}
         onVoiceToggle={onVoiceToggle}
         inferenceSource={inferenceSource}
@@ -413,14 +443,30 @@ const SellMode: React.FC<SellModeProps> = ({
           {sourceDetected && !result && !isAnalyzing && !showCompare && (
             <div className="space-y-10">
               {isJudgeDemoBuild() && (
-                <div className="rounded-2xl border-2 border-[#C06B45] bg-gradient-to-br from-[#FFF8F0] to-[#F4ECDC] p-5">
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#C06B45] mb-1">Sell on Etsy</p>
-                  <p className="text-sm text-[#241F18] leading-relaxed">
-                    There is no separate listing page — after you <strong>try a sample</strong> below, scroll to the{' '}
-                    <strong>Etsy listing draft</strong> card (title, description, tags) and tap{' '}
-                    <strong>Hear listing draft</strong> so judges hear what artisans would paste into Etsy or Shopify.
+                <>
+                  <p className="text-sm text-[#241F18] leading-relaxed rounded-xl border border-[#D8CDB8] bg-white px-4 py-3">
+                    <strong>Uploads</strong> use <strong>{OLLAMA_CLOUD}</strong> ({OLLAMA_CLOUD_MODEL_TAG}) so you can
+                    try live analysis without installing Ollama. The <strong>real product</strong> uses{' '}
+                    <strong>{GEMMA_4_E4B}</strong> ({OLLAMA_MODEL_TAG}) on your device — offline and private.{' '}
+                    <a
+                      href={REPO_LOCAL_QUICKSTART_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline font-semibold text-[#2F4858]"
+                    >
+                      Run Ollama + E4B locally
+                    </a>
+                    .
                   </p>
-                </div>
+                  <div className="rounded-2xl border-2 border-[#C06B45] bg-gradient-to-br from-[#FFF8F0] to-[#F4ECDC] p-5">
+                    <p className="text-xs font-bold uppercase tracking-wider text-[#C06B45] mb-1">Sell on Etsy</p>
+                    <p className="text-sm text-[#241F18] leading-relaxed">
+                      There is no separate listing page — after you <strong>try a sample</strong> below, scroll to the{' '}
+                      <strong>Etsy listing draft</strong> card (title, description, tags) and tap{' '}
+                      <strong>Hear listing draft</strong> so judges hear what artisans would paste into Etsy or Shopify.
+                    </p>
+                  </div>
+                </>
               )}
 
               {/* Demo Samples - THE HERO */}
@@ -594,6 +640,26 @@ const SellMode: React.FC<SellModeProps> = ({
           {/* Result Display */}
           {result && (
             <div className="space-y-8">
+              {analysisProvenance === 'recorded-sample' && (
+                <p className="rounded-xl border-2 border-[#D8CDB8] bg-[#F4ECDC] px-4 py-3 text-sm text-[#241F18] leading-relaxed">
+                  <strong className="text-[#2F4858]">Recorded sample:</strong> this coaching text is a real{' '}
+                  <strong>{GEMMA_4_E4B}</strong> run saved from a local Mac (not live inference). Upload your
+                  own photo below the samples for live <strong>{OLLAMA_CLOUD}</strong> analysis.
+                </p>
+              )}
+              {analysisProvenance === 'live' && inferenceSource === 'cloud' && (
+                <p className="rounded-xl border-2 border-[#2F4858]/30 bg-[#A9B8BE]/40 px-4 py-3 text-sm text-[#241F18] leading-relaxed">
+                  <strong className="text-[#2F4858]">Live analysis:</strong> generated just now via{' '}
+                  <strong>{OLLAMA_CLOUD}</strong> for your upload.
+                </p>
+              )}
+              {analysisProvenance === 'live' && inferenceSource === 'local' && (
+                <p className="rounded-xl border-2 border-[#2F4858]/30 bg-[#A9B8BE]/40 px-4 py-3 text-sm text-[#241F18] leading-relaxed">
+                  <strong className="text-[#2F4858]">Live analysis:</strong> generated just now on your device
+                  with <strong>{GEMMA_4_E4B}</strong>.
+                </p>
+              )}
+
               {/* Photo + Verdict */}
               <div className="flex flex-col md:flex-row gap-6">
                 <div className="w-full md:w-96 shrink-0 rounded-2xl overflow-hidden border-2 border-[#D8CDB8] bg-[#F4ECDC]">

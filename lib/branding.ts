@@ -35,6 +35,10 @@ export const PRODUCT_ARTISAN_DEPLOY_URL =
 /** Hackathon demo video (guided journey walkthrough). */
 export const DEMO_VIDEO_YOUTUBE_URL = 'https://www.youtube.com/watch?v=qoDLKzzcYHM';
 
+/** README: install Ollama, pull E4B, run locally (real on-device product path). */
+export const REPO_LOCAL_QUICKSTART_URL =
+  'https://github.com/prasadt1/photography-coach-gemma4#-quick-start';
+
 export function getJudgeHomeWelcomeScript(): string {
   return (
     `Welcome to the L.E.N.S. judge demo. ` +

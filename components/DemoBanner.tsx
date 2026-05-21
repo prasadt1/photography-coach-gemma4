@@ -6,11 +6,8 @@ import {
   GEMMA_TRADEMARK,
   OLLAMA_CLOUD,
   OLLAMA_CLOUD_MODEL_TAG,
-  PRODUCT_ARTISAN_DEPLOY_URL,
+  REPO_LOCAL_QUICKSTART_URL,
 } from '../lib/branding';
-
-const REPO_QUICKSTART =
-  'https://github.com/prasadt1/photography-coach-gemma4#-quick-start';
 
 /**
  * Top banner on deployed sites — copy differs for judge try-it vs artisan product deploy.
@@ -49,29 +46,20 @@ export const DemoBanner: React.FC = () => {
             <span className="font-semibold text-sm">Judge try-it demo</span>
           </div>
           <p className="text-[#ECE3D2]/95 text-sm flex-1 leading-relaxed">
-            <strong className="font-semibold">Sample photos</strong> play back real{' '}
-            <strong className="font-semibold">{GEMMA_4_E4B}</strong> outputs recorded from a local Mac
-            (same prompts and JSON schema). <strong className="font-semibold">Upload your photo</strong>{' '}
-            uses <strong className="font-semibold">{OLLAMA_CLOUD}</strong> with{' '}
-            <code className="bg-black/20 px-1 rounded text-xs">{OLLAMA_CLOUD_MODEL_TAG}</code> so you can test
-            without installing Ollama. Tap <strong>Enter Artisan Studio</strong> below, then try a
-            sample or upload. Saw the submission video? Open the{' '}
+            <strong className="font-semibold">Honest demo:</strong> uploads use{' '}
+            <strong className="font-semibold">{OLLAMA_CLOUD}</strong>{' '}
+            (<code className="bg-black/20 px-1 rounded text-xs">{OLLAMA_CLOUD_MODEL_TAG}</code>) so you can
+            try the full flow without installing Ollama. The <strong className="font-semibold">real product</strong>{' '}
+            runs <strong className="font-semibold">{GEMMA_4_E4B}</strong> on your device — private and
+            offline-capable. Samples here are recorded E4B from a local Mac. Tap{' '}
+            <strong>Enter Artisan Studio</strong>, then try a sample or upload. Prefer on-device E4B?{' '}
             <a
-              href={PRODUCT_ARTISAN_DEPLOY_URL}
+              href={REPO_LOCAL_QUICKSTART_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="underline hover:text-white font-medium"
             >
-              full product demo
-            </a>
-            {' '}(voice-guided journey, local E4B). For fully on-device coaching, see the{' '}
-            <a
-              href={REPO_QUICKSTART}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-white font-medium"
-            >
-              local quick start
+              Ollama + E4B local setup
             </a>
             . {GEMMA_TRADEMARK}
           </p>
@@ -111,7 +99,7 @@ export const DemoBanner: React.FC = () => {
           </a>
           . See the{' '}
           <a
-            href={REPO_QUICKSTART}
+            href={REPO_LOCAL_QUICKSTART_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="underline hover:text-white font-medium"

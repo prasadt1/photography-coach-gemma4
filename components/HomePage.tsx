@@ -18,10 +18,11 @@ import {
   GEMMA_4_E4B_DOCS_URL,
   OLLAMA_CLOUD,
   OLLAMA_MODEL_TAG,
-  OLLAMA_CLOUD_MODEL_TAG,
   ARTISAN_GRID_WELCOME_KEY,
   DEMO_VIDEO_YOUTUBE_URL,
+  OLLAMA_CLOUD_MODEL_TAG,
   PRODUCT_ARTISAN_DEPLOY_URL,
+  REPO_LOCAL_QUICKSTART_URL,
   getJudgeHomeWelcomeScript,
   getArtisanStudioWelcomeScript,
 } from '../lib/branding';
@@ -159,55 +160,68 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
             {isJudgeDemoBuild() && (
               <div className="mb-4 space-y-3 max-w-xl">
                 <p
+                  className="text-sm text-[#241F18] bg-white border-2 border-[#C06B45]/50 rounded-xl px-4 py-3 leading-relaxed"
+                  role="note"
+                >
+                  <strong className="text-[#C06B45]">Why cloud is on this page:</strong> for your convenience,
+                  so you can see the end-to-end flow without installing Ollama, <strong>photo uploads</strong> use{' '}
+                  <strong>{OLLAMA_CLOUD}</strong> (<code className="text-xs">{OLLAMA_CLOUD_MODEL_TAG}</code>).
+                  The <strong>real product offering</strong> runs <strong>{GEMMA_4_E4B}</strong> on your device
+                  ({OLLAMA_MODEL_TAG}) — private, offline-capable coaching. Sample tiles here are recorded E4B from a
+                  local Mac, not live cloud.
+                  <span className="block mt-2">
+                    Prefer the on-device path?{' '}
+                    <a
+                      href={REPO_LOCAL_QUICKSTART_URL}
+                      className="underline font-semibold text-[#2F4858]"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Install Ollama and run {GEMMA_4_E4B} locally
+                    </a>
+                    {' '}(README quick start), then open the{' '}
+                    <a
+                      href={PRODUCT_ARTISAN_DEPLOY_URL}
+                      className="underline font-semibold text-[#2F4858]"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      full product demo
+                    </a>
+                    {' '}with your Mac serving the model (same as the submission video).
+                  </span>
+                </p>
+                <p
                   className="text-sm text-[#2F4858] bg-[#F4ECDC] border border-[#D8CDB8] rounded-xl px-4 py-3 leading-relaxed"
                   aria-live="polite"
                 >
                   <strong>Judge try-it:</strong> tap <strong>Enter Artisan Studio</strong> for a spoken studio
                   guide, then try a <strong>sample</strong> to see coaching plus an <strong>Etsy listing draft</strong>{' '}
-                  (title, tags, description — with &quot;Hear listing draft&quot;). Samples = recorded{' '}
-                  <strong>{GEMMA_4_E4B}</strong> ({OLLAMA_MODEL_TAG}); upload = live{' '}
-                  <strong>{OLLAMA_CLOUD}</strong> (<code className="text-xs">{OLLAMA_CLOUD_MODEL_TAG}</code>).{' '}
+                  (title, tags, description — with &quot;Hear listing draft&quot;).{' '}
                   {!voiceEnabled && (
                     <span className="block mt-2 text-[#AB3B24] font-semibold">
                       Turn <strong>Voice</strong> on (top right) for spoken guides.
                     </span>
                   )}
-                  <a
-                    href={GEMMA_4_E4B_DOCS_URL}
-                    className="underline font-semibold"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Gemma 4 model card
-                  </a>
-                  {' '}·{' '}
-                  <a
-                    href="https://github.com/prasadt1/photography-coach-gemma4#-quick-start"
-                    className="underline font-semibold"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    local quick start
-                  </a>
-                  {' '}·{' '}
-                  <a
-                    href={PRODUCT_ARTISAN_DEPLOY_URL}
-                    className="underline font-semibold"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    full product demo
-                  </a>
-                  {' '}(voice-guided journey from the submission video)
-                  {' '}·{' '}
-                  <a
-                    href={DEMO_VIDEO_YOUTUBE_URL}
-                    className="underline font-semibold"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    watch demo video
-                  </a>
+                  <span className="block mt-2">
+                    <a
+                      href={GEMMA_4_E4B_DOCS_URL}
+                      className="underline font-semibold"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Gemma 4 model card
+                    </a>
+                    {' '}·{' '}
+                    <a
+                      href={DEMO_VIDEO_YOUTUBE_URL}
+                      className="underline font-semibold"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      watch demo video
+                    </a>
+                  </span>
                 </p>
                 <a
                   href={PRODUCT_ARTISAN_DEPLOY_URL}

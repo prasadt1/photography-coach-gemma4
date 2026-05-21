@@ -6,6 +6,7 @@ import {
   GEMMA_TRADEMARK,
   OLLAMA_CLOUD,
   OLLAMA_CLOUD_MODEL_TAG,
+  PRODUCT_ARTISAN_DEPLOY_URL,
 } from '../lib/branding';
 
 const REPO_QUICKSTART =
@@ -54,7 +55,16 @@ export const DemoBanner: React.FC = () => {
             uses <strong className="font-semibold">{OLLAMA_CLOUD}</strong> with{' '}
             <code className="bg-black/20 px-1 rounded text-xs">{OLLAMA_CLOUD_MODEL_TAG}</code> so you can test
             without installing Ollama. Tap <strong>Enter Artisan Studio</strong> below, then try a
-            sample or upload. For fully on-device coaching, see the{' '}
+            sample or upload. Saw the submission video? Open the{' '}
+            <a
+              href={PRODUCT_ARTISAN_DEPLOY_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-white font-medium"
+            >
+              full product demo
+            </a>
+            {' '}(voice-guided journey, local E4B). For fully on-device coaching, see the{' '}
             <a
               href={REPO_QUICKSTART}
               target="_blank"

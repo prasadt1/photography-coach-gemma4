@@ -8,7 +8,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   AudioLines, Camera, WifiOff,
   ArrowRight, Sparkles, Shield, Loader2, Heart,
-  User, Wrench, Smartphone, Target, Plus,
+  User, Wrench, Smartphone, Target, Plus, ExternalLink,
 } from 'lucide-react';
 import { getHomeHeroBadgeText } from '../config';
 import { showStudioModeEntry } from '../lib/launchRoute';
@@ -20,6 +20,8 @@ import {
   OLLAMA_MODEL_TAG,
   OLLAMA_CLOUD_MODEL_TAG,
   ARTISAN_GRID_WELCOME_KEY,
+  DEMO_VIDEO_YOUTUBE_URL,
+  PRODUCT_ARTISAN_DEPLOY_URL,
   getJudgeHomeWelcomeScript,
   getArtisanStudioWelcomeScript,
 } from '../lib/branding';
@@ -187,7 +189,35 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                   >
                     local quick start
                   </a>
+                  {' '}·{' '}
+                  <a
+                    href={PRODUCT_ARTISAN_DEPLOY_URL}
+                    className="underline font-semibold"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    full product demo
+                  </a>
+                  {' '}(voice-guided journey from the submission video)
+                  {' '}·{' '}
+                  <a
+                    href={DEMO_VIDEO_YOUTUBE_URL}
+                    className="underline font-semibold"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    watch demo video
+                  </a>
                 </p>
+                <a
+                  href={PRODUCT_ARTISAN_DEPLOY_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border-2 border-[#2F4858] bg-white text-[#2F4858] text-sm font-semibold hover:bg-[#F4ECDC] focus:outline-none focus:ring-2 focus:ring-[#C06B45]"
+                >
+                  <ExternalLink className="w-4 h-4" aria-hidden />
+                  Open full product demo (as in video)
+                </a>
                 <div className="flex flex-col gap-2">
                   <button
                     type="button"

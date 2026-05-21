@@ -28,6 +28,13 @@ export const OLLAMA_CLOUD_MODEL_TAG = 'gemma4:31b';
 
 export const ARTISAN_GRID_WELCOME_KEY = 'lens-artisan-grid-welcomed';
 
+/** Real product / submission-video deploy (voice-guided journey first). */
+export const PRODUCT_ARTISAN_DEPLOY_URL =
+  'https://photography-coach-gemma4.vercel.app';
+
+/** Hackathon demo video (guided journey walkthrough). */
+export const DEMO_VIDEO_YOUTUBE_URL = 'https://www.youtube.com/watch?v=qoDLKzzcYHM';
+
 export function getJudgeHomeWelcomeScript(): string {
   return (
     `Welcome to the L.E.N.S. judge demo. ` +

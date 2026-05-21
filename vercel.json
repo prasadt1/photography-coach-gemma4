@@ -3,8 +3,14 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "functions": {
-    "api/**/*.ts": {
+    "api/analyze.ts": {
       "maxDuration": 60
+    },
+    "api/tts.ts": {
+      "maxDuration": 30
+    },
+    "api/health.js": {
+      "maxDuration": 10
     }
   },
   "rewrites": [

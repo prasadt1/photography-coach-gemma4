@@ -157,6 +157,34 @@ OLLAMA_CLOUD_MODEL=gemma4:31b
 After changing Vercel environment variables, redeploy the project. A running
 local Ollama instance on your laptop does not affect the hosted judge deployment.
 
+### `/api/analyze` returns `FUNCTION_INVOCATION_FAILED`
+
+That message means the **serverless function crashed on startup**, not that the
+Ollama key is wrong (a missing key returns JSON with `code: "NO_API_KEY"`).
+
+1. In the Vercel dashboard, open the **lens-app-gemma4** project (not only
+   photography-coach).
+2. Confirm **Root Directory** is empty (repo root). It must **not** be `dist` —
+   otherwise `/api` routes are never deployed.
+3. **Deployments → latest → Functions** — open `/api/analyze` logs for the real
+   stack trace.
+4. **Settings → Environment Variables** (Production): `OLLAMA_API_KEY`,
+   `OLLAMA_TARGET=cloud`, `OLLAMA_CLOUD_MODEL=gemma4:31b`,
+   `VITE_DEPLOYMENT_PROFILE=judge`.
+5. **Redeploy** after env changes (Redeploy → use latest commit).
+
+Smoke test after redeploy:
+
+```bash
+curl -sS -X POST https://lens-app-gemma4.vercel.app/api/analyze \
+  -H 'Content-Type: application/json' \
+  -d '{"healthCheck":true}'
+```
+
+Expected: JSON with `"status":"ok"`. If you still see plain-text
+`FUNCTION_INVOCATION_FAILED`, the API bundle is still broken — check function
+logs, not the browser UI.
+
 ## When To Use Each Path
 
 - Use local desktop or LAN PWA for the real L.E.N.S. product path.

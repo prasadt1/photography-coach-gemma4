@@ -46,22 +46,10 @@ export const DemoBanner: React.FC = () => {
             <span className="font-semibold text-sm">Judge try-it demo</span>
           </div>
           <p className="text-[#ECE3D2]/95 text-sm flex-1 leading-relaxed">
-            <strong className="font-semibold">Honest demo:</strong> uploads use{' '}
-            <strong className="font-semibold">{OLLAMA_CLOUD}</strong>{' '}
-            (<code className="bg-black/20 px-1 rounded text-xs">{OLLAMA_CLOUD_MODEL_TAG}</code>) so you can
-            try the full flow without installing Ollama. The <strong className="font-semibold">real product</strong>{' '}
-            runs <strong className="font-semibold">{GEMMA_4_E4B}</strong> on your device — private and
-            offline-capable. Samples here are recorded E4B from a local Mac. Tap{' '}
-            <strong>Enter Artisan Studio</strong>, then try a sample or upload. Prefer on-device E4B?{' '}
-            <a
-              href={REPO_LOCAL_QUICKSTART_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-white font-medium"
-            >
-              Ollama + E4B local setup
-            </a>
-            . {GEMMA_TRADEMARK}
+            <strong className="font-semibold">Judge demo (this URL):</strong> try samples and uploads in{' '}
+            <strong>Artisan Studio</strong> — live uploads via {OLLAMA_CLOUD}{' '}
+            (<code className="bg-black/20 px-1 rounded text-xs">{OLLAMA_CLOUD_MODEL_TAG}</code>), no install.
+            Real product = {GEMMA_4_E4B} on your Mac — see paths on the home page. {GEMMA_TRADEMARK}
           </p>
           <button
             type="button"

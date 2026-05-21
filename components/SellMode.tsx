@@ -43,14 +43,7 @@ import type { ArtisanAnalysisV3 } from '../services/voiceCoach';
 import { getAnalyzingStatus, getUploadHint } from '../config';
 import { showStudioModeEntry } from '../lib/launchRoute';
 import { isJudgeDemoBuild } from '../lib/deploymentProfile';
-import {
-  GEMMA_4_E4B,
-  OLLAMA_CLOUD,
-  OLLAMA_CLOUD_MODEL_TAG,
-  OLLAMA_MODEL_TAG,
-  REPO_LOCAL_QUICKSTART_URL,
-  getArtisanStudioWelcomeScript,
-} from '../lib/branding';
+import { GEMMA_4_E4B, OLLAMA_CLOUD, getArtisanStudioWelcomeScript } from '../lib/branding';
 import MarketplaceListingPreview, { buildMarketplaceListingDraft } from './MarketplaceListingPreview';
 import { DEMO_RESPONSES, DemoResponse, simulateProcessing, getComparisonSamples, DEMO_COMPARISON_RESULT } from '../src/data/demoResponses';
 import { ComparisonResult } from '../services/ollamaService';
@@ -444,20 +437,6 @@ const SellMode: React.FC<SellModeProps> = ({
             <div className="space-y-10">
               {isJudgeDemoBuild() && (
                 <>
-                  <p className="text-sm text-[#241F18] leading-relaxed rounded-xl border border-[#D8CDB8] bg-white px-4 py-3">
-                    <strong>Uploads</strong> use <strong>{OLLAMA_CLOUD}</strong> ({OLLAMA_CLOUD_MODEL_TAG}) so you can
-                    try live analysis without installing Ollama. The <strong>real product</strong> uses{' '}
-                    <strong>{GEMMA_4_E4B}</strong> ({OLLAMA_MODEL_TAG}) on your device — offline and private.{' '}
-                    <a
-                      href={REPO_LOCAL_QUICKSTART_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline font-semibold text-[#2F4858]"
-                    >
-                      Run Ollama + E4B locally
-                    </a>
-                    .
-                  </p>
                   <div className="rounded-2xl border-2 border-[#C06B45] bg-gradient-to-br from-[#FFF8F0] to-[#F4ECDC] p-5">
                     <p className="text-xs font-bold uppercase tracking-wider text-[#C06B45] mb-1">Sell on Etsy</p>
                     <p className="text-sm text-[#241F18] leading-relaxed">

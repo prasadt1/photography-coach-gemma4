@@ -122,15 +122,27 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
             </div>
 
             <h2 className="text-3xl md:text-4xl font-bold font-serif text-[#241F18] leading-tight mb-3">
-              Photograph your craft,<br />
-              <span className="text-[#2F4858]">on your own terms</span>
+              {isJudgeDemoBuild() ? (
+                <>
+                  L.E.N.S.<br />
+                  <span className="text-[#2F4858]">Judge demo</span>
+                </>
+              ) : (
+                <>
+                  Photograph your craft,<br />
+                  <span className="text-[#2F4858]">on your own terms</span>
+                </>
+              )}
             </h2>
 
             <p className="text-base text-[#241F18] leading-relaxed mb-4">
-              Voice-guided coaching for blind and low-vision artisans. Hear what's working in your photo, what isn't, and exactly how to fix it — no sighted help needed.
+              {isJudgeDemoBuild()
+                ? 'Voice-guided coaching for blind and low-vision artisans. Pick how you want to try it below.'
+                : "Voice-guided coaching for blind and low-vision artisans. Hear what's working in your photo, what isn't, and exactly how to fix it — no sighted help needed."}
             </p>
 
-            {/* Product truth badge */}
+            {/* Product truth badge — hidden on judge home (paths card explains cloud vs local) */}
+            {!isJudgeDemoBuild() && (
             <div className="mb-5">
               {connectionState === 'connecting' ? (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F4ECDC] border border-[#D8CDB8] text-[#524A3D] text-xs">
@@ -156,110 +168,132 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
                 </div>
               )}
             </div>
+            )}
 
-            {isJudgeDemoBuild() && (
-              <div className="mb-4 space-y-3 max-w-xl">
-                <p
-                  className="text-sm text-[#241F18] bg-white border-2 border-[#C06B45]/50 rounded-xl px-4 py-3 leading-relaxed"
-                  role="note"
-                >
-                  <strong className="text-[#C06B45]">Why cloud is on this page:</strong> for your convenience,
-                  so you can see the end-to-end flow without installing Ollama, <strong>photo uploads</strong> use{' '}
-                  <strong>{OLLAMA_CLOUD}</strong> (<code className="text-xs">{OLLAMA_CLOUD_MODEL_TAG}</code>).
-                  The <strong>real product offering</strong> runs <strong>{GEMMA_4_E4B}</strong> on your device
-                  ({OLLAMA_MODEL_TAG}) — private, offline-capable coaching. Sample tiles here are recorded E4B from a
-                  local Mac, not live cloud.
-                  <span className="block mt-2">
-                    Prefer the on-device path?{' '}
-                    <a
-                      href={REPO_LOCAL_QUICKSTART_URL}
-                      className="underline font-semibold text-[#2F4858]"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Install Ollama and run {GEMMA_4_E4B} locally
-                    </a>
-                    {' '}(README quick start), then open the{' '}
+            {isJudgeDemoBuild() ? (
+              <div className="mb-6 max-w-xl rounded-2xl border-2 border-[#D8CDB8] bg-[#F4ECDC] overflow-hidden shadow-md">
+                <div className="px-5 py-4 border-b border-[#D8CDB8] bg-white">
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#524A3D]">Choose a path</p>
+                </div>
+
+                <div className="px-5 py-5 border-b border-[#D8CDB8] bg-white">
+                  <p className="text-sm font-bold text-[#C06B45] mb-1">1 · Try here (recommended)</p>
+                  <p className="text-sm text-[#241F18] leading-relaxed mb-4">
+                    Judge flow on <strong>this page</strong>: sample photos (recorded {GEMMA_4_E4B}) plus{' '}
+                    <strong>live uploads</strong> via {OLLAMA_CLOUD} ({OLLAMA_CLOUD_MODEL_TAG}) — similar
+                    end-to-end experience, no install.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleEnterArtisanStudio}
+                    className="group inline-flex w-full sm:w-auto items-center justify-center gap-2 px-6 py-3.5 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full text-base font-bold shadow-lg transition-colors"
+                  >
+                    <Camera className="w-4 h-4" aria-hidden />
+                    Enter Artisan Studio
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" aria-hidden />
+                  </button>
+                  <p className="mt-3 text-xs text-[#524A3D] leading-relaxed">
+                    <sup>†</sup> Uploads use cloud so you can judge the flow without Ollama. The shipped product uses{' '}
+                    {GEMMA_4_E4B} on-device ({OLLAMA_MODEL_TAG}), offline and private.
+                  </p>
+                  {!voiceEnabled && (
+                    <p className="mt-2 text-xs text-[#AB3B24] font-semibold">
+                      Turn <strong>Voice</strong> on (top right) for spoken guides.
+                    </p>
+                  )}
+                </div>
+
+                <div className="px-5 py-5">
+                  <p className="text-sm font-bold text-[#2F4858] mb-1">2 · Real app (local {GEMMA_4_E4B})</p>
+                  <p className="text-sm text-[#241F18] leading-relaxed mb-3">
+                    Same coaching app on{' '}
                     <a
                       href={PRODUCT_ARTISAN_DEPLOY_URL}
                       className="underline font-semibold text-[#2F4858]"
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      full product demo
+                      photography-coach-gemma4.vercel.app
                     </a>
-                    {' '}with your Mac serving the model (same as the submission video).
-                  </span>
-                </p>
-                <p
-                  className="text-sm text-[#2F4858] bg-[#F4ECDC] border border-[#D8CDB8] rounded-xl px-4 py-3 leading-relaxed"
-                  aria-live="polite"
-                >
-                  <strong>Judge try-it:</strong> tap <strong>Enter Artisan Studio</strong> for a spoken studio
-                  guide, then try a <strong>sample</strong> to see coaching plus an <strong>Etsy listing draft</strong>{' '}
-                  (title, tags, description — with &quot;Hear listing draft&quot;).{' '}
-                  {!voiceEnabled && (
-                    <span className="block mt-2 text-[#AB3B24] font-semibold">
-                      Turn <strong>Voice</strong> on (top right) for spoken guides.
-                    </span>
-                  )}
-                  <span className="block mt-2">
+                    , but it only runs <strong>live</strong> when your Mac is serving Ollama — follow the{' '}
                     <a
-                      href={GEMMA_4_E4B_DOCS_URL}
-                      className="underline font-semibold"
+                      href={REPO_LOCAL_QUICKSTART_URL}
+                      className="underline font-semibold text-[#2F4858]"
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      Gemma 4 model card
+                      GitHub quick start
                     </a>
-                    {' '}·{' '}
+                    . Without that setup you will only see <strong>recorded</strong> samples, not live analysis (as in
+                    our submission video).
+                  </p>
+                  <div className="flex flex-wrap gap-2">
                     <a
-                      href={DEMO_VIDEO_YOUTUBE_URL}
-                      className="underline font-semibold"
+                      href={REPO_LOCAL_QUICKSTART_URL}
                       target="_blank"
                       rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-[#2F4858] text-[#2F4858] text-sm font-semibold hover:bg-[#A9B8BE]/50"
                     >
-                      watch demo video
+                      <ExternalLink className="w-3.5 h-3.5" aria-hidden />
+                      Local setup (README)
                     </a>
-                  </span>
-                </p>
-                <a
-                  href={PRODUCT_ARTISAN_DEPLOY_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border-2 border-[#2F4858] bg-white text-[#2F4858] text-sm font-semibold hover:bg-[#F4ECDC] focus:outline-none focus:ring-2 focus:ring-[#C06B45]"
-                >
-                  <ExternalLink className="w-4 h-4" aria-hidden />
-                  Open full product demo (as in video)
-                </a>
-                <div className="flex flex-col gap-2">
+                    <a
+                      href={PRODUCT_ARTISAN_DEPLOY_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#2F4858] text-white text-sm font-semibold hover:bg-[#1D3444]"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" aria-hidden />
+                      Open product URL
+                    </a>
+                  </div>
+                </div>
+
+                <div className="px-5 py-3 border-t border-[#D8CDB8] bg-[#ECE3D2]/60 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-[#524A3D]">
                   <button
                     type="button"
                     onPointerDown={() => primeJudgeSpeech()}
                     onClick={playJudgeWelcome}
-                    className="inline-flex select-none items-center gap-2 px-4 py-2.5 rounded-full bg-[#2F4858] hover:bg-[#1D3444] text-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#C06B45]"
-                    aria-label="Hear short spoken intro for judges on this page"
+                    className="inline-flex items-center gap-1.5 font-semibold text-[#2F4858] underline-offset-2 hover:underline"
                   >
-                    <AudioLines className="w-4 h-4" aria-hidden />
-                    Hear demo guide
+                    <AudioLines className="w-3.5 h-3.5" aria-hidden />
+                    Hear intro
                   </button>
-                  <p className="text-xs text-[#524A3D] min-h-[1.25rem]" aria-live="polite" role="status">
-                    {speechStatus === 'speaking' && 'Speaking… check Mac volume and Chrome tab is not muted.'}
-                    {speechStatus === 'error' && 'Speech could not start — try Chrome settings → Accessibility → Spoken Content.'}
-                  </p>
+                  <span aria-hidden>·</span>
+                  <a
+                    href={DEMO_VIDEO_YOUTUBE_URL}
+                    className="font-semibold text-[#2F4858] hover:underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Submission video
+                  </a>
+                  <span aria-hidden>·</span>
+                  <a
+                    href={GEMMA_4_E4B_DOCS_URL}
+                    className="font-semibold text-[#2F4858] hover:underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Gemma 4 model card
+                  </a>
+                  <span className="w-full min-h-[1rem]" aria-live="polite" role="status">
+                    {speechStatus === 'speaking' && 'Speaking…'}
+                    {speechStatus === 'error' && 'Speech could not start — check volume and browser settings.'}
+                  </span>
                 </div>
               </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleEnterArtisanStudio}
+                className="group inline-flex items-center gap-3 px-8 py-4 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full text-lg font-bold shadow-xl transition-colors"
+              >
+                <Camera className="w-4 h-4" />
+                <span>Enter Artisan Studio</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
             )}
-
-            <button
-              type="button"
-              onClick={handleEnterArtisanStudio}
-              className="group inline-flex items-center gap-3 px-8 py-4 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full text-lg font-bold shadow-xl transition-colors"
-            >
-              <Camera className="w-4 h-4" />
-              <span>Enter Artisan Studio</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
           </div>
 
           {/* Hero image - artisan using phone on tripod with voice coaching UI */}
@@ -443,11 +477,16 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
 
         {/* ========== CTA ========== */}
         <section className="py-8 border-t border-[#D8CDB8] text-center">
-          <h3 className="text-2xl font-bold font-serif text-[#241F18] mb-2">Ready to list?</h3>
+          <h3 className="text-2xl font-bold font-serif text-[#241F18] mb-2">
+            {isJudgeDemoBuild() ? 'Already in Artisan Studio?' : 'Ready to list?'}
+          </h3>
           <p className="text-base text-[#241F18] mb-5">
-            Get marketplace-ready photos with voice-guided coaching.
+            {isJudgeDemoBuild()
+              ? 'Use path 1 above for the judge demo on this URL.'
+              : 'Get marketplace-ready photos with voice-guided coaching.'}
           </p>
 
+          {!isJudgeDemoBuild() && (
           <button
             onClick={() => onSelectMode('sell')}
             className="group inline-flex items-center gap-2 px-7 py-3 bg-[#C06B45] hover:bg-[#A6552F] text-white rounded-full text-base font-bold shadow-xl transition-colors mb-4"
@@ -456,6 +495,7 @@ const HomePage: React.FC<HomePageProps> = ({ onSelectMode, ollamaReady: _ollamaR
             <span>Enter Artisan Studio</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
+          )}
 
           <div className="flex flex-wrap items-center justify-center gap-5 mb-5 text-xs">
             <div className="flex items-center gap-1 text-[#524A3D]">

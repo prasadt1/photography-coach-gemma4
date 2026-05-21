@@ -42,8 +42,7 @@ export const REPO_LOCAL_QUICKSTART_URL =
 export function getJudgeHomeWelcomeScript(): string {
   return (
     `Welcome to the L.E.N.S. judge demo. ` +
-    `This page is for reviewers. ` +
-    `Tap Enter Artisan Studio to try the artisan coaching experience.`
+    `Try the cloud path here in Artisan Studio, or follow the README to run the real on-device app.`
   );
 }
 

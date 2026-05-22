@@ -89,7 +89,14 @@ function cloudModelsToTry(primary: string): string[] {
     : [CLOUD_VISION_FALLBACK, primary];
 }
 
+/** Vercel production/preview cannot reach the maker's Mac at 127.0.0.1. */
+function isHostedVercel(): boolean {
+  const env = process.env.VERCEL_ENV;
+  return env === 'production' || env === 'preview';
+}
+
 function getTarget(): 'local' | 'cloud' {
+  if (isHostedVercel()) return 'cloud';
   return process.env.OLLAMA_TARGET === 'local' ? 'local' : 'cloud';
 }
 
@@ -200,6 +207,7 @@ export default async function handler(request: Request): Promise<Response> {
   }
 
   if (body.healthCheck) {
+    const forcedCloud = isHostedVercel() && process.env.OLLAMA_TARGET === 'local';
     return json({
       status: 'ok',
       configured: true,
@@ -208,6 +216,11 @@ export default async function handler(request: Request): Promise<Response> {
       target,
       model,
       endpoint,
+      ...(forcedCloud
+        ? {
+            note: 'OLLAMA_TARGET=local ignored on Vercel hosting; using Ollama Cloud.',
+          }
+        : {}),
     });
   }
 

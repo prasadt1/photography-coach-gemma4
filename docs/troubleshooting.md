@@ -177,6 +177,18 @@ the **Edge** runtime (see `export const config` in `api/analyze.ts`) to avoid th
 5. **Redeploy** after any change.
 6. **Deployments → Functions → `/api/analyze`** — check logs if it still fails.
 
+### Error mentions `gemma4:e4b` or “Network connection lost” on upload
+
+That usually means the **wrong Vercel project** or **`OLLAMA_TARGET=local`** on a hosted deploy.
+The serverless function then calls `http://127.0.0.1:11434` from Vercel (not your Mac) and fails.
+
+1. **Judge uploads:** use **https://lens-app-gemma4.vercel.app** (not photography-coach-gemma4 unless
+   that project also has cloud env vars).
+2. Health check: `curl -sS -X POST …/api/analyze -d '{"healthCheck":true}'` must show
+   `"target":"cloud"`, `"model":"gemma4:31b"`, `"endpoint":"https://ollama.com/api/chat"`.
+   If you see `"target":"local"` and `127.0.0.1`, fix env or redeploy latest `main`.
+3. **lens-app-gemma4** env: `OLLAMA_TARGET=cloud` (not `local`), `OLLAMA_API_KEY`, `OLLAMA_CLOUD_MODEL=gemma4:31b`.
+
 Smoke test after redeploy:
 
 ```bash

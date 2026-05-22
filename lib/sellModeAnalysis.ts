@@ -35,6 +35,12 @@ export function cloudUnavailableMessage(cloudError?: string): string {
   if (/NO_API_KEY|not configured/i.test(raw)) {
     return `Analysis unavailable: OLLAMA_API_KEY is not set on this Vercel project. Add it under lens-app-gemma4 → Settings → Environment Variables, then redeploy. ${hint}`;
   }
+  if (/tried:\s*gemma4:e4b/i.test(raw) || /127\.0\.0\.1:11434/i.test(raw)) {
+    return (
+      `Analysis unavailable: this deploy tried local Ollama (gemma4:e4b) from the server, which cannot work on Vercel. ` +
+      `Use https://lens-app-gemma4.vercel.app for judge uploads, or set OLLAMA_TARGET=cloud and OLLAMA_API_KEY on this project. ${hint}`
+    );
+  }
   if (/gemma4:31b|README quick start/i.test(detail)) {
     return `Analysis unavailable: ${detail}`;
   }

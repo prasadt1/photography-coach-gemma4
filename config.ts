@@ -3,7 +3,14 @@
  * All environment-specific values in one place.
  */
 
-import { GEMMA_4_E4B, OLLAMA_CLOUD } from './lib/branding';
+import {
+  GEMMA_4,
+  GEMMA_4_CLOUD_LABEL,
+  GEMMA_4_E4B,
+  OLLAMA_CLOUD,
+  OLLAMA_CLOUD_MODEL_TAG,
+} from './lib/branding';
+import { isJudgeDemoBuild } from './lib/deploymentProfile';
 
 // Derive Ollama host from the page origin so LAN devices (phone, tablet)
 // automatically reach the Mac running Ollama instead of their own localhost.
@@ -82,15 +89,30 @@ export const OLLAMA_CLOUD_CONFIG = {
 // Inference source tracking for UI badges
 export type InferenceSource = 'local' | 'cloud' | 'demo';
 
-// User-facing copy only — never expose "cloud" in the product UI
+/** Live inference label: judge cloud uploads use Gemma 4 · Ollama Cloud, not E4B. */
+function liveModelLabel(source: InferenceSource): string {
+  if (source === 'local') return GEMMA_4_E4B;
+  if (isJudgeDemoBuild()) return GEMMA_4_CLOUD_LABEL;
+  return GEMMA_4_E4B;
+}
+
+/** Header subtitle under L.E.N.S. */
+export function getHeaderModelTagline(): string {
+  return isJudgeDemoBuild() ? GEMMA_4_CLOUD_LABEL : `${GEMMA_4_E4B} · Ollama`;
+}
+
 export const getInferenceSourceLabel = (source: InferenceSource): string => {
   switch (source) {
     case 'local':
       return `Local ${GEMMA_4_E4B} · Private`;
     case 'cloud':
-      return `${GEMMA_4_E4B} · ${OLLAMA_CLOUD}`;
+      return isJudgeDemoBuild()
+        ? GEMMA_4_CLOUD_LABEL
+        : `${GEMMA_4_E4B} · ${OLLAMA_CLOUD}`;
     case 'demo':
-      return `Demo · Recorded ${GEMMA_4_E4B}`;
+      return isJudgeDemoBuild()
+        ? `Demo · Recorded ${GEMMA_4_E4B} (local Mac)`
+        : `Demo · Recorded ${GEMMA_4_E4B}`;
   }
 };
 
@@ -100,7 +122,7 @@ export const getInferenceSourceShortLabel = (source: InferenceSource): string =>
     case 'local':
       return 'Local · Private';
     case 'cloud':
-      return 'Cloud';
+      return isJudgeDemoBuild() ? GEMMA_4 : 'Cloud';
     case 'demo':
       return 'Demo';
   }
@@ -111,9 +133,13 @@ export const getHomeHeroBadgeText = (source: InferenceSource): string => {
     case 'local':
       return `${GEMMA_4_E4B} on your device · Private · Offline`;
     case 'cloud':
-      return `${GEMMA_4_E4B} ready · Voice-guided coaching`;
+      return isJudgeDemoBuild()
+        ? `${GEMMA_4_CLOUD_LABEL} ready · Voice-guided coaching`
+        : `${GEMMA_4_E4B} ready · Voice-guided coaching`;
     case 'demo':
-      return `Demo · Recorded ${GEMMA_4_E4B} samples`;
+      return isJudgeDemoBuild()
+        ? `Demo · Recorded ${GEMMA_4_E4B} (local Mac)`
+        : `Demo · Recorded ${GEMMA_4_E4B} samples`;
   }
 };
 
@@ -127,14 +153,21 @@ export const getAnalyzingStatus = (
         subtitle: `${GEMMA_4_E4B} · Nothing leaves your device`,
       };
     case 'cloud':
-      return {
-        title: `Analyzing with ${GEMMA_4_E4B}...`,
-        subtitle: `Voice-guided coaching · ${OLLAMA_CLOUD}`,
-      };
+      return isJudgeDemoBuild()
+        ? {
+            title: `Analyzing with ${GEMMA_4}...`,
+            subtitle: `${OLLAMA_CLOUD} · ${OLLAMA_CLOUD_MODEL_TAG}`,
+          }
+        : {
+            title: `Analyzing with ${GEMMA_4_E4B}...`,
+            subtitle: `Voice-guided coaching · ${OLLAMA_CLOUD}`,
+          };
     case 'demo':
       return {
         title: 'Preparing analysis...',
-        subtitle: `Recorded ${GEMMA_4_E4B} sample`,
+        subtitle: isJudgeDemoBuild()
+          ? `Recorded ${GEMMA_4_E4B} sample (local Mac)`
+          : `Recorded ${GEMMA_4_E4B} sample`,
       };
   }
 };
@@ -144,7 +177,9 @@ export const getUploadHint = (source: InferenceSource): string => {
     case 'local':
       return '100% private, on your device';
     case 'cloud':
-      return `Live ${GEMMA_4_E4B} via ${OLLAMA_CLOUD}`;
+      return isJudgeDemoBuild()
+        ? `Live ${GEMMA_4} via ${OLLAMA_CLOUD}`
+        : `Live ${GEMMA_4_E4B} via ${OLLAMA_CLOUD}`;
     case 'demo':
       return 'Try a sample or upload a photo';
   }
@@ -155,9 +190,9 @@ export const getArtisanInferenceBadge = (source: InferenceSource): string => {
     case 'local':
       return `Local ${GEMMA_4_E4B}`;
     case 'cloud':
-      return GEMMA_4_E4B;
+      return liveModelLabel(source);
     case 'demo':
-      return `Demo · ${GEMMA_4_E4B}`;
+      return isJudgeDemoBuild() ? `Demo · ${GEMMA_4_E4B} (Mac)` : `Demo · ${GEMMA_4_E4B}`;
   }
 };
 

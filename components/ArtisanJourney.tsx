@@ -362,7 +362,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
       const captureKind: ArtisanCaptureKind =
         phase === 'firstCapture' ? 'first' : attempts.length >= 2 ? 'replace' : 'compare';
       const isFirstPhoto = captureKind === 'first';
-      const analysisStatus = getAnalysisStatusCopy(captureKind);
+      const analysisStatus = getAnalysisStatusCopy(captureKind, currentInferenceSource);
 
       clearAnalysisStatusTimer();
       if (coachingEnabled && tapOnlyDemo) {
@@ -957,7 +957,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
         ? 'replace'
         : 'compare'
       : 'first';
-    const processingStatus = getAnalysisStatusCopy(processingKind);
+    const processingStatus = getAnalysisStatusCopy(processingKind, currentInferenceSource);
     const promptText = isSecond && attempts[0]?.analysisJSON?.primaryFix
       ? `Remember: ${attempts[0].analysisJSON.primaryFix}`
       : 'Position your craft in good light';
@@ -1037,7 +1037,7 @@ const ArtisanJourney: React.FC<ArtisanJourneyProps> = ({
 
   // Phase 3: First Analysis (processing)
   if (phase === 'firstAnalysis' && isProcessing) {
-    const firstStatus = getAnalysisStatusCopy('first');
+    const firstStatus = getAnalysisStatusCopy('first', currentInferenceSource);
     return (
       <div className="max-w-2xl mx-auto px-6 py-12" ref={mainContentRef} tabIndex={-1}>
         <div

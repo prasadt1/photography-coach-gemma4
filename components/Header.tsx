@@ -8,10 +8,10 @@ import React from 'react';
 import { ChevronLeft, Volume2, VolumeX, Sparkles } from 'lucide-react';
 import {
   type InferenceSource,
+  getHeaderModelTagline,
   getInferenceSourceLabel,
   getInferenceSourceShortLabel,
 } from '../config';
-import { GEMMA_4_E4B } from '../lib/branding';
 
 export type { InferenceSource };
 
@@ -54,7 +54,7 @@ const Header: React.FC<HeaderProps> = ({
                 Local Edge Native Studio
               </p>
               <p className="text-[10px] sm:text-[11px] text-[#524A3D] font-medium truncate">
-                {GEMMA_4_E4B} · Ollama
+                {getHeaderModelTagline()}
               </p>
             </div>
           </div>

@@ -3,18 +3,30 @@
  * Does not change the model JSON schema.
  */
 
-import { GEMMA_4_E4B } from '../lib/branding';
+import { GEMMA_4_CLOUD_LABEL, GEMMA_4_E4B } from '../lib/branding';
+import { isJudgeDemoBuild } from '../lib/deploymentProfile';
+import type { InferenceSource } from '../config';
 
 export type ArtisanCaptureKind = 'first' | 'compare' | 'replace';
 
-/** Screen + voice copy while Gemma 4 E4B runs (first / 2nd photo / 3rd+ retake). */
-export function getAnalysisStatusCopy(kind: ArtisanCaptureKind): {
+function analysisModelLabel(source?: InferenceSource): string {
+  if (source === 'local') return GEMMA_4_E4B;
+  if (isJudgeDemoBuild()) return GEMMA_4_CLOUD_LABEL;
+  return GEMMA_4_E4B;
+}
+
+/** Screen + voice copy while inference runs (first / 2nd photo / 3rd+ retake). */
+export function getAnalysisStatusCopy(
+  kind: ArtisanCaptureKind,
+  source?: InferenceSource,
+): {
   screenTitle: string;
   screenDetail: string;
   /** Spoken on Take Photo (user gesture) — Samantha / analysis voice. */
   voiceOnCapture: string;
   voiceAfterDelay: string;
 } {
+  const model = analysisModelLabel(source);
   const timingFirst =
     'This usually takes twenty to thirty seconds. The very first run may take a little longer while the model loads.';
   const timingNext = 'This usually takes twenty to thirty seconds.';
@@ -22,22 +34,21 @@ export function getAnalysisStatusCopy(kind: ArtisanCaptureKind): {
   switch (kind) {
     case 'first':
       return {
-        screenTitle: `Analysing with ${GEMMA_4_E4B}`,
-        screenDetail:
-          `${GEMMA_4_E4B} is studying your photo. ${timingFirst}`,
-        voiceOnCapture: `Analysing your photo with ${GEMMA_4_E4B}. ${timingFirst}`,
-        voiceAfterDelay: `Still analysing your photo with ${GEMMA_4_E4B}. ${timingNext}`,
+        screenTitle: `Analysing with ${model}`,
+        screenDetail: `${model} is studying your photo. ${timingFirst}`,
+        voiceOnCapture: `Analysing your photo with ${model}. ${timingFirst}`,
+        voiceAfterDelay: `Still analysing your photo with ${model}. ${timingNext}`,
       };
     case 'compare':
       return {
-        screenTitle: `Analysing with ${GEMMA_4_E4B}`,
+        screenTitle: `Analysing with ${model}`,
         screenDetail: `Comparing both photos to find the stronger shot. ${timingNext}`,
-        voiceOnCapture: `Comparing both photos with ${GEMMA_4_E4B}. ${timingNext}`,
-        voiceAfterDelay: `Still comparing your photos with ${GEMMA_4_E4B}. ${timingNext}`,
+        voiceOnCapture: `Comparing both photos with ${model}. ${timingNext}`,
+        voiceAfterDelay: `Still comparing your photos with ${model}. ${timingNext}`,
       };
     case 'replace':
       return {
-        screenTitle: `Analysing with ${GEMMA_4_E4B}`,
+        screenTitle: `Analysing with ${model}`,
         screenDetail: `Analysing your new photo and comparing it to your first shot. ${timingNext}`,
         voiceOnCapture: `Analysing your new photo and comparing it to your first shot. ${timingNext}`,
         voiceAfterDelay: `Still analysing and comparing your photos. ${timingNext}`,

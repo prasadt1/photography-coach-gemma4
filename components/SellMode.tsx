@@ -44,7 +44,12 @@ import type { ArtisanAnalysisV3 } from '../services/voiceCoach';
 import { getAnalyzingStatus, getUploadHint } from '../config';
 import { showStudioModeEntry } from '../lib/launchRoute';
 import { isJudgeDemoBuild } from '../lib/deploymentProfile';
-import { GEMMA_4_E4B, OLLAMA_CLOUD, getArtisanStudioWelcomeScript } from '../lib/branding';
+import {
+  GEMMA_4_CLOUD_LABEL,
+  GEMMA_4_E4B,
+  OLLAMA_CLOUD,
+  getArtisanStudioWelcomeScript,
+} from '../lib/branding';
 import MarketplaceListingPreview, { buildMarketplaceListingDraft } from './MarketplaceListingPreview';
 import { DEMO_RESPONSES, DemoResponse, simulateProcessing, getComparisonSamples, DEMO_COMPARISON_RESULT } from '../src/data/demoResponses';
 import { ComparisonResult } from '../services/ollamaService';
@@ -615,7 +620,8 @@ const SellMode: React.FC<SellModeProps> = ({
               {analysisProvenance === 'live' && inferenceSource === 'cloud' && (
                 <p className="rounded-xl border-2 border-[#2F4858]/30 bg-[#A9B8BE]/40 px-4 py-3 text-sm text-[#241F18] leading-relaxed">
                   <strong className="text-[#2F4858]">Live analysis:</strong> generated just now via{' '}
-                  <strong>{OLLAMA_CLOUD}</strong> for your upload.
+                  <strong>{isJudgeDemoBuild() ? GEMMA_4_CLOUD_LABEL : OLLAMA_CLOUD}</strong>{' '}
+                  for your upload.
                 </p>
               )}
               {analysisProvenance === 'live' && inferenceSource === 'local' && (

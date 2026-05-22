@@ -3,12 +3,16 @@
  * Prose: Gemma 4 E4B · Ollama tag: gemma4:e4b · Schema id: gemma-4-e4b
  */
 
+import { isJudgeDemoBuild } from './deploymentProfile';
+
 export const GEMMA_4_E4B = 'Gemma 4 E4B';
 export const GEMMA_4 = 'Gemma 4';
+export const OLLAMA_CLOUD = 'Ollama Cloud';
+/** Judge live uploads — Ollama Cloud (not on-device E4B). */
+export const GEMMA_4_CLOUD_LABEL = `${GEMMA_4} · ${OLLAMA_CLOUD}`;
 export const OLLAMA_MODEL_TAG = 'gemma4:e4b';
 export const GEMMA_SCHEMA_ID = 'gemma-4-e4b';
 export const GEMMA_TRADEMARK = 'Gemma is a trademark of Google LLC.';
-export const OLLAMA_CLOUD = 'Ollama Cloud';
 
 /** Gemma open-models hub — family overview */
 export const GEMMA_FAMILY_URL = 'https://deepmind.google/models/gemma/';
@@ -47,6 +51,14 @@ export function getJudgeHomeWelcomeScript(): string {
 }
 
 export function getArtisanStudioWelcomeScript(): string {
+  if (isJudgeDemoBuild()) {
+    return (
+      `Artisan Studio. ` +
+      `Tap a sample for recorded ${GEMMA_4_E4B} from a local Mac. ` +
+      `Upload your own photo or open the guided journey for live ${GEMMA_4_CLOUD_LABEL}. ` +
+      `Use Hear page guide to replay these instructions.`
+    );
+  }
   return (
     `Artisan Studio. ` +
     `For this demo, tap a sample photo to hear recorded ${GEMMA_4_E4B} coaching from a local Mac, ` +

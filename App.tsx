@@ -231,8 +231,9 @@ function App() {
   }, []);
 
   const handleGoHome = useCallback(() => {
-    // Judge demo and dev studio builds can return to the home / sample grid
+    // Artisan product (no judge home): SellMode handles its own back stack
     if (!isJudgeDemoBuild() && !showStudioModeEntry()) {
+      setPendingSellImage(null);
       setMode('sell');
       setShowHome(false);
       setAppState(AppState.IDLE);
@@ -241,6 +242,7 @@ function App() {
     }
     if (isJudgeDemoBuild()) judgeStop();
     else hardStopVoice();
+    setPendingSellImage(null);
     setShowHome(true);
     setAppState(AppState.IDLE);
     setCurrentImage(null);

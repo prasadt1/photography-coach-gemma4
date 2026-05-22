@@ -42,7 +42,6 @@ import {
 } from '../lib/sellModeAnalysis';
 import type { ArtisanAnalysisV3 } from '../services/voiceCoach';
 import { getAnalyzingStatus, getUploadHint } from '../config';
-import { showStudioModeEntry } from '../lib/launchRoute';
 import { isJudgeDemoBuild } from '../lib/deploymentProfile';
 import {
   GEMMA_4_CLOUD_LABEL,
@@ -259,28 +258,40 @@ const SellMode: React.FC<SellModeProps> = ({
     }
   };
 
+  const resetToStudioGrid = () => {
+    setShowGuidedJourney(false);
+    setResult(null);
+    setAnalysisProvenance(null);
+    setShowCompare(false);
+    setDemoCompareResult(null);
+    setError(null);
+    setIsAnalyzing(false);
+  };
+
   const handleBack = () => {
     cancelAnalysisSession();
     if (showGuidedJourney) {
-      if (showStudioModeEntry()) {
+      if (isJudgeDemoBuild()) {
         setShowGuidedJourney(false);
-      } else {
         onBack();
+        return;
       }
-    } else if (result || showCompare) {
+      setShowGuidedJourney(false);
+      return;
+    }
+    if (result || showCompare) {
       if (isJudgeDemoBuild()) {
         onBack();
         return;
       }
-      setResult(null);
-      setAnalysisProvenance(null);
-      setShowCompare(false);
-      setDemoCompareResult(null);
-      setError(null);
-      setIsAnalyzing(false);
-    } else {
-      onBack();
+      resetToStudioGrid();
+      return;
     }
+    if (isJudgeDemoBuild()) {
+      onBack();
+      return;
+    }
+    resetToStudioGrid();
   };
 
   const handleRetry = () => {

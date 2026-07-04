@@ -66,7 +66,11 @@ const CLOUD_MODEL_ALIASES: Record<string, string> = {
   'gemma4:4b': 'gemma4:31b',
 };
 const CLOUD_VISION_FALLBACK = 'gemma3:4b';
-const TIMEOUT_MS = 55_000;
+/** Stay under Vercel Edge maxDuration (60s) with headroom for JSON parsing. */
+const HOSTED_DEADLINE_MS = 58_000;
+const LOCAL_DEADLINE_MS = 115_000;
+const MIN_ATTEMPT_MS = 3_000;
+const SCHEMA_RETRY_MIN_MS = 12_000;
 
 interface AnalyzeRequest {
   base64Image?: string;
@@ -83,10 +87,15 @@ function resolveCloudModel(requested?: string): string {
   return CLOUD_MODEL_ALIASES[raw] ?? raw;
 }
 
+/** Primary cloud model first; smaller vision model only on fast failures. */
 function cloudModelsToTry(primary: string): string[] {
   return primary === CLOUD_VISION_FALLBACK
     ? [CLOUD_VISION_FALLBACK]
-    : [CLOUD_VISION_FALLBACK, primary];
+    : [primary, CLOUD_VISION_FALLBACK];
+}
+
+function msRemaining(deadlineAt: number): number {
+  return deadlineAt - Date.now();
 }
 
 /** Vercel production/preview cannot reach the maker's Mac at 127.0.0.1. */
@@ -107,15 +116,18 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-async function attemptOllamaChat(params: {
-  endpoint: string;
-  headers: Record<string, string>;
-  model: string;
-  systemPrompt: string;
-  userPrompt: string;
-  cleanBase64: string;
-  outputSchema?: object;
-}): Promise<{ ok: true; content: string } | { ok: false; status: number; details: string }> {
+async function attemptOllamaChat(
+  params: {
+    endpoint: string;
+    headers: Record<string, string>;
+    model: string;
+    systemPrompt: string;
+    userPrompt: string;
+    cleanBase64: string;
+    outputSchema?: object;
+  },
+  deadlineAt: number,
+): Promise<{ ok: true; content: string } | { ok: false; status: number; details: string }> {
   const buildBody = (withSchema: boolean) => {
     const req: Record<string, unknown> = {
       model: params.model,
@@ -124,7 +136,7 @@ async function attemptOllamaChat(params: {
         { role: 'user', content: params.userPrompt, images: [params.cleanBase64] },
       ],
       stream: false,
-      options: { temperature: 0.1, num_predict: 2048 },
+      options: { temperature: 0.1, num_predict: 1200 },
     };
     if (withSchema && params.outputSchema) {
       req.format = params.outputSchema;
@@ -132,10 +144,19 @@ async function attemptOllamaChat(params: {
     return req;
   };
 
-  for (const withSchema of [true, false]) {
-    if (!withSchema && !params.outputSchema) break;
+  const schemaAttempts: boolean[] = params.outputSchema ? [true, false] : [false];
+
+  for (let i = 0; i < schemaAttempts.length; i++) {
+    const withSchema = schemaAttempts[i]!;
+    const remaining = msRemaining(deadlineAt);
+    if (remaining < MIN_ATTEMPT_MS) {
+      return { ok: false, status: 504, details: 'Request timeout' };
+    }
+
+    const attemptTimeout = Math.min(52_000, remaining - 1_500);
+    const startedAt = Date.now();
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    const timeoutId = setTimeout(() => controller.abort(), attemptTimeout);
     try {
       const response = await fetch(params.endpoint, {
         method: 'POST',
@@ -146,18 +167,35 @@ async function attemptOllamaChat(params: {
       clearTimeout(timeoutId);
       if (!response.ok) {
         const errorText = await response.text();
-        return { ok: false, status: response.status, details: errorText.slice(0, 500) };
+        const err = { ok: false as const, status: response.status, details: errorText.slice(0, 500) };
+        const hasSchemaRetry = withSchema && i < schemaAttempts.length - 1;
+        if (hasSchemaRetry && msRemaining(deadlineAt) >= SCHEMA_RETRY_MIN_MS) {
+          continue;
+        }
+        return err;
       }
       const data = (await response.json()) as { message?: { content?: string } };
       const content = data.message?.content ?? '';
       if (content.trim()) {
         return { ok: true, content };
       }
-      return { ok: false, status: 502, details: 'Empty model response' };
+      const empty = { ok: false as const, status: 502, details: 'Empty model response' };
+      if (withSchema && i < schemaAttempts.length - 1 && msRemaining(deadlineAt) >= SCHEMA_RETRY_MIN_MS) {
+        continue;
+      }
+      return empty;
     } catch (err) {
       clearTimeout(timeoutId);
       if (err instanceof Error && err.name === 'AbortError') {
-        return { ok: false, status: 504, details: 'Request timeout' };
+        const timedOut = { ok: false as const, status: 504, details: 'Request timeout' };
+        const elapsed = Date.now() - startedAt;
+        const hasSchemaRetry =
+          withSchema && i < schemaAttempts.length - 1 && msRemaining(deadlineAt) >= SCHEMA_RETRY_MIN_MS;
+        // Retry schema-off only when schema-on failed quickly (likely format rejection).
+        if (hasSchemaRetry && elapsed < 15_000) {
+          continue;
+        }
+        return timedOut;
       }
       return {
         ok: false,
@@ -277,18 +315,27 @@ export default async function handler(request: Request): Promise<Response> {
   }
 
   const models = isLocal ? [localModel] : cloudModelsToTry(cloudModel);
+  const deadlineAt = Date.now() + (isHostedVercel() ? HOSTED_DEADLINE_MS : LOCAL_DEADLINE_MS);
   let lastError = { status: 502, details: 'Unknown error' };
 
   for (const tryModel of models) {
-    const result = await attemptOllamaChat({
-      endpoint,
-      headers,
-      model: tryModel,
-      systemPrompt: body.systemPrompt,
-      userPrompt: body.userPrompt,
-      cleanBase64,
-      outputSchema,
-    });
+    if (msRemaining(deadlineAt) < MIN_ATTEMPT_MS) {
+      lastError = { status: 504, details: 'Request timeout' };
+      break;
+    }
+
+    const result = await attemptOllamaChat(
+      {
+        endpoint,
+        headers,
+        model: tryModel,
+        systemPrompt: body.systemPrompt,
+        userPrompt: body.userPrompt,
+        cleanBase64,
+        outputSchema,
+      },
+      deadlineAt,
+    );
 
     if (result.ok) {
       return json({
@@ -314,6 +361,10 @@ export default async function handler(request: Request): Promise<Response> {
         { error: 'Invalid Ollama API key', code: 'INVALID_API_KEY', details: result.details },
         401,
       );
+    }
+    // Do not chain to fallback after a slow timeout — budget is exhausted.
+    if (result.status === 504 && msRemaining(deadlineAt) < SCHEMA_RETRY_MIN_MS) {
+      break;
     }
   }
 

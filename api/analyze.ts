@@ -72,10 +72,10 @@ const CLOUD_MODEL_ALIASES: Record<string, string> = {
   'gemma4:4b': 'gemma4:31b',
 };
 /**
- * Living Ollama Cloud vision model. gemma3:* retired 2026-07-15.
- * gemma4:31b vision currently 500s/hangs on Cloud — use minimax-m3 for hosted judge uploads.
+ * Living Ollama Cloud vision models. gemma3:* retired 2026-07-15.
+ * gemma4:31b vision currently fails on Cloud — hosted judge uploads use these instead.
  */
-const CLOUD_VISION_FALLBACKS = ['minimax-m3'] as const;
+const CLOUD_VISION_FALLBACKS = ['kimi-k2.6', 'minimax-m3'] as const;
 const HOSTED_DEADLINE_MS = 55_000;
 const LOCAL_DEADLINE_MS = 115_000;
 const MIN_ATTEMPT_MS = 3_000;
@@ -96,7 +96,7 @@ function resolveCloudModel(requested?: string): string {
   return CLOUD_MODEL_ALIASES[raw] ?? raw;
 }
 
-/** Hosted gemma4:31b vision is unhealthy — use a living cloud vision model only. */
+/** Hosted gemma4:31b vision is unhealthy — use living cloud vision models only. */
 function cloudModelsToTry(primary: string): string[] {
   if (primary === 'gemma4:31b') {
     return [...CLOUD_VISION_FALLBACKS];
@@ -272,36 +272,47 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (body.warmUp) {
+    // Brief ping only — long keep_alive warm-ups burn Ollama Cloud concurrency and cause 429s.
     const warmHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
     if (!isLocal && apiKey) {
       warmHeaders.Authorization = `Bearer ${apiKey}`;
     }
+    const warmModel = isLocal ? model : CLOUD_VISION_FALLBACKS[0]!;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8_000);
     try {
       const warmRes = await fetch(endpoint, {
         method: 'POST',
         headers: warmHeaders,
         body: JSON.stringify({
-          model: isLocal ? model : CLOUD_VISION_FALLBACKS[0] ?? model,
+          model: warmModel,
           messages: [{ role: 'user', content: '.' }],
           stream: false,
           think: false,
           options: { num_predict: 1 },
-          keep_alive: '30m',
         }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
       if (!warmRes.ok) {
         const errorText = await warmRes.text();
-        return res.status(502).json({
-          error: 'Warm-up failed',
-          code: 'WARMUP_ERROR',
-          details: errorText.slice(0, 500),
+        return res.status(200).json({
+          status: 'ok',
+          warmed: false,
+          target,
+          model: warmModel,
+          details: errorText.slice(0, 200),
         });
       }
-      return res.status(200).json({ status: 'ok', warmed: true, target, model });
+      return res.status(200).json({ status: 'ok', warmed: true, target, model: warmModel });
     } catch (err) {
-      return res.status(502).json({
-        error: 'Warm-up failed',
-        message: err instanceof Error ? err.message : 'Unknown error',
+      clearTimeout(timeoutId);
+      return res.status(200).json({
+        status: 'ok',
+        warmed: false,
+        target,
+        model: warmModel,
+        message: err instanceof Error ? err.message : 'Warm-up skipped',
       });
     }
   }
@@ -378,6 +389,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         code: 'INVALID_API_KEY',
         details: result.details,
       });
+    }
+    // Brief pause then try next living model after Cloud concurrency limits.
+    if (result.status === 429 && !isLastModel) {
+      await new Promise((r) => setTimeout(r, 1500));
+      continue;
     }
     if (result.status === 504 && isLastModel) {
       break;

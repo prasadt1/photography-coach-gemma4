@@ -73,11 +73,9 @@ const CLOUD_MODEL_ALIASES: Record<string, string> = {
 };
 /**
  * Living Ollama Cloud vision model. gemma3:* retired 2026-07-15.
- * gemma4:31b vision currently 500s upstream — lead with minimax-m3 for judge uploads.
+ * gemma4:31b vision currently 500s/hangs on Cloud — use minimax-m3 for hosted judge uploads.
  */
 const CLOUD_VISION_FALLBACKS = ['minimax-m3'] as const;
-/** Cap time on a non-final model so the living fallback still fits in 60s. */
-const CLOUD_PROBE_BUDGET_MS = 12_000;
 const HOSTED_DEADLINE_MS = 55_000;
 const LOCAL_DEADLINE_MS = 115_000;
 const MIN_ATTEMPT_MS = 3_000;
@@ -98,12 +96,12 @@ function resolveCloudModel(requested?: string): string {
   return CLOUD_MODEL_ALIASES[raw] ?? raw;
 }
 
-/** Lead with a living vision model when primary gemma4:31b is unhealthy on Cloud. */
+/** Hosted gemma4:31b vision is unhealthy — use a living cloud vision model only. */
 function cloudModelsToTry(primary: string): string[] {
-  const extras = CLOUD_VISION_FALLBACKS.filter((m) => m !== primary);
-  if (primary === 'gemma4:31b' && extras.length > 0) {
-    return [...extras, primary];
+  if (primary === 'gemma4:31b') {
+    return [...CLOUD_VISION_FALLBACKS];
   }
+  const extras = CLOUD_VISION_FALLBACKS.filter((m) => m !== primary);
   return [primary, ...extras];
 }
 
@@ -338,11 +336,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       break;
     }
 
-    const modelDeadlineAt =
-      !isLocal && !isLastModel
-        ? Math.min(deadlineAt, Date.now() + CLOUD_PROBE_BUDGET_MS)
-        : deadlineAt;
-
     const result = await attemptOllamaChat(
       {
         endpoint,
@@ -352,10 +345,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         userPrompt: body.userPrompt,
         cleanBase64,
         outputSchema,
-        allowSchemaRetry: isLocal || isLastModel,
+        allowSchemaRetry: true,
         numPredict: isLocal ? 1200 : 900,
       },
-      modelDeadlineAt,
+      deadlineAt,
     );
 
     if (result.ok) {

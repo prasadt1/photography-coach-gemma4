@@ -66,11 +66,13 @@ const CLOUD_MODEL_ALIASES: Record<string, string> = {
   'gemma4:4b': 'gemma4:31b',
 };
 /**
- * Living Ollama Cloud vision models to try after the primary fails fast
+ * Living Ollama Cloud vision model to try after the primary fails fast
  * (e.g. upstream 500). gemma3:* was retired 2026-07-15 — do not use.
- * Prefer smaller/faster vision models before the largest ones.
+ * One fallback only: Vercel Edge has a 60s budget; chaining large models times out.
  */
-const CLOUD_VISION_FALLBACKS = ['minimax-m3', 'qwen3.5:397b'] as const;
+const CLOUD_VISION_FALLBACKS = ['minimax-m3'] as const;
+/** Cap time spent on a non-final cloud model so fallbacks still fit in Edge. */
+const CLOUD_PROBE_BUDGET_MS = 10_000;
 /** Stay under Vercel Edge maxDuration (60s) with headroom for JSON parsing. */
 const HOSTED_DEADLINE_MS = 58_000;
 const LOCAL_DEADLINE_MS = 115_000;
@@ -92,9 +94,12 @@ function resolveCloudModel(requested?: string): string {
   return CLOUD_MODEL_ALIASES[raw] ?? raw;
 }
 
-/** Primary cloud model first; other living vision models only on fast failures. */
+/** Primary first, except gemma4:31b vision is currently 500ing on Ollama Cloud — lead with a living model. */
 function cloudModelsToTry(primary: string): string[] {
   const extras = CLOUD_VISION_FALLBACKS.filter((m) => m !== primary);
+  if (primary === 'gemma4:31b' && extras.length > 0) {
+    return [...extras, primary];
+  }
   return [primary, ...extras];
 }
 
@@ -129,9 +134,14 @@ async function attemptOllamaChat(
     userPrompt: string;
     cleanBase64: string;
     outputSchema?: object;
+    /** When false, only one format attempt (saves Edge budget for fallbacks). */
+    allowSchemaRetry?: boolean;
+    numPredict?: number;
   },
   deadlineAt: number,
 ): Promise<{ ok: true; content: string } | { ok: false; status: number; details: string }> {
+  const allowSchemaRetry = params.allowSchemaRetry !== false;
+  const numPredict = params.numPredict ?? 1200;
   const buildBody = (withSchema: boolean) => {
     const req: Record<string, unknown> = {
       model: params.model,
@@ -142,7 +152,7 @@ async function attemptOllamaChat(
       stream: false,
       // Gemma 4 cloud defaults to thinking; vision + think has been returning upstream 500s.
       think: false,
-      options: { temperature: 0.1, num_predict: 1200 },
+      options: { temperature: 0.1, num_predict: numPredict },
     };
     if (withSchema && params.outputSchema) {
       req.format = params.outputSchema;
@@ -150,7 +160,8 @@ async function attemptOllamaChat(
     return req;
   };
 
-  const schemaAttempts: boolean[] = params.outputSchema ? [true, false] : [false];
+  const schemaAttempts: boolean[] =
+    params.outputSchema && allowSchemaRetry ? [true, false] : params.outputSchema ? [true] : [false];
 
   for (let i = 0; i < schemaAttempts.length; i++) {
     const withSchema = schemaAttempts[i]!;
@@ -324,11 +335,19 @@ export default async function handler(request: Request): Promise<Response> {
   const deadlineAt = Date.now() + (isHostedVercel() ? HOSTED_DEADLINE_MS : LOCAL_DEADLINE_MS);
   let lastError = { status: 502, details: 'Unknown error' };
 
-  for (const tryModel of models) {
+  for (let mi = 0; mi < models.length; mi++) {
+    const tryModel = models[mi]!;
+    const isLastModel = mi === models.length - 1;
     if (msRemaining(deadlineAt) < MIN_ATTEMPT_MS) {
       lastError = { status: 504, details: 'Request timeout' };
       break;
     }
+
+    // Probe non-final cloud models quickly so a living fallback still fits in Edge 60s.
+    const modelDeadlineAt =
+      !isLocal && !isLastModel
+        ? Math.min(deadlineAt, Date.now() + CLOUD_PROBE_BUDGET_MS)
+        : deadlineAt;
 
     const result = await attemptOllamaChat(
       {
@@ -339,8 +358,10 @@ export default async function handler(request: Request): Promise<Response> {
         userPrompt: body.userPrompt,
         cleanBase64,
         outputSchema,
+        allowSchemaRetry: isLocal || isLastModel,
+        numPredict: isLocal ? 1200 : 900,
       },
-      deadlineAt,
+      modelDeadlineAt,
     );
 
     if (result.ok) {
@@ -348,15 +369,17 @@ export default async function handler(request: Request): Promise<Response> {
         content: result.content,
         source: isLocal ? 'ollama-local' : 'ollama-hosted',
         model: tryModel,
-        ...(!isLocal && tryModel !== cloudModelRequested
+        ...(!isLocal && tryModel !== cloudModel
           ? {
               requestedModel: cloudModelRequested,
-              cloudNote:
-                tryModel === cloudModel
-                  ? 'E4B runs locally; cloud uses Gemma 4 31B'
-                  : `Primary cloud model failed; used vision fallback ${tryModel}`,
+              cloudNote: `Primary cloud model failed; used vision fallback ${tryModel}`,
             }
-          : {}),
+          : !isLocal && tryModel !== cloudModelRequested
+            ? {
+                requestedModel: cloudModelRequested,
+                cloudNote: 'E4B runs locally; cloud uses Gemma 4 31B',
+              }
+            : {}),
         target,
       });
     }
@@ -368,8 +391,8 @@ export default async function handler(request: Request): Promise<Response> {
         401,
       );
     }
-    // Do not chain after a slow timeout — Edge budget is exhausted.
-    if (result.status === 504 && msRemaining(deadlineAt) < SCHEMA_RETRY_MIN_MS) {
+    // Do not chain after a slow timeout on the final model — Edge budget is exhausted.
+    if (result.status === 504 && isLastModel) {
       break;
     }
   }

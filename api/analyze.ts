@@ -1,17 +1,23 @@
 /**
- * /api/analyze — Ollama Cloud proxy for judge uploads (Edge runtime, fetch-only).
- * Edge avoids Node 24 serverless startup crashes on Vercel.
+ * /api/analyze — Ollama Cloud proxy for judge uploads (Node.js serverless).
+ * Node (not Edge): Edge must send first bytes within 25s; vision chats often take longer.
+ * Pin Node 20 via package.json engines to avoid Node 24 startup crashes.
  */
 
 export const config = {
-  runtime: 'edge',
   maxDuration: 60,
 };
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+type VercelRequest = {
+  method?: string;
+  body?: AnalyzeRequest;
+};
+
+type VercelResponse = {
+  setHeader(name: string, value: string): void;
+  status(code: number): VercelResponse;
+  json(data: unknown): VercelResponse;
+  end(): void;
 };
 
 const ARTISAN_V3_OUTPUT_SCHEMA = {
@@ -66,15 +72,13 @@ const CLOUD_MODEL_ALIASES: Record<string, string> = {
   'gemma4:4b': 'gemma4:31b',
 };
 /**
- * Living Ollama Cloud vision model to try after the primary fails fast
- * (e.g. upstream 500). gemma3:* was retired 2026-07-15 — do not use.
- * One fallback only: Vercel Edge has a 60s budget; chaining large models times out.
+ * Living Ollama Cloud vision model. gemma3:* retired 2026-07-15.
+ * gemma4:31b vision currently 500s upstream — lead with minimax-m3 for judge uploads.
  */
 const CLOUD_VISION_FALLBACKS = ['minimax-m3'] as const;
-/** Cap time spent on a non-final cloud model so fallbacks still fit in Edge. */
-const CLOUD_PROBE_BUDGET_MS = 10_000;
-/** Stay under Vercel Edge maxDuration (60s) with headroom for JSON parsing. */
-const HOSTED_DEADLINE_MS = 58_000;
+/** Cap time on a non-final model so the living fallback still fits in 60s. */
+const CLOUD_PROBE_BUDGET_MS = 12_000;
+const HOSTED_DEADLINE_MS = 55_000;
 const LOCAL_DEADLINE_MS = 115_000;
 const MIN_ATTEMPT_MS = 3_000;
 const SCHEMA_RETRY_MIN_MS = 12_000;
@@ -94,7 +98,7 @@ function resolveCloudModel(requested?: string): string {
   return CLOUD_MODEL_ALIASES[raw] ?? raw;
 }
 
-/** Primary first, except gemma4:31b vision is currently 500ing on Ollama Cloud — lead with a living model. */
+/** Lead with a living vision model when primary gemma4:31b is unhealthy on Cloud. */
 function cloudModelsToTry(primary: string): string[] {
   const extras = CLOUD_VISION_FALLBACKS.filter((m) => m !== primary);
   if (primary === 'gemma4:31b' && extras.length > 0) {
@@ -118,11 +122,10 @@ function getTarget(): 'local' | 'cloud' {
   return process.env.OLLAMA_TARGET === 'local' ? 'local' : 'cloud';
 }
 
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
-  });
+function setCors(res: VercelResponse): void {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 }
 
 async function attemptOllamaChat(
@@ -134,7 +137,6 @@ async function attemptOllamaChat(
     userPrompt: string;
     cleanBase64: string;
     outputSchema?: object;
-    /** When false, only one format attempt (saves Edge budget for fallbacks). */
     allowSchemaRetry?: boolean;
     numPredict?: number;
   },
@@ -150,7 +152,6 @@ async function attemptOllamaChat(
         { role: 'user', content: params.userPrompt, images: [params.cleanBase64] },
       ],
       stream: false,
-      // Gemma 4 cloud defaults to thinking; vision + think has been returning upstream 500s.
       think: false,
       options: { temperature: 0.1, num_predict: numPredict },
     };
@@ -208,7 +209,6 @@ async function attemptOllamaChat(
         const elapsed = Date.now() - startedAt;
         const hasSchemaRetry =
           withSchema && i < schemaAttempts.length - 1 && msRemaining(deadlineAt) >= SCHEMA_RETRY_MIN_MS;
-        // Retry schema-off only when schema-on failed quickly (likely format rejection).
         if (hasSchemaRetry && elapsed < 15_000) {
           continue;
         }
@@ -224,13 +224,15 @@ async function attemptOllamaChat(
   return { ok: false, status: 502, details: 'All attempts failed' };
 }
 
-export default async function handler(request: Request): Promise<Response> {
-  if (request.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: CORS });
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  setCors(res);
+
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
   }
 
-  if (request.method !== 'POST') {
-    return json({ error: 'Method not allowed' }, 405);
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const target = getTarget();
@@ -244,30 +246,22 @@ export default async function handler(request: Request): Promise<Response> {
   const endpoint = isLocal ? `${localUrl}/api/chat` : OLLAMA_CLOUD_URL;
 
   if (!isLocal && !apiKey) {
-    return json(
-      {
-        error: 'Hosted analysis not configured',
-        code: 'NO_API_KEY',
-        message: 'OLLAMA_API_KEY is not set on this Vercel project (lens-app-gemma4).',
-      },
-      503,
-    );
+    return res.status(503).json({
+      error: 'Hosted analysis not configured',
+      code: 'NO_API_KEY',
+      message: 'OLLAMA_API_KEY is not set on this Vercel project (lens-app-gemma4).',
+    });
   }
 
-  let body: AnalyzeRequest;
-  try {
-    body = (await request.json()) as AnalyzeRequest;
-  } catch {
-    return json({ error: 'Invalid JSON body' }, 400);
-  }
+  const body = (req.body ?? {}) as AnalyzeRequest;
 
   if (body.healthCheck) {
     const forcedCloud = isHostedVercel() && process.env.OLLAMA_TARGET === 'local';
-    return json({
+    return res.status(200).json({
       status: 'ok',
       configured: true,
       cloudConfigured: !isLocal && Boolean(apiKey),
-      runtime: 'edge',
+      runtime: 'nodejs',
       target,
       model,
       endpoint,
@@ -289,34 +283,35 @@ export default async function handler(request: Request): Promise<Response> {
         method: 'POST',
         headers: warmHeaders,
         body: JSON.stringify({
-          model,
+          model: isLocal ? model : CLOUD_VISION_FALLBACKS[0] ?? model,
           messages: [{ role: 'user', content: '.' }],
           stream: false,
+          think: false,
           options: { num_predict: 1 },
           keep_alive: '30m',
         }),
       });
       if (!warmRes.ok) {
         const errorText = await warmRes.text();
-        return json(
-          { error: 'Warm-up failed', code: 'WARMUP_ERROR', details: errorText.slice(0, 500) },
-          502,
-        );
-      }
-      return json({ status: 'ok', warmed: true, target, model });
-    } catch (err) {
-      return json(
-        {
+        return res.status(502).json({
           error: 'Warm-up failed',
-          message: err instanceof Error ? err.message : 'Unknown error',
-        },
-        502,
-      );
+          code: 'WARMUP_ERROR',
+          details: errorText.slice(0, 500),
+        });
+      }
+      return res.status(200).json({ status: 'ok', warmed: true, target, model });
+    } catch (err) {
+      return res.status(502).json({
+        error: 'Warm-up failed',
+        message: err instanceof Error ? err.message : 'Unknown error',
+      });
     }
   }
 
   if (!body.base64Image || !body.systemPrompt || !body.userPrompt) {
-    return json({ error: 'Missing required fields: base64Image, systemPrompt, userPrompt' }, 400);
+    return res.status(400).json({
+      error: 'Missing required fields: base64Image, systemPrompt, userPrompt',
+    });
   }
 
   const cleanBase64 = body.base64Image.includes('base64,')
@@ -343,7 +338,6 @@ export default async function handler(request: Request): Promise<Response> {
       break;
     }
 
-    // Probe non-final cloud models quickly so a living fallback still fits in Edge 60s.
     const modelDeadlineAt =
       !isLocal && !isLastModel
         ? Math.min(deadlineAt, Date.now() + CLOUD_PROBE_BUDGET_MS)
@@ -365,14 +359,14 @@ export default async function handler(request: Request): Promise<Response> {
     );
 
     if (result.ok) {
-      return json({
+      return res.status(200).json({
         content: result.content,
         source: isLocal ? 'ollama-local' : 'ollama-hosted',
         model: tryModel,
         ...(!isLocal && tryModel !== cloudModel
           ? {
               requestedModel: cloudModelRequested,
-              cloudNote: `Primary cloud model failed; used vision fallback ${tryModel}`,
+              cloudNote: `Live hosted vision via ${tryModel} (gemma4:31b cloud vision currently unavailable)`,
             }
           : !isLocal && tryModel !== cloudModelRequested
             ? {
@@ -386,25 +380,22 @@ export default async function handler(request: Request): Promise<Response> {
 
     lastError = { status: result.status, details: result.details };
     if (result.status === 401) {
-      return json(
-        { error: 'Invalid Ollama API key', code: 'INVALID_API_KEY', details: result.details },
-        401,
-      );
+      return res.status(401).json({
+        error: 'Invalid Ollama API key',
+        code: 'INVALID_API_KEY',
+        details: result.details,
+      });
     }
-    // Do not chain after a slow timeout on the final model — Edge budget is exhausted.
     if (result.status === 504 && isLastModel) {
       break;
     }
   }
 
-  return json(
-    {
-      error: 'Ollama error',
-      code: 'OLLAMA_ERROR',
-      status: lastError.status,
-      details: lastError.details,
-      modelsTried: models,
-    },
-    502,
-  );
+  return res.status(502).json({
+    error: 'Ollama error',
+    code: 'OLLAMA_ERROR',
+    status: lastError.status,
+    details: lastError.details,
+    modelsTried: models,
+  });
 }

@@ -192,12 +192,12 @@ missing Vercel env var (health check still returns `"status":"ok"`). Image
 requests to `gemma4:31b` can fail with a generic upstream 500 while text-only
 or the route itself is fine.
 
-**Demo now:** use the on-prem path — start Ollama with `gemma4:e4b`, open the
-app on `localhost` / LAN (not `*.vercel.app`), and analyze there.
+Hosted `/api/analyze` now runs on **Node.js** (not Edge) so vision can take up
+to 60s, and leads with a living cloud vision model (`minimax-m3`) when
+`gemma4:31b` vision is unhealthy. Hard-refresh after deploy and tap Try Again.
 
-**Hosted:** wait for Ollama Cloud recovery, or temporarily set
-`OLLAMA_CLOUD_MODEL` on the lens-app project to another cloud vision model and
-redeploy.
+**Demo with true E4B:** start Ollama with `gemma4:e4b` and open the app on
+`localhost` / LAN (not `*.vercel.app`).
 
 ### Error mentions `gemma4:e4b` or “Network connection lost” on upload
 

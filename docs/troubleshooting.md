@@ -185,6 +185,20 @@ a build that only uses `gemma4:31b` (`OLLAMA_CLOUD_MODEL=gemma4:31b`). If analys
 still fails, the details should now show the real `gemma4:31b` error (timeout,
 quota, or key) — tap Try Again after a cold start.
 
+### Error mentions `Internal Server Error` with `gemma4:31b`
+
+That response comes from **Ollama Cloud**, not from local E4B and not from a
+missing Vercel env var (health check still returns `"status":"ok"`). Image
+requests to `gemma4:31b` can fail with a generic upstream 500 while text-only
+or the route itself is fine.
+
+**Demo now:** use the on-prem path — start Ollama with `gemma4:e4b`, open the
+app on `localhost` / LAN (not `*.vercel.app`), and analyze there.
+
+**Hosted:** wait for Ollama Cloud recovery, or temporarily set
+`OLLAMA_CLOUD_MODEL` on the lens-app project to another cloud vision model and
+redeploy.
+
 ### Error mentions `gemma4:e4b` or “Network connection lost” on upload
 
 That usually means the **wrong Vercel project** or **`OLLAMA_TARGET=local`** on a hosted deploy.

@@ -65,6 +65,12 @@ const CLOUD_MODEL_ALIASES: Record<string, string> = {
   'gemma4:e4b': 'gemma4:31b',
   'gemma4:4b': 'gemma4:31b',
 };
+/**
+ * Living Ollama Cloud vision models to try after the primary fails fast
+ * (e.g. upstream 500). gemma3:* was retired 2026-07-15 — do not use.
+ * Prefer smaller/faster vision models before the largest ones.
+ */
+const CLOUD_VISION_FALLBACKS = ['minimax-m3', 'qwen3.5:397b'] as const;
 /** Stay under Vercel Edge maxDuration (60s) with headroom for JSON parsing. */
 const HOSTED_DEADLINE_MS = 58_000;
 const LOCAL_DEADLINE_MS = 115_000;
@@ -84,6 +90,12 @@ interface AnalyzeRequest {
 function resolveCloudModel(requested?: string): string {
   const raw = requested || DEFAULT_CLOUD_MODEL;
   return CLOUD_MODEL_ALIASES[raw] ?? raw;
+}
+
+/** Primary cloud model first; other living vision models only on fast failures. */
+function cloudModelsToTry(primary: string): string[] {
+  const extras = CLOUD_VISION_FALLBACKS.filter((m) => m !== primary);
+  return [primary, ...extras];
 }
 
 function msRemaining(deadlineAt: number): number {
@@ -128,6 +140,8 @@ async function attemptOllamaChat(
         { role: 'user', content: params.userPrompt, images: [params.cleanBase64] },
       ],
       stream: false,
+      // Gemma 4 cloud defaults to thinking; vision + think has been returning upstream 500s.
+      think: false,
       options: { temperature: 0.1, num_predict: 1200 },
     };
     if (withSchema && params.outputSchema) {
@@ -306,50 +320,66 @@ export default async function handler(request: Request): Promise<Response> {
     headers.Authorization = `Bearer ${apiKey}`;
   }
 
-  const models = [model];
+  const models = isLocal ? [model] : cloudModelsToTry(cloudModel);
   const deadlineAt = Date.now() + (isHostedVercel() ? HOSTED_DEADLINE_MS : LOCAL_DEADLINE_MS);
+  let lastError = { status: 502, details: 'Unknown error' };
 
-  const result = await attemptOllamaChat(
-    {
-      endpoint,
-      headers,
-      model,
-      systemPrompt: body.systemPrompt,
-      userPrompt: body.userPrompt,
-      cleanBase64,
-      outputSchema,
-    },
-    deadlineAt,
-  );
+  for (const tryModel of models) {
+    if (msRemaining(deadlineAt) < MIN_ATTEMPT_MS) {
+      lastError = { status: 504, details: 'Request timeout' };
+      break;
+    }
 
-  if (result.ok) {
-    return json({
-      content: result.content,
-      source: isLocal ? 'ollama-local' : 'ollama-hosted',
-      model,
-      ...(!isLocal && model !== cloudModelRequested
-        ? {
-            requestedModel: cloudModelRequested,
-            cloudNote: 'E4B runs locally; cloud uses Gemma 4 31B',
-          }
-        : {}),
-      target,
-    });
-  }
-
-  if (result.status === 401) {
-    return json(
-      { error: 'Invalid Ollama API key', code: 'INVALID_API_KEY', details: result.details },
-      401,
+    const result = await attemptOllamaChat(
+      {
+        endpoint,
+        headers,
+        model: tryModel,
+        systemPrompt: body.systemPrompt,
+        userPrompt: body.userPrompt,
+        cleanBase64,
+        outputSchema,
+      },
+      deadlineAt,
     );
+
+    if (result.ok) {
+      return json({
+        content: result.content,
+        source: isLocal ? 'ollama-local' : 'ollama-hosted',
+        model: tryModel,
+        ...(!isLocal && tryModel !== cloudModelRequested
+          ? {
+              requestedModel: cloudModelRequested,
+              cloudNote:
+                tryModel === cloudModel
+                  ? 'E4B runs locally; cloud uses Gemma 4 31B'
+                  : `Primary cloud model failed; used vision fallback ${tryModel}`,
+            }
+          : {}),
+        target,
+      });
+    }
+
+    lastError = { status: result.status, details: result.details };
+    if (result.status === 401) {
+      return json(
+        { error: 'Invalid Ollama API key', code: 'INVALID_API_KEY', details: result.details },
+        401,
+      );
+    }
+    // Do not chain after a slow timeout — Edge budget is exhausted.
+    if (result.status === 504 && msRemaining(deadlineAt) < SCHEMA_RETRY_MIN_MS) {
+      break;
+    }
   }
 
   return json(
     {
       error: 'Ollama error',
       code: 'OLLAMA_ERROR',
-      status: result.status,
-      details: result.details,
+      status: lastError.status,
+      details: lastError.details,
       modelsTried: models,
     },
     502,

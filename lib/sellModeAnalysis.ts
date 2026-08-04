@@ -27,6 +27,12 @@ export function cloudUnavailableMessage(cloudError?: string): string {
   if (/invalid.*api key|401/i.test(raw)) {
     return `Analysis unavailable: ${detail || 'Invalid Ollama API key'}. Set OLLAMA_API_KEY on the Vercel project and redeploy.`;
   }
+  if (/Internal Server Error/i.test(raw)) {
+    return (
+      `Analysis unavailable: Ollama Cloud returned an internal error on the vision model. ` +
+      `Hard-refresh and tap Try Again — the hosted app retries living vision fallbacks. ${hint}`
+    );
+  }
   if (/FUNCTION_INVOCATION_TIMEOUT/i.test(raw)) {
     return (
       `Analysis unavailable: Ollama Cloud exceeded the 60-second server limit (cold model start or a large photo). Tap Try Again — the second attempt is usually faster. ${hint}`

@@ -20,7 +20,7 @@ import {
 /** User-facing message when hosted /api/analyze or Ollama Cloud is unavailable. */
 export function cloudUnavailableMessage(cloudError?: string): string {
   const hint =
-    'Live analysis uses gemma4:31b on Ollama Cloud (vision fallback: gemma3:4b). Local E4B (gemma4:e4b) is in the README quick start.';
+    'Live analysis uses gemma4:31b on Ollama Cloud. Local E4B (gemma4:e4b) is in the README quick start.';
   const raw = cloudError?.trim() ?? '';
   const detail = raw.replace(/^Cloud analysis failed:\s*/i, '').trim();
 

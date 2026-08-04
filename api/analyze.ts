@@ -65,7 +65,6 @@ const CLOUD_MODEL_ALIASES: Record<string, string> = {
   'gemma4:e4b': 'gemma4:31b',
   'gemma4:4b': 'gemma4:31b',
 };
-const CLOUD_VISION_FALLBACK = 'gemma3:4b';
 /** Stay under Vercel Edge maxDuration (60s) with headroom for JSON parsing. */
 const HOSTED_DEADLINE_MS = 58_000;
 const LOCAL_DEADLINE_MS = 115_000;
@@ -85,13 +84,6 @@ interface AnalyzeRequest {
 function resolveCloudModel(requested?: string): string {
   const raw = requested || DEFAULT_CLOUD_MODEL;
   return CLOUD_MODEL_ALIASES[raw] ?? raw;
-}
-
-/** Primary cloud model first; smaller vision model only on fast failures. */
-function cloudModelsToTry(primary: string): string[] {
-  return primary === CLOUD_VISION_FALLBACK
-    ? [CLOUD_VISION_FALLBACK]
-    : [primary, CLOUD_VISION_FALLBACK];
 }
 
 function msRemaining(deadlineAt: number): number {
@@ -314,66 +306,50 @@ export default async function handler(request: Request): Promise<Response> {
     headers.Authorization = `Bearer ${apiKey}`;
   }
 
-  const models = isLocal ? [localModel] : cloudModelsToTry(cloudModel);
+  const models = [model];
   const deadlineAt = Date.now() + (isHostedVercel() ? HOSTED_DEADLINE_MS : LOCAL_DEADLINE_MS);
-  let lastError = { status: 502, details: 'Unknown error' };
 
-  for (const tryModel of models) {
-    if (msRemaining(deadlineAt) < MIN_ATTEMPT_MS) {
-      lastError = { status: 504, details: 'Request timeout' };
-      break;
-    }
+  const result = await attemptOllamaChat(
+    {
+      endpoint,
+      headers,
+      model,
+      systemPrompt: body.systemPrompt,
+      userPrompt: body.userPrompt,
+      cleanBase64,
+      outputSchema,
+    },
+    deadlineAt,
+  );
 
-    const result = await attemptOllamaChat(
-      {
-        endpoint,
-        headers,
-        model: tryModel,
-        systemPrompt: body.systemPrompt,
-        userPrompt: body.userPrompt,
-        cleanBase64,
-        outputSchema,
-      },
-      deadlineAt,
+  if (result.ok) {
+    return json({
+      content: result.content,
+      source: isLocal ? 'ollama-local' : 'ollama-hosted',
+      model,
+      ...(!isLocal && model !== cloudModelRequested
+        ? {
+            requestedModel: cloudModelRequested,
+            cloudNote: 'E4B runs locally; cloud uses Gemma 4 31B',
+          }
+        : {}),
+      target,
+    });
+  }
+
+  if (result.status === 401) {
+    return json(
+      { error: 'Invalid Ollama API key', code: 'INVALID_API_KEY', details: result.details },
+      401,
     );
-
-    if (result.ok) {
-      return json({
-        content: result.content,
-        source: isLocal ? 'ollama-local' : 'ollama-hosted',
-        model: tryModel,
-        ...(!isLocal && tryModel !== cloudModelRequested
-          ? {
-              requestedModel: cloudModelRequested,
-              cloudNote:
-                tryModel === CLOUD_VISION_FALLBACK
-                  ? 'Cloud vision fallback uses Gemma 3 4B; local demo uses Gemma 4 E4B'
-                  : 'E4B runs locally; cloud uses Gemma 4 31B',
-            }
-          : {}),
-        target,
-      });
-    }
-
-    lastError = { status: result.status, details: result.details };
-    if (result.status === 401) {
-      return json(
-        { error: 'Invalid Ollama API key', code: 'INVALID_API_KEY', details: result.details },
-        401,
-      );
-    }
-    // Do not chain to fallback after a slow timeout — budget is exhausted.
-    if (result.status === 504 && msRemaining(deadlineAt) < SCHEMA_RETRY_MIN_MS) {
-      break;
-    }
   }
 
   return json(
     {
       error: 'Ollama error',
       code: 'OLLAMA_ERROR',
-      status: lastError.status,
-      details: lastError.details,
+      status: result.status,
+      details: result.details,
       modelsTried: models,
     },
     502,

@@ -177,6 +177,14 @@ the **Edge** runtime (see `export const config` in `api/analyze.ts`) to avoid th
 5. **Redeploy** after any change.
 6. **Deployments → Functions → `/api/analyze`** — check logs if it still fails.
 
+### Error mentions `gemma3:4b` was retired
+
+Ollama Cloud retired `gemma3:4b` on 2026-07-15. Older builds fell back to that
+model after a `gemma4:31b` failure and surfaced the retirement message. Redeploy
+a build that only uses `gemma4:31b` (`OLLAMA_CLOUD_MODEL=gemma4:31b`). If analysis
+still fails, the details should now show the real `gemma4:31b` error (timeout,
+quota, or key) — tap Try Again after a cold start.
+
 ### Error mentions `gemma4:e4b` or “Network connection lost” on upload
 
 That usually means the **wrong Vercel project** or **`OLLAMA_TARGET=local`** on a hosted deploy.
